@@ -126,7 +126,7 @@ Review notes, Host Pass:
 A yearly subscription for hosts. While it's active, every game the subscriber hosts is free of ads for everyone at the Table, and includes every Trial and the full question banks. Players who join never pay. To see it: buy it under Your passes on the start screen, then tap Host a game, Start a game and choose Use my Host Pass, or use it from a free game's lobby with Make it ad-free with a pass. Restore purchases brings it to another device, and Manage subscription opens Apple's subscription settings.
 ```
 
-Each needs a review screenshot: the **Your passes** screen, or the lobby's pass sheet.
+Each needs a review screenshot: `review/passes-6.9.png` (the **Your passes** screen, 1320 × 2868, an accepted iPhone size).
 
 ## Screenshots
 
