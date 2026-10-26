@@ -19,7 +19,7 @@ PHONE = [
     ("oath", "Everyone swears an oath.", "Not everyone means it."),
     ("roles-forsworn", "A few of you are Forsworn.", "Your phone tells you, and no one else."),
     ("likely-open", "Party games for the Purse.", "Quizzes, guesses, words and more."),
-    ("vote-mine", "Argue. Accuse. Vote.", "Each round, one of you leaves the Table."),
+    ("vote-mine", "Argue. Accuse. Vote.", "Each round, the table votes someone out."),
     ("night-forsworn-picked", "By night, the Forsworn choose.", "Everyone taps too, so no one can tell who."),
     ("end-winner", "Find every Forsworn.", "Or watch them take the Purse."),
 ]
@@ -27,7 +27,7 @@ TV = [
     ("lobby-host", "Your TV becomes the show.", "Friends join in the app, or scan the code."),
     ("quiz-open", "Everyone answers on their own phone.", "The TV keeps the table together."),
     ("talk", "The Reckoning.", "A few minutes of debate, then a secret vote."),
-    ("reveal-exiled", "Every exile is unmasked.", "Loyal or Forsworn, the table finds out."),
+    ("reveal-exiled", "The exile is unmasked.", "Loyal or Forsworn, the table finds out."),
     ("dawn-revealed", "Dawn brings the night’s victim.", "Last words, then back to the table."),
     ("end-host", "Who takes the Purse?", "The Loyal, or the ones who lied all night."),
 ]
