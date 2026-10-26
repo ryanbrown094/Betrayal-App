@@ -266,7 +266,7 @@ final class Session {
         let phase = v.phase
         Task {
             try? await Task.sleep(for: .seconds(phase == "end" ? 8 : 1.5))
-            if view?.phase == phase && view?.paused == nil { Ads.shared.interstitial(room: room, limits: limits) }
+            if view?.phase == phase && view?.paused == nil { Ads.shared.interstitial(room: room, limits: limits, placement: phase == "end" ? "P3" : "P2") }
         }
     }
 

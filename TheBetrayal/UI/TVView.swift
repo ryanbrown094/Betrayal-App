@@ -28,6 +28,7 @@ struct TVView: View {
                     }
                     .padding(.vertical, u.vh * 4).padding(.horizontal, u.vw * 5)
                     if v.paused != nil { PauseBox(v: v, me: nil, tv: true, vh: u.vh) }
+                    TVOffer(v: v, u: u).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(.top, u.vh * 10).padding(.trailing, u.vw * 5)
                 } else {
                     VStack(spacing: u.vh * 2.4) {
                         Brand()

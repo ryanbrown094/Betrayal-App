@@ -59,6 +59,11 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
     units. Make the app in AdMob, put its app ID there and its two ad units in `Info.plist` as `BTAdBanner` and
     `BTAdInterstitial`; in AdMob's Privacy & messaging, publish a GDPR message (and an IDFA explainer if wanted); add
     Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's own is there now).
+- **Offers to the host** (`UI/Offers.swift`, all their limits in one place): in a free game's lobby once three have
+  joined (instead of the host's banner, until waved away); a strip at the start of rounds 2 and 4 on the host's phone,
+  with a matching corner card on the TV that has nothing to tap; and the Host Pass on the host's results. Players are
+  never offered anything. Each ad and offer seen or tapped, and each purchase started, is counted by the server
+  (`/api/app/event`; the server repo's HANDOVER §4.8 has the figures and the weekly host conversion).
 - **Buying passes** (`Model/Shop.swift`, `UI/ShopView.swift`): Apple's in-app purchase, at the App Store's price. Each
   purchase goes to `POST /api/appstore/claim`, which checks it with Apple and returns its code (the server repo's
   HANDOVER §6.2a); only then does the app finish the purchase, so a code is never lost to a dropped connection

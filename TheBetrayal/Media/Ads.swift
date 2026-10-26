@@ -50,16 +50,20 @@ final class Ads {
         }
     }
 
-    // a player's phone at a natural break: shown if one is loaded and the limits allow
-    func interstitial(room: String, limits: AdsConfig) {
-        guard limits.enabled, let ad = interstitial, let vc = Ads.top() else { preload(); return }
+    // a player's phone at a natural break (placement P2 between rounds, P3 the results): shown if the limits allow and
+    // one is loaded
+    func interstitial(room: String, limits: AdsConfig, placement: String) {
+        guard limits.enabled else { return }
         let n = shown[room] ?? 0
         if n >= limits.maxPerRoom { return }
         if let last = lastShown, Date().timeIntervalSince(last) < limits.minGap { return }
+        Events.send("ad_requested", placement: placement)
+        guard let ad = interstitial, let vc = Ads.top() else { Events.send("ad_failed", placement: placement, product: "notloaded"); preload(); return }
         interstitial = nil
         shown[room] = n + 1
         lastShown = Date()
         ad.present(from: vc)
+        Events.send("ad_shown", placement: placement)
     }
 
     fileprivate func closed() { preload() }
@@ -85,11 +89,13 @@ private final class Watcher: NSObject, FullScreenContentDelegate {
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) { Task { @MainActor in Ads.shared.closed() } }
 }
 
-// the lobby's banner: anchored, as wide as the phone's column
+// the lobby's banner (P1 a player's, P4 the host's): anchored, as wide as the phone's column
 struct AdBanner: View {
+    let placement: String
     private let size = currentOrientationAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
     var body: some View {
         BannerBox(size: size).frame(width: size.size.width, height: size.size.height).frame(maxWidth: .infinity)
+            .onAppear { Events.send("ad_requested", placement: placement) }
     }
 }
 
@@ -114,7 +120,8 @@ struct AdStrip: View {
     var body: some View {
         if session.tier.tier == "free", let ads = session.tier.ads, ads.enabled {
             if v.phase == "lobby" {
-                if ads.banner && Ads.shared.ready { AdBanner() }
+                // the host's banner gives way to the offer while it's showing (Offers, U1)
+                if ads.banner && Ads.shared.ready && !(me.director && Offers.lobbyDue(v, session)) { AdBanner(placement: me.director ? "P4" : "P1") }
             } else if !me.director && ["day", "break", "end"].contains(v.phase) && v.round > ads.afterRound {
                 Text("The host can remove ads for everyone tonight.")
                     .font(Theme.ui(14)).foregroundStyle(Theme.tallow2)

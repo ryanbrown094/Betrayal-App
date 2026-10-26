@@ -214,7 +214,7 @@ struct UsePassSheet: View {
     private func buyAndUse(_ plan: Shop.Plan) {
         problem = nil
         Task {
-            if let b = await shop.buy(plan, announce: false) { go(b.pass) }
+            if let b = await shop.buy(plan, announce: false, from: "lobby") { go(b.pass) }
             else if let p = shop.problem { problem = p; shop.problem = nil }
         }
     }

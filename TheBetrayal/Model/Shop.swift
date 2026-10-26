@@ -68,8 +68,9 @@ final class Shop {
 
     // announce: show the pass in its own sheet (the start screen); a game's lobby uses it straight away instead
     @discardableResult
-    func buy(_ plan: Plan, announce: Bool = true) async -> Bought? {
+    func buy(_ plan: Plan, announce: Bool = true, from: String = "home") async -> Bought? {
         guard let product = plan.product, buying == nil else { return nil }
+        Events.send("purchase_started", placement: from, product: plan.id == Shop.hostID ? "host" : "night")
         buying = plan.id
         defer { buying = nil }
         do {

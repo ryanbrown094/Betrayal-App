@@ -46,6 +46,7 @@ struct LobbyView: View {
             People(list: v.players)
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
+                LobbyOffer(v: v)
                 if v.test {
                     Banner(.plain, "Test game: the bots play themselves, Trials score at random, and every countdown is ten seconds.")
                     Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14)
@@ -208,6 +209,7 @@ struct DayView: View {
     @Environment(Session.self) private var session
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if me.director { BreakOffer(v: v) }
             if !v.final { Eyebrow("round \(v.round)") }
             H1(v.final ? "The final" : v.roundTrials > 0 ? "Back at the table" : "A new day")
             Sub(v.final ? "Five or fewer remain. An exile’s role stays hidden until the end. When the table trusts everyone left, it ends." : "Talk among yourselves, and watch each other.")
@@ -603,6 +605,7 @@ struct EndView: View {
             VStack(alignment: .leading, spacing: 0) {
                 H1(fw ? "The Forsworn win" : "The Loyal win", disp: true)
                 Sub(EndView.how(r))
+                if me.director { ResultsOffer(v: v) }
                 VStack(spacing: 0) {
                     Eyebrow(EndView.prizeHead(r))
                     Answer(Words.prize(r), center: true)
