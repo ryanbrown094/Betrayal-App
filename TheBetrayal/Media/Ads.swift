@@ -85,7 +85,7 @@ final class Ads {
         #if DEBUG
         // the CI's QA run can't tap the ad's close button: it closes itself, so the game's screens can be photographed
         if ProcessInfo.processInfo.arguments.contains("-adclose") {
-            Task { try? await Task.sleep(nanoseconds: 3_000_000_000); vc.presentedViewController?.dismiss(animated: false) { [weak self] in self?.closed() } }
+            Task { try? await Task.sleep(nanoseconds: 3_000_000_000); vc.presentedViewController?.dismiss(animated: false) } // Google's delegate then calls closed()
         }
         #endif
     }
