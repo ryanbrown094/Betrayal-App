@@ -2,8 +2,9 @@ import SwiftUI
 
 // Offers to the host of a free game to make the night ad-free, all decided here so their limits live in one place:
 //   U1  the host's lobby, once three have joined, until waved away (it takes the lobby banner's place)
-//   U2  a strip on the host's phone at the start of two rounds, never consecutive (the second and the fourth)
-//   U3  the same two rounds, in a corner of the TV, with nothing to tap: buying is only ever on the host's phone
+//   U2  a strip on the host's phone at the Reckoning's debate (when players see the ad) in two rounds, never
+//       consecutive (the second and the fourth)
+//   U3  the same two debates, in a corner of the TV, with nothing to tap: buying is only ever on the host's phone
 //   U4  the host's results: the Host Pass, for next time, until waved away
 // Players are never offered anything; they can't buy. Nor is anyone at a practice game, where only bots would see ads.
 @MainActor
@@ -12,7 +13,7 @@ enum Offers {
         adsOn(s.tier) && !v.practice && v.phase == "lobby" && v.players.count >= 3 && !waved(s.room, "U1")
     }
     static func breakDue(_ v: Snapshot, _ tier: Tier) -> Bool {
-        guard adsOn(tier), !v.practice, let a = tier.ads, v.phase == "day", !v.final else { return false }
+        guard adsOn(tier), !v.practice, let a = tier.ads, v.phase == "talk", !v.final else { return false }
         return v.round == a.afterRound + 1 || v.round == a.afterRound + 3
     }
     static func resultsDue(_ v: Snapshot, _ s: Session) -> Bool { s.tier.tier == "free" && !v.practice && v.phase == "end" && !waved(s.room, "U4") }

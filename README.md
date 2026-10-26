@@ -57,8 +57,9 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
 - **Ads in free games** (`Media/Ads.swift`), with Google's AdMob SDK (`GoogleMobileAds` through Swift Package Manager,
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
   consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
-  on a player's phone at the start of each new round from the second, and on the results, never on the host's phone
-  or the TV, at most once a break, four minutes apart and four a game (the server sends these limits, and
+  on a player's phone at the Reckoning's debate from the second round (minutes when nobody needs their phone), and on
+  the results, never on the host's phone or the TV, at most once a break, four minutes apart and four a game (the
+  server sends these limits, and
   `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
   Google's form where the law asks for it.

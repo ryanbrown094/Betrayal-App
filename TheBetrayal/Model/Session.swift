@@ -134,7 +134,15 @@ final class Session {
     private func take(_ j: JSON) {
         let local = Date().timeIntervalSince1970 * 1000
         if let n = j["now"].double { off = n - local }
-        if let v = Snapshot(j["view"]) { view = v; off = v.now - local; changed() }
+        if let v = Snapshot(j["view"]) {
+            // a place the Table no longer knows (taken out in the lobby, a new game without them, let back in on another
+            // phone): the name screen, not "Connecting…" for ever
+            if !isTV && !demo && token != nil && v.me == nil {
+                clearToken(); view = nil; screen = .join
+                return say("You’re no longer at this Table. Type your name to join it again.", error: true)
+            }
+            view = v; off = v.now - local; changed()
+        }
         if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
         if tier.tier == "free", tier.ads?.enabled == true, !isTV, !demo { Ads.shared.prepare() }
         if !j["rejoin"].isNull { rejoin = j["rejoin"].array.compactMap { r in r["id"].string.map { Rejoin(id: $0, name: r["name"].string ?? "?") } } }
@@ -257,11 +265,12 @@ final class Session {
         adMoment(v)
     }
 
-    // a free game's natural breaks, on a player's phone (never the host's, which runs the game, nor the TV): the start
-    // of each new round from the second, and the results once they've been seen
+    // a free game's natural breaks, on a player's phone (never the host's, which runs the game, nor the TV): the
+    // Reckoning's debate from the second round (minutes when nobody needs their phone; at the day, the host could begin
+    // a Trial under the ad), and the results once they've been seen
     private func adMoment(_ v: Snapshot) {
         guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, let me = v.me, !me.director else { return }
-        let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
+        let key = v.phase == "talk" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
         guard !key.isEmpty, !adKeys.contains(key) else { return }
         adKeys.insert(key)
         let phase = v.phase

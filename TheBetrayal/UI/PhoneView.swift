@@ -219,7 +219,13 @@ struct PlayView: View {
         } else if session.isTV {
             TVView()
         } else {
-            ScrollView { Column { Brand(); Text("Connecting…").font(Theme.ui(18)).foregroundStyle(Theme.tallow2).frame(maxWidth: .infinity) } }
+            ScrollView {
+                Column {
+                    Brand()
+                    Text("Connecting…").font(Theme.ui(18)).foregroundStyle(Theme.tallow2).frame(maxWidth: .infinity).padding(.bottom, 24)
+                    Button("Back to the start") { dismiss() }.btn(.dark, .sm)
+                }
+            }
         }
     }
 
@@ -295,7 +301,7 @@ struct TopBar: View {
 
     // to the start screen, which offers the way back to this Table; mid-game, asked first
     private func leave() {
-        if ["lobby", "end"].contains(v.phase) || !me.alive { dismiss(); return }
+        if ["lobby", "end"].contains(v.phase) || (!me.alive && !me.director) { dismiss(); return }
         session.confirm(me.director ? "Leave the game for now? It waits for you to move it on: come back to it from the start screen."
                                     : "Leave the game for now? It carries on, and you can come back to it from the start screen.", yes: "Leave") { dismiss() }
     }
@@ -398,6 +404,7 @@ struct PauseBox: View {
                     Button("Carry on") { session.act("pause", "off") }.btn(.fill, .big)
                     Spacer().frame(height: 10)
                     Button("Host tools") { session.tools = true }.btn(.ghost, .sm, fit: true)
+                    ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18)
                 }
             }
             .multilineTextAlignment(.center)

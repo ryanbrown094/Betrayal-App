@@ -145,7 +145,7 @@ struct AdStrip: View {
             if v.phase == "lobby" {
                 // the host's banner gives way to the offer while it's showing (Offers, U1)
                 if ads.banner && Ads.shared.ready && !(me.director && Offers.lobbyDue(v, session)) { AdBanner(placement: me.director ? "P4" : "P1") }
-            } else if !me.director && ["day", "break", "end"].contains(v.phase) && v.round > ads.afterRound {
+            } else if !me.director && ["day", "talk", "break", "end"].contains(v.phase) && v.round > ads.afterRound {
                 Text("The host can remove ads for everyone tonight.")
                     .font(Theme.ui(14)).foregroundStyle(Theme.tallow2)
                     .frame(maxWidth: .infinity).padding(.vertical, 8)

@@ -94,7 +94,8 @@ struct AnswerForm: View {
         .onAppear { text = initial }
     }
     private func send() {
-        let v = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let typed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let v = number ? typed.replacingOccurrences(of: ",", with: ".") : typed // 12,5 is 12.5 (the server reads only a point)
         guard !v.isEmpty else { return session.say("Type an answer first.", error: true) }
         if !multiline { text = "" }
         session.act("ans", v)

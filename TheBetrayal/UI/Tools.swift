@@ -29,6 +29,7 @@ struct ToolsView: View {
     var body: some View {
         let others = v.players.filter { $0.id != me.id }
         VStack(alignment: .leading, spacing: 0) {
+            ForEach(session.rejoin) { r in RejoinCard(r: r) }
             H2("Host tools")
             Sub("For when something goes wrong. Nothing here shows you anyone’s role, except the last one.")
             let list = tools
@@ -49,9 +50,13 @@ struct ToolsView: View {
                 Small("If someone is ill or has to go home. They leave for good, and nobody is told their role. If nobody Forsworn is left, the final begins.")
                 PickGrid(list: others) { p in run("remove", who: p) }
             }
-            More("Make someone else the host") {
-                Small("Their phone gets these controls, and yours loses them.")
-                PickGrid(list: others) { p in run("host", who: p) }
+            // never a bot (the server refuses): so not at a practice game
+            let people = others.filter { !$0.bot }
+            if !people.isEmpty {
+                More("Make someone else the host") {
+                    Small("Their phone gets these controls, and yours loses them.")
+                    PickGrid(list: people) { p in run("host", who: p) }
+                }
             }
             More("Music on this phone") {
                 Small("If there’s no TV, this phone can play the music and sounds.")

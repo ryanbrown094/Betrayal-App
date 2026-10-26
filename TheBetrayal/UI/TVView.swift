@@ -61,6 +61,7 @@ struct TVUnits {
 private struct TVButtons: View {
     let u: TVUnits
     @Environment(Session.self) private var session
+    @Environment(\.dismiss) private var dismiss
     @State private var refresh = false
     var body: some View {
         VStack {
@@ -77,6 +78,7 @@ private struct TVButtons: View {
                     refresh.toggle()
                 }
                 .btn(.ghost, .sm, fit: true)
+                Button("Leave") { dismiss() }.btn(.ghost, .sm, fit: true).accessibilityLabel("Back to the start")
                 Spacer()
             }
             .opacity(0.55)

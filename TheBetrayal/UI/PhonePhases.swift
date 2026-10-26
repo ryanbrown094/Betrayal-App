@@ -210,7 +210,6 @@ struct DayView: View {
     @Environment(Session.self) private var session
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if me.director { BreakOffer(v: v) }
             if !v.final { Eyebrow("round \(v.round)") }
             H1(v.final ? "The final" : v.roundTrials > 0 ? "Back at the table" : "A new day")
             Sub(v.final ? "Five or fewer remain. An exile’s role stays hidden until the end. When the table trusts everyone left, it ends." : "Talk among yourselves, and watch each other.")
@@ -220,7 +219,7 @@ struct DayView: View {
             DirCard {
                 VStack(spacing: 10) {
                     Button("Begin: " + (v.next ?? "next")) { session.act("next") }.btn(.fill, .big)
-                    Button("A short break first · 10 min") { session.act("break", "interval") }.btn(.ghost, .sm)
+                    Button(v.practice ? "A short break first" : "A short break first · 10 min") { session.act("break", "interval") }.btn(.ghost, .sm)
                 }
             }
         }
@@ -251,6 +250,7 @@ struct TalkView: View {
     let me: Me
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if me.director { BreakOffer(v: v) }
             Eyebrow("the reckoning" + (v.vote?.second == true ? " · the second exile" : ""))
             H1("Make your accusations")
             Clock(end: v.vote?.talkEnd, size: 56).padding(.bottom, 12)

@@ -447,7 +447,7 @@ struct Field: View {
             .multilineTextAlignment(code ? .center : .leading)
             .textInputAutocapitalization(code ? .characters : number ? .never : .sentences)
             .autocorrectionDisabled()
-            .keyboardType(number ? .decimalPad : code ? .asciiCapable : .default)
+            .keyboardType(number ? .numbersAndPunctuation : code ? .asciiCapable : .default) // numbers: a return key, and a minus
             .submitLabel(.send)
             .onSubmit(submit)
             .foregroundStyle(Theme.tallow)
