@@ -207,8 +207,8 @@ struct HomeView: View {
     }
 }
 
-// the booking code: OATH-XXXX-XXXX, typed any way
-private struct BookingField: View {
+// a pass's code: OATH-XXXX-XXXX, typed any way
+struct BookingField: View {
     @Binding var text: String
     let submit: () -> Void
     var body: some View {

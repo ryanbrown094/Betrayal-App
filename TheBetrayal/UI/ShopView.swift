@@ -138,3 +138,81 @@ struct BoughtSheet: View {
         .background(Backdrop())
     }
 }
+
+// a Trial a free game doesn't play
+struct LockedTrial: View {
+    let title: String
+    var body: some View {
+        HStack(spacing: 5) {
+            Icon(name: "key").frame(width: 15, height: 15)
+            Text(title).font(Theme.ui(15))
+        }
+        .foregroundStyle(Theme.tallow2)
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .overlay(Capsule().strokeBorder(Theme.edge, lineWidth: 1))
+    }
+}
+
+// the host makes a free game ad-free from its lobby: one of this phone's passes, or a pass's code typed in
+struct UsePassSheet: View {
+    let use: (String) async -> String?
+    @Environment(\.dismiss) private var dismiss
+    @State private var code = ""
+    @State private var busy = false
+    @State private var problem: String?
+    private var shop: Shop { Shop.shared }
+    // a Night Pass that's ready or in its 24 hours, a Host Pass that's paid up (or not yet asked about)
+    private var usable: [SavedCodes.Code] {
+        shop.codes.filter { c in
+            guard let st = shop.status[c.pass] else { return true }
+            return st.kind == "night" ? st.state == "ready" || st.state == "active" : st.kind == "host" && st.state == "active"
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            Column {
+                HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
+                H1("Make tonight ad-free")
+                Sub("A pass takes the ads away for everyone at this Table, and adds every Trial and the full question banks from the next Trial on. A Night Pass’s 24 hours start now.")
+                if !usable.isEmpty {
+                    Label2("Your passes")
+                    ForEach(usable) { c in
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: c.pass).font(Theme.ui(20, .bold)).tracking(1.5).foregroundStyle(Theme.tallow)
+                                Text(c.sub == true ? "Host Pass" : "Night Pass").font(Theme.sc(13)).tracking(0.6).foregroundStyle(Theme.tallow2)
+                            }
+                            Spacer()
+                            Button("Use") { go(c.pass) }.btn(.fill, .sm, fit: true).disabled(busy)
+                        }
+                        .padding(.vertical, 8)
+                        .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
+                    }
+                    Spacer().frame(height: 18)
+                }
+                Label2(usable.isEmpty ? "Type a pass’s code" : "Or type a pass’s code")
+                VStack(spacing: 10) {
+                    BookingField(text: $code) { go(code) }
+                    Button(busy ? "Using it…" : "Use this pass") { go(code) }.btn(.ghost).disabled(busy || code.count < 4)
+                }
+                if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
+                Small("No pass yet? Passes are on the start screen, under Make it ad-free.").padding(.top, 14)
+            }
+        }
+        .background(Backdrop())
+        .task { await shop.refresh() }
+    }
+
+    private func go(_ pass: String) {
+        let p = pass.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !busy, p.count >= 4 else { return }
+        busy = true
+        problem = nil
+        Task {
+            let e = await use(p)
+            busy = false
+            if let e { problem = e } else { dismiss() }
+        }
+    }
+}

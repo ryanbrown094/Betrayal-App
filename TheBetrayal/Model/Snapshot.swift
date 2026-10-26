@@ -21,6 +21,7 @@ struct Snapshot {
     let roundTrials: Int
     let opts: Opts?
     let next: String?
+    let locked: [String]   // a free game in the app: the Trials a pass would add (the server's BASE_TRIALS)
     let trial: Trial?
     let vote: Vote?
     let reveal: Reveal?
@@ -52,6 +53,7 @@ struct Snapshot {
         roundTrials = j["roundTrials"].int ?? 0
         opts = j["opts"].isNull ? nil : Opts(j["opts"])
         next = j["next"].string
+        locked = j["locked"].strings
         trial = j["trial"].isNull ? nil : Trial(j["trial"])
         vote = j["vote"].isNull ? nil : Vote(j["vote"])
         reveal = j["reveal"].isNull ? nil : Reveal(j["reveal"])

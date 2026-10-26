@@ -34,6 +34,7 @@ struct LobbyView: View {
     @State private var tier1 = ""
     @State private var tier2 = ""
     @State private var loaded = false
+    @State private var passing = false
     @FocusState private var focus: String?
 
     var body: some View {
@@ -71,6 +72,12 @@ struct LobbyView: View {
                     Label2("Eating as you play?")
                     two("courses", (true, "Yes, in courses"), (false, "No"), on: o?.courses)
                     Small(o?.courses == true ? "Dinner in courses: a starter, a main and dessert are served between the rounds." : "No meal breaks. Turn this on to serve dinner in courses between the rounds. You can always call a short break.").padding(.top, 6)
+                    if !v.locked.isEmpty {
+                        Label2("Trials").padding(.top, 12)
+                        Small("A free game plays 8 of the 15 Trials, with half the questions, and shows an ad between rounds. A pass takes the ads away for everyone and adds:").padding(.top, 2)
+                        Flow(spacing: 6) { ForEach(v.locked, id: \.self) { LockedTrial(title: $0) } }.padding(.bottom, 10)
+                        Button("Make it ad-free with a pass") { passing = true }.btn(.ghost, .sm, fit: true)
+                    }
                     Spacer().frame(height: 12)
                     Button(n < 8 ? "Waiting for \(8 - n) more" : "Start with \(n) players") {
                         session.confirm("Start the game? Nobody else can join after this.", yes: "Start") { session.act("start") }
@@ -81,6 +88,7 @@ struct LobbyView: View {
             }
         }
         .onAppear(perform: load)
+        .sheet(isPresented: $passing) { UsePassSheet(use: session.upgrade) }
         .onChange(of: focus) { was, _ in if was == "prize" { sendPrize() } else if was == "tier1" || was == "tier2" { sendTiers() } }
     }
 

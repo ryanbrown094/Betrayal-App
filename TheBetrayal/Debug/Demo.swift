@@ -2,7 +2,8 @@
 import SwiftUI
 
 // A Debug build can show the game without a server, for the CI's screenshots (.github/workflows/ios-native.yml):
-//   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did
+//   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
+//                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
@@ -48,7 +49,14 @@ enum Demo {
     }()
 
     @MainActor static func session(_ name: String, tv: Bool) -> Session? {
-        guard let f = fixtures[name], let v = Snapshot(tv || f["phone"].isNull ? f["tv"] : f["phone"]) else { return nil }
+        let free = name.hasSuffix("+free"), key = free ? String(name.dropLast(5)) : name
+        guard let f = fixtures[key] else { return nil }
+        var j = tv || f["phone"].isNull ? f["tv"] : f["phone"]
+        if free, case .object(var o) = j {
+            o["locked"] = .array(["Memory Wall", "What Changed?", "Snap", "Rock Paper Scissors Royale", "The Statue", "Hum It", "Pictionary"].map { .string($0) })
+            j = .object(o)
+        }
+        guard let v = Snapshot(j) else { return nil }
         let s = Session(room: f["code"].string ?? "K7Q2XM", screen: tv || f["phone"].isNull ? .tv : .play)
         let peek = f["peekList"].isNull ? nil : f["peekList"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? true) }
         let rejoin = f["rejoin"].array.map { Rejoin(id: $0["id"].string ?? "", name: $0["name"].string ?? "?") }
@@ -71,7 +79,7 @@ private struct RenderAll: View {
     @MainActor private func render() async {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("shots")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        for name in Demo.fixtures.keys.sorted() {
+        for name in Demo.fixtures.keys.sorted() + ["lobby-host+free"] {
             if let s = Demo.session(name, tv: false), !s.isTV {
                 let r = ImageRenderer(content: PhonePicture(session: s))
                 r.proposedSize = ProposedViewSize(width: 390, height: nil)

@@ -157,6 +157,20 @@ final class Session {
         }
     }
 
+    // the host uses a pass on this free game (the server's m/upgrade): no ads for anyone, and every Trial from the next
+    // one on. Returns the server's reason when it can't.
+    func upgrade(_ pass: String) async -> String? {
+        guard !demo else { return nil }
+        do {
+            let r = try await API.room(room, "m/upgrade", body: ["pass": pass], token: token)
+            guard r.ok else { return r.error ?? "That didn’t work. Try again." }
+            take(r.json)
+            Shop.shared.remember(pass)
+            Task { await Shop.shared.refresh() }
+            return nil
+        } catch { return "Can’t reach the game. Check you’re online." }
+    }
+
     func act(_ a: String, _ v: Any? = nil) {
         var body: [String: Any] = ["a": a]
         if let v { body["v"] = v }
