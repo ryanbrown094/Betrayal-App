@@ -49,8 +49,9 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   free game, with ads between rounds and the base Trials; a **Night Pass** (consumable) makes every game started in its
   24 hours ad-free with every Trial, and the **Host Pass** (yearly subscription) every game while it's paid. The app's
   codes are a pool of their own (every call to `/api/games` says `app: true`): website codes don't open Tables here.
-  Pass codes stay out of sight: **Your passes** lists each by name and state and the app uses it itself; a code you're
-  given (one minted on the admin page with `pool: "app"`) goes in under **Have a gift code?**. **Practice against
+  Pass codes stay out of sight: **Your passes** lists each by name and state and the app uses it itself. There's no way
+  to type a code in: only purchases in the app unlock anything (App Review 3.1.1; promotions use Apple's offer codes).
+  **Practice against
   bots** opens a practice game (`practice: true`): the bots play every part and the Trials that need people in the
   room are left out.
   Every response from an app-made Table carries its tier (`room.tier`), which `Model/Session.swift` keeps as `tier`.

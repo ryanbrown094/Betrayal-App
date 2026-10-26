@@ -19,7 +19,6 @@ struct HomeView: View {
     @State private var path: [Route] = []
     @State private var scanning = false
     @State private var page: Page?
-    @State private var gifting = false
     @State private var intro: Intro?
     @AppStorage("bt-intro") private var introSeen = false
     private var shop: Shop { Shop.shared }
@@ -81,7 +80,6 @@ struct HomeView: View {
         .onChange(of: model.link) { _, room in follow(room) }
         .sheet(isPresented: $scanning) { ScanSheet { room in tableCode = room; joinTable() } }
         .sheet(item: $page) { p in PageView(page: p) { page = nil } }
-        .sheet(isPresented: $gifting) { GiftCodeSheet() }
         .sheet(item: Binding(get: { shop.bought }, set: { shop.bought = $0 })) { b in BoughtSheet(bought: b, open: openCode) }
         .fullScreenCover(item: $intro) { i in
             IntroView(ready: i.then == nil ? "Done" : "Let’s play") {
@@ -232,17 +230,16 @@ struct HomeView: View {
             Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big).disabled(busy)
             Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
-            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Passes and gift codes") { path.append(.passes) }.btn(.ghost)
+            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { path.append(.passes) }.btn(.ghost)
         }
     }
 
     private var passesScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Passes")
-            if shop.codes.isEmpty { Sub("None on this phone yet. A pass you buy, or a gift code you add, appears here.") }
+            if shop.codes.isEmpty { Sub("None on this phone yet. A pass you buy appears here.") }
             YourCodes(open: openCode)
             BookCard(open: openCode, show: { page = $0 })
-            Button("Have a gift code?") { gifting = true }.btn(.dark, .sm, fit: true)
         }
     }
 

@@ -106,42 +106,6 @@ struct YourCodes: View {
     }
 }
 
-// a code you've been given (codes the admin page makes): checked with the server, then kept with the phone's passes
-struct GiftCodeSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var code = ""
-    @State private var busy = false
-    @State private var problem: String?
-    var body: some View {
-        ScrollView {
-            Column {
-                HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
-                H1("A gift code")
-                Sub("Type the code you were given. It joins your passes on this phone.")
-                VStack(spacing: 10) {
-                    BookingField(text: $code) { add() }
-                    Button(busy ? "Checking…" : "Add it", action: add).btn(.fill).disabled(busy || code.count < 4)
-                }
-                if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
-            }
-        }
-        .background(Backdrop())
-    }
-    private func add() {
-        guard !busy, let pass = SavedCodes.shown(code) else { problem = "That isn’t a code. It looks like OATH-XXXX-XXXX."; return }
-        busy = true
-        Task {
-            let st = await API.codes([pass])[pass]
-            busy = false
-            guard let st else { problem = "That code isn’t one the app knows. Check it, and try again."; return }
-            SavedCodes.add(pass, sub: st.kind == "host")
-            Shop.shared.reload()
-            await Shop.shared.refresh()
-            dismiss()
-        }
-    }
-}
-
 // straight after paying: the pass, and the way to an ad-free game
 struct BoughtSheet: View {
     let bought: Shop.Bought

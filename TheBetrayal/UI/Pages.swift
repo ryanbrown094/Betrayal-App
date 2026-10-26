@@ -145,7 +145,7 @@ enum Page: String, Identifiable {
         ]),
         ("3. Buying in the app", [
             "The price is shown in the app, in your currency, before you pay, and includes VAT where it applies. Payment is taken by Apple, through your Apple Account. We never see your card details, your name or your email address.",
-            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps it on the phone you bought it on, under **Your passes**, and uses it when you start a game. **Restore purchases** brings a Host Pass to your other devices. If you lose the phone with an unused Night Pass on it, contact us with the order ID from Apple’s receipt and we’ll restore it. Gift codes we give you are added under **Have a gift code?**.",
+            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps it on the phone you bought it on, under **Your passes**, and uses it when you start a game. **Restore purchases** brings a Host Pass to your other devices. If you lose the phone with an unused Night Pass on it, contact us with the order ID from Apple’s receipt and we’ll restore it.",
             "If a price is obviously wrong, we may cancel the purchase and have it refunded in full.",
         ]),
         ("4. The Host Pass: renewal and cancelling", [
