@@ -101,7 +101,7 @@ private final class Watcher: NSObject, FullScreenContentDelegate {
 struct AdBanner: View {
     let placement: String
     var body: some View {
-        let size = currentOrientationAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
+        let size = largeAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
         BannerBox(size: size).frame(width: size.size.width, height: size.size.height).frame(maxWidth: .infinity)
             .onAppear { Events.send("ad_requested", placement: placement) }
     }
