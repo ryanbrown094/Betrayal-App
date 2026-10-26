@@ -164,15 +164,19 @@ struct Backdrop: View {
     }
 }
 
-// a CSS radial-gradient with its own radii: a circle of the height's radius, stretched to the width's
+// a CSS radial-gradient with its own radii: an ellipse of those radii around its centre, its last colour beyond (a
+// circle stretched to the width fell short of the sides whenever the width's radius was the smaller one, as on a phone)
 private struct CSSGlow: View {
     let stops: [Gradient.Stop]
     let at: UnitPoint
     let rx: CGFloat
     let ry: CGFloat
     var body: some View {
-        RadialGradient(gradient: Gradient(stops: stops), center: at, startRadius: 0, endRadius: max(1, ry))
-            .scaleEffect(x: rx / max(1, ry), y: 1, anchor: at)
+        GeometryReader { g in
+            EllipticalGradient(gradient: Gradient(stops: stops), center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
+                .frame(width: 2 * max(1, rx), height: 2 * max(1, ry))
+                .position(x: at.x * g.size.width, y: at.y * g.size.height)
+        }
     }
 }
 
