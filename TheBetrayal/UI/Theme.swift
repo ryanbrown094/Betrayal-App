@@ -30,7 +30,7 @@ enum Theme {
     static let parchment = Color(hex: 0xEFE0D4) // the Longest Word's tiles
     static let parchmentInk = Color(hex: 0x241018)
 
-    // the fonts ship in Resources/Fonts (made from the website's own files by ios/tools/fonts.py)
+    // the fonts ship in Resources/Fonts (made from the website's own files by tools/fonts.py)
     static func disp(_ size: CGFloat, fixed: Bool = false) -> Font { font("GrenzeGotisch-Regular", size, .largeTitle, fixed) }
     static func book(_ size: CGFloat, fixed: Bool = false) -> Font { font("IMFellDWPica-Roman", size, .title, fixed) }
     static func bookItalic(_ size: CGFloat, fixed: Bool = false) -> Font { font("IMFellDWPica-Italic", size, .body, fixed) }

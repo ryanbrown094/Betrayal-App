@@ -2,7 +2,7 @@
 import SwiftUI
 
 // A Debug build can show the game without a server, for the CI's screenshots (.github/workflows/ios-native.yml):
-//   -demo NAME [-tv]   one moment of Fixtures.json (ios/tools/fixtures.mjs), as that phone saw it, or as the TV did
+//   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)

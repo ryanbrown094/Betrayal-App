@@ -1,7 +1,7 @@
 # A whole Modern game against bots on a local Worker, with the host played from here and the app showing the host's
 # phone: the CI photographs the simulator at each new screen. The bots and the ten-second clocks of a test game
 # (worker/src/modern.js, the master passcode's room) do the rest.
-#   python3 ios/ci/drive.py http://127.0.0.1:8790 MASTERTEST --launch "CMD {room} {tok}" --shot "CMD {name}"
+#   python3 ci/drive.py http://127.0.0.1:8790 MASTERTEST --launch "CMD {room} {tok}" --shot "CMD {name}"
 import argparse, json, random, subprocess, sys, time, urllib.request
 
 ap = argparse.ArgumentParser()

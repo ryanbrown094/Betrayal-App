@@ -1,14 +1,14 @@
-// The app's model against every recorded moment of a game (ios/TheBetrayal/Debug/Fixtures.json, from the real rules
+// The app's model against every recorded moment of a game (TheBetrayal/Debug/Fixtures.json, from the real rules
 // engine), and its SVG reader against every drawing. Built and run by .github/workflows/ios-native.yml:
-//   swiftc ios/TheBetrayal/Model/{JSON,Snapshot,Logic,API}.swift ios/TheBetrayal/UI/Art.swift ios/ci/main.swift -o decode
-//   ./decode ios/TheBetrayal/Debug/Fixtures.json
+//   swiftc TheBetrayal/Model/{JSON,Snapshot,Logic,API}.swift TheBetrayal/UI/Art.swift ci/main.swift -o decode
+//   ./decode TheBetrayal/Debug/Fixtures.json
 import Foundation
 import CoreGraphics
 
 var failures = 0
 func check(_ ok: Bool, _ what: @autoclosure () -> String) { if !ok { failures += 1; print("FAIL", what()) } }
 
-let path = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "ios/TheBetrayal/Debug/Fixtures.json"
+let path = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "TheBetrayal/Debug/Fixtures.json"
 let all = try JSON(data: Data(contentsOf: URL(fileURLWithPath: path))).object
 check(all.count > 100, "only \(all.count) moments")
 var phases = Set<String>(), kinds = Set<String>()

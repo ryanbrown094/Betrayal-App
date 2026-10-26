@@ -95,7 +95,7 @@ final class Session {
         beat?.cancel(); beat = nil
     }
 
-    // a Debug build's recorded moment (ios/tools/fixtures.mjs), shown without a server
+    // a Debug build's recorded moment (tools/fixtures.mjs), shown without a server
     func show(_ v: Snapshot, rejoin: [Rejoin] = [], peek: [Peek]? = nil, tools: Bool = false, rolePeek: Bool = false) {
         demo = true
         view = v

@@ -1,12 +1,13 @@
 # The app's fonts, made from the website's own files (worker/public/fonts, OFL): each family's latin and latin-ext
 # subsets joined into one TTF, and Grenze Gotisch (a variable font on the web) fixed at the two weights the game uses.
-# Run from the repo root:  pip install fonttools brotli && python3 ios/tools/fonts.py
+# Run from this repo's root, with the server's repo beside it (or SERVER set to it):
+#   pip install fonttools brotli && python3 tools/fonts.py
 import os, tempfile
 from fontTools.ttLib import TTFont
 from fontTools.merge import Merger
 from fontTools.varLib.instancer import instantiateVariableFont
 
-SRC, OUT = "worker/public/fonts", "ios/TheBetrayal/Resources/Fonts"
+SRC, OUT = os.path.join(os.environ.get("SERVER", "../Claude"), "worker/public/fonts"), "TheBetrayal/Resources/Fonts"
 FACES = [  # (web file stem, weight to fix for a variable font, output name, family, style)
     ("AlegreyaSans-n400", None, "AlegreyaSans-Regular", "Alegreya Sans", "Regular"),
     ("AlegreyaSans-n500", None, "AlegreyaSans-Medium", "Alegreya Sans Medium", "Regular"),

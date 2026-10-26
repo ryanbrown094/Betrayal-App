@@ -1,6 +1,6 @@
 import AVFoundation
 
-// The music and sounds (src/audio.js), played from the files ios/tools/sounds.mjs renders from the website's own
+// The music and sounds (src/audio.js), played from the files tools/sounds.mjs renders from the website's own
 // synthesiser. The score follows the scene: each change crossfades over a second or so; a big moment's sound ducks the
 // music under it, as the page's duck() does. Sound plays on the TV, or on the host's phone when there's no TV.
 @MainActor

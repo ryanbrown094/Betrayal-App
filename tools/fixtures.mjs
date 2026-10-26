@@ -1,9 +1,12 @@
 // Every screen of a Modern evening, as the server would send it: a whole game played by the real rules engine
-// (worker/src/modern.js), with a phone's view and the TV's view saved at each moment. The app's Debug build shows them
-// (-demo NAME, -demo-all) for the screenshots in .github/workflows/ios-native.yml, and ios/ci/decode.swift checks that
-// the app's model reads every one. Run from the repo root:
-//   node ios/tools/fixtures.mjs > ios/TheBetrayal/Debug/Fixtures.json
-import { newGame, join, act, tick, viewFor } from "../../worker/src/modern.js";
+// (worker/src/modern.js, in the server's repo), with a phone's view and the TV's view saved at each moment. The app's
+// Debug build shows them (-demo NAME, -render-all) for the screenshots in .github/workflows/ios.yml, and ci/main.swift
+// checks that the app's model reads every one. Run from this repo's root, with the server's repo beside it (or SERVER
+// set to it):
+//   node tools/fixtures.mjs > TheBetrayal/Debug/Fixtures.json
+import path from "node:path"; import { pathToFileURL } from "node:url";
+const SERVER = process.env.SERVER || "../Claude";
+const { newGame, join, act, tick, viewFor } = await import(pathToFileURL(path.resolve(SERVER, "worker/src/modern.js")).href);
 
 let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
 const ctx = { rnd, dict: { has: (w) => ["rate", "tears", "stare", "seat", "east", "rates", "aster"].includes(w) || w.length < 7 } };

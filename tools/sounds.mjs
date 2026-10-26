@@ -1,13 +1,14 @@
 // The app's music and sounds, rendered from the website's own synthesiser (src/audio.js, built into
 // worker/public/modern.html) in headless Chromium: each scene of the score as a seamless loop of 16 bars, and each sound
 // effect the Modern page plays. The app plays these files and nothing else.
-// Run from the repo root (Playwright with Chromium, and ffmpeg):  node ios/tools/sounds.mjs
+// Run from this repo's root, with the server's repo beside it (or SERVER set to it) and its ./build.sh run (Playwright
+// with Chromium, and ffmpeg):  node tools/sounds.mjs
 import { createRequire } from "node:module";
 import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import os from "node:os";
 import { execFileSync } from "node:child_process";
 const { chromium } = createRequire(import.meta.url)("playwright"); // a global install works too (NODE_PATH)
 
-const OUT = "ios/TheBetrayal/Resources/Sound", RATE = 44100, BARS = 16, TAIL = 5;
+const OUT = "TheBetrayal/Resources/Sound", RATE = 44100, BARS = 16, TAIL = 5;
 const SFX = ["chime", "drum", "beat", "alarm", "seal", "snuff", "gold", "dawn", "poison", "reveal", "win"];
 
 const render = async ([what, name, bars, tail, rate]) => {
@@ -47,7 +48,7 @@ const wav = (pcm) => {
 };
 
 fs.mkdirSync(OUT, { recursive: true });
-const root = path.resolve("worker/public");
+const root = path.resolve(process.env.SERVER || "../Claude", "worker/public");
 const srv = http.createServer((req, res) => {
   const f = path.join(root, decodeURIComponent(new URL(req.url, "http://x").pathname));
   if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
