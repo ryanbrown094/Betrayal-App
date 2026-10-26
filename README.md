@@ -23,8 +23,8 @@ You need a Mac with Xcode 16 or later.
 **On your own iPhone:** plug it in (or pair it over Wi-Fi), choose it at the top of the window, then in the target's
 **Signing & Capabilities** tab choose your **Team**. Your Apple ID works as a free personal team: the app runs on your
 phone for 7 days at a time. TestFlight and the App Store need the Apple Developer Program. The bundle identifier is
-`uk.co.thebetrayal.app`, the same as the web-view app on the server repo's `claude/laughing-ramanujan-q36all` branch,
-so the two replace each other on a phone; change it in the target's settings to keep both.
+`uk.co.thebetrayal.app` (the old web-view app, since removed from the server repo, used the same one, so this replaces
+it on a phone).
 
 **To test on your own:** enter the master passcode as the booking code and choose **Play against bots**.
 
