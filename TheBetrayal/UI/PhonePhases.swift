@@ -70,9 +70,6 @@ struct LobbyView: View {
                     Label2("Twists").padding(.top, 12)
                     two("twists", (true, "On"), (false, "Off"), on: o?.twists)
                     Small(o?.twists == true ? "Once each: the Casting Vote, the Temptation, the Crown, and the Confessor in the final." : "Off: a plainer game, good for a first night.").padding(.top, 6)
-                    Label2("Eating as you play?")
-                    two("courses", (true, "Yes, in courses"), (false, "No"), on: o?.courses)
-                    Small(o?.courses == true ? "Dinner in courses: a starter, a main and dessert are served between the rounds." : "No meal breaks. Turn this on to serve dinner in courses between the rounds. You can always call a short break.").padding(.top, 6)
                     if !v.locked.isEmpty {
                         Label2("Trials").padding(.top, 12)
                         Small("A free game plays 8 of the 15 Trials, with half the questions, and shows an ad between rounds. A pass takes the ads away for everyone and adds:").padding(.top, 2)

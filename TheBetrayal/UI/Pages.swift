@@ -1,25 +1,28 @@
 import SwiftUI
 
-// How to play, the terms and the privacy notice, in the app itself, so it needs no website. How to play follows
-// site/pages/rules.html (Modern only, joining in the app); the terms and the notice follow site/pages/terms.html and
-// privacy.html, for what the app does: Apple takes the payments, the app keeps codes on the phone, the camera reads QR codes.
+// How to play, the questions, the terms and the privacy notice, in the app itself, so it needs no website. How to play
+// follows site/pages/rules.html (Modern only, joining in the app), and the questions the home page's (for the app); the
+// terms and the notice follow site/pages/terms.html and privacy.html, for what the app does: Apple takes the payments,
+// the app keeps codes on the phone, the camera reads QR codes.
 enum Page: String, Identifiable {
-    case rules, terms, privacy
+    case rules, faq, terms, privacy
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .rules: return "How to play"
+        case .faq: return "FAQs"
         case .terms: return "Terms of sale and use"
         case .privacy: return "Privacy notice"
         }
     }
-    var updated: String? { self == .rules ? nil : "Last updated: 26 October 2026" }
+    var updated: String? { self == .rules || self == .faq ? nil : "Last updated: 26 October 2026" }
 
     // each section: a heading and its paragraphs. **bold**; a paragraph starting "• " is a list item.
     var sections: [(String, [String])] {
         switch self {
         case .rules: return Page.rulesText
+        case .faq: return Page.faqText
         case .terms: return Page.termsText
         case .privacy: return Page.privacyText
         }
@@ -31,7 +34,7 @@ enum Page: String, Identifiable {
         ("", ["Everything that happens at a night of The Betrayal, from the first oath to the last betrayal. You don’t need to learn any of it before the night: every phone tells its player what to do, when."]),
         ("The idea", [
             "A few of your guests are secretly **Forsworn**. Everyone else is one of the **Loyal**. Every night the Forsworn poison someone, and every day the table votes to throw someone out. The Loyal win if they find every Forsworn before the end. The Forsworn win if even one of them is still at the table when the game finishes.",
-            "In between, you play party games for a shared Purse and for protection, you argue, you make alliances, and you lie to people you’ve known for years. A typical game lasts an evening. Play it with drinks and snacks, or over dinner: the game can fit the courses between the rounds.",
+            "In between, you play party games for a shared Purse and for protection, you argue, you make alliances, and you lie to people you’ve known for years. A typical game lasts an hour or two. Play it with drinks and snacks.",
         ]),
         ("Joining", [
             "The host starts a Table in The Betrayal app (free, or ad-free with a pass) and types their name. Everyone else opens The Betrayal app, types the six-character Table code (or scans the QR code on the TV) and their name. There’s no account to make. The TV is optional: without one, the host just reads the code out. When everyone’s in, the host taps **Start**.",
@@ -39,7 +42,7 @@ enum Page: String, Identifiable {
         ("Who’s who", [
             "**The Loyal** are most of the table. They don’t know who anyone else is. Their job is to work out who the Forsworn are and vote them out, with nothing to go on but conversation, voting patterns and gut feeling.",
             "**The Forsworn** are about one guest in four or five, and their phones tell them who the others are. Each night they choose who is poisoned. By day they act like the Loyal, steer the vote, and quietly sabotage the Trials.",
-            "**The host** has a secret role like everyone else and never sees anyone else’s. Their phone also moves the evening on, beginning the next part or calling a break. The game plans its own Trials and Reckonings (and courses, if you’re eating).",
+            "**The host** has a secret role like everyone else and never sees anyone else’s. Their phone also moves the evening on, beginning the next part or calling a break. The game plans its own Trials and Reckonings.",
             "The night begins with **the Oath**. Every phone asks its player, privately: would you like to be Forsworn? Yes, make me Forsworn; I’d rather be Loyal; or Either way. The roles are dealt from the answers (volunteers first), though nobody is promised what they asked for. Then each player looks at their role with their phone held close.",
             "Nobody is told how many Forsworn there are. Players only find out as Forsworn are exiled and revealed.",
         ]),
@@ -50,7 +53,7 @@ enum Page: String, Identifiable {
             "• **The reveal.** The exiled player’s role is shown: Forsworn or Loyal. They can type one last line for the TV on the way out.",
             "• **The night.** Heads down. The Forsworn choose a victim on their phones (two at a table of twelve or more, three at twenty or more). Everyone else taps someone too, so nobody at the table can tell who is choosing. The Forsworn can also whisper to each other in set phrases (“Vote with me tomorrow”). A player holding Sanctuary can’t be poisoned.",
             "• **Dawn.** The victim learns first, in secret on their phone. Then the host reveals the night to everyone. The victim was poisoned: they stand, announce it and get thirty seconds of last words, then leave the table. If the table voted them most likely to something, the TV remembers that too.",
-            "Eating as you play? Switch on **dinner in courses** when you open your Table, and the game serves a starter early on, the main course mid-game, and dessert just before the final. Either way, the host can call a short break whenever they like, or pause the game, which stops every clock, for the doorbell or a second helping. If someone is taken ill, the host can take them out of the game without anyone learning their role.",
+            "The host can call a short break whenever they like, or pause the game, which stops every clock, for the doorbell or a top-up. If someone is taken ill, the host can take them out of the game without anyone learning their role.",
         ]),
         ("The dead", [
             "Nobody goes home when they’re out. Exiled and poisoned players become **Ghosts**: they stay at the party and watch the game on their phones. They can’t vote, but at every Reckoning they can call who they think goes, and the table is told which Ghosts called it. In The Statue, the Ghosts do their worst to make the living laugh.",
@@ -99,11 +102,31 @@ enum Page: String, Identifiable {
         ]),
         ("What you need", [
             "• 8 to 24 players. 8 to 16 is the sweet spot.",
-            "• An evening: about 3 to 3½ hours for 8 to 12 players (half an hour to an hour more if you stop for dinner), about 4¼ hours for 16, and 5 to 6 for 20 and up.",
+            "• An hour or two: about an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24.",
             "• A prize.",
             "On your own, or learning the game? **Practice against bots** on the start screen: the bots play every part, and the Trials that need people in the room are left out.",
             "• A phone each, with The Betrayal app. A TV makes it a show, but it’s optional: AirPlay the host’s phone to it (the TV shows the game, never the phone’s screen), or open the app on an iPad connected to it and choose **Use this screen as the TV**.",
         ]),
+    ]
+
+    private static let faqText: [(String, [String])] = [
+        ("What is The Betrayal?", ["A party game for 8 to 24 players in one room, best with 8 to 16, each playing on their own phone. A few players are secretly the **Forsworn**; the rest, the **Loyal**, have one evening to find them. Trials (quizzes and party games on the phones) fill a shared Purse, a secret vote exiles someone each round, and each night the Forsworn poison someone."]),
+        ("Does everyone need the app?", ["Yes: everyone plays on their own phone with The Betrayal app, the host included. There’s no account to make, and joining a game is always free."]),
+        ("How long does a game take?", ["About an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24. A Table stays open for 48 hours, so you can set it up in the afternoon."]),
+        ("What does it cost?", [
+            "Hosting is free. A free game shows an ad between rounds, never while you play, and plays 8 of the 15 Trials with half the questions.",
+            "• A **Night Pass** makes one night ad-free, with every Trial and the full question banks: every game you start in the 24 hours after you first use it.",
+            "• The **Host Pass**, a yearly subscription, makes every game you host ad-free, with every Trial.",
+            "A pass is the host’s, and takes the ads away for everyone at the Table: guests never need one. The prices are under **Your passes**.",
+        ]),
+        ("Does the host get to play?", ["Yes. The host has a secret role like everyone else and never sees anyone else’s. Their phone also moves the evening on, beginning the next part or calling a break."]),
+        ("Do we need a TV?", ["No, but it makes it a show. AirPlay the host’s phone to it (the TV shows the game, never the phone’s screen), or open the app on an iPad connected to it and choose **Use this screen as the TV** under **Join a game**. Without a TV, the host just reads out the Table code."]),
+        ("Can I try it on my own?", ["Yes: **Practice against bots** on the start screen. The bots play every part, the clocks are short, and the Trials that need people in the room are left out."]),
+        ("What if the Wi-Fi drops?", ["Every phone reconnects by itself and picks up where it was: the game lives on our server, not on anyone’s phone. If someone’s battery dies, they join again on another phone, and the host lets them back in."]),
+        ("Who wins the Purse?", ["The Loyal, if they win, share the Purse they built. The Forsworn, if they win, take what it **fell short** of its target, so every point they quietly sabotage is theirs."]),
+        ("I have a new phone. Where’s my pass?", ["A Host Pass comes back with **Restore purchases**, under **Your passes**. If you lose a phone with an unused Night Pass on it, email us the order ID from Apple’s receipt and we’ll restore it."]),
+        ("How do I cancel the Host Pass?", ["With **Manage subscription** under **Your passes**, or in your Apple Account’s subscriptions in Settings, at any time up to 24 hours before the end of the year. It keeps working until the end of the year you’ve paid for."]),
+        ("Who is it for?", ["Adults, at a party or a night in: it has themes of secrecy, betrayal and make-believe poisoning. Anyone under 18 should only play with a parent or guardian’s agreement."]),
     ]
 
     private static let termsText: [(String, [String])] = [

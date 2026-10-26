@@ -39,7 +39,9 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
 
 ## What it does
 
-- **The start screen** (`UI/HomeView.swift`): join a Table with its code, by scanning the TV's QR code (`UI/Scanner.swift`)
+- **The start screen** (`UI/HomeView.swift`): two choices, **Join a game** and **Host a game**, then Practice against
+  bots, Your passes, How to play (the premise in five screens, which a phone also sees before its first game) and FAQs.
+  Join a Table with its code, by scanning the TV's QR code (`UI/Scanner.swift`)
   or from a `thebetrayal://join/CODE` link; use the device as a Table's TV; start your own Table, free or with a pass. It
   makes the website's calls (`POST /api/games`, then `GET /api/g/CODE/m`), offers "carry on or start a new game" to a
   pass whose game is still open and the test choice to the master passcode, and refuses a Table already set up for Classic.
@@ -91,7 +93,7 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   - **On a TV:** AirPlay the phone to a TV (or use a cable). The app gives the second display a scene of its own
     (`ExternalDisplay` in `App/TheBetrayalApp.swift`) showing the TV of the Table the phone is at, with the music. It
     never mirrors the phone, so a player's role can't reach the TV.
-  - **On an iPad or a spare phone:** type the Table code on the start screen and choose **Use this screen as the TV**.
+  - **On an iPad or a spare phone:** under **Join a game**, type the Table code and choose **Use this screen as the TV**.
     The narrator and sound buttons are in its bottom-left corner, as on the website.
 - **What the website can't do on an iPhone, the app does:** it taps the phone when something needs its player, and
   hard ten seconds before a clock closes on an unanswered question (the page's `navigator.vibrate`, which iPhones
@@ -127,8 +129,8 @@ with options to play the whole game and to choose the server repo's branch):
 1. `ci/main.swift` builds the model with `swiftc` and reads every moment of `Debug/Fixtures.json` (a whole game
    recorded from the real rules engine by `tools/fixtures.mjs`), and every drawing.
 2. It builds the app (Debug and Release) and runs it in the iPhone simulator: the start screen, the art (`-art`), the
-   booking card and saved codes with made-up prices (`-shop -scroll book`), the sheet after a purchase (`-bought`), the
-   three pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
+   start screen's join, host and passes screens with made-up prices and saved codes (`-shop -screen passes`), the sheet
+   after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
    phone and TV drawn offscreen (`-render-all`, which can't draw text fields). `ci/main.swift` also checks which
    Table a scanned code or link opens.
 3. It checks out the server repo, starts its Worker (`wrangler dev`, with a test master passcode), and `ci/drive.py`

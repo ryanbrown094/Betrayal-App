@@ -9,15 +9,16 @@ import SwiftUI
 //                      to Documents/store/*.png, then Documents/store/done (store/compose.py adds the captions)
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
-//   -shop [-scroll ID] the start screen with the passes priced as in Store.storekit, and two saved codes,
-//                      scrolled to ID ("book")
-//   -page NAME         How to play, the terms or the privacy notice (rules, terms, privacy)
+//   -shop              the start screen with the passes priced as in Store.storekit, and two saved codes
+//   -screen NAME       the start screen's own screens (join, host, passes), with or without -shop
+//   -intro [N]         the premise, at its Nth screen (from 0)
+//   -page NAME         How to play, the questions, the terms or the privacy notice (rules, faq, terms, privacy)
 //   -bought            the sheet after a purchase
 enum Demo {
-    static let scroll: String? = {
+    static let screen: Route? = {
         let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-scroll"), i + 1 < args.count else { return nil }
-        return args[i + 1]
+        guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return nil }
+        return ["join": Route.join, "host": .host, "passes": .passes][args[i + 1]]
     }()
 
     static let fixtures: [String: JSON] = {
@@ -40,6 +41,7 @@ enum Demo {
             return AnyView(HomeView())
         }
         if let i = args.firstIndex(of: "-page"), i + 1 < args.count, let p = Page(rawValue: args[i + 1]) { return AnyView(PageView(page: p)) }
+        if let i = args.firstIndex(of: "-intro") { return AnyView(IntroView(start: i + 1 < args.count ? Int(args[i + 1]) ?? 0 : 0, ready: "Let’s play") {}) }
         if let i = args.firstIndex(of: "-play"), i + 2 < args.count {
             let room = args[i + 1]
             UserDefaults.standard.set(args[i + 2], forKey: Session.tokKey(room))

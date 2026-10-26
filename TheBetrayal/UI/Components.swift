@@ -487,24 +487,27 @@ struct Flow: Layout {
         var y = bounds.minY
         for row in arrange(width: bounds.width, subviews) {
             var x = center ? bounds.minX + (bounds.width - row.width) / 2 : bounds.minX
-            for (i, size) in row.items {
-                subviews[i].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
+            // one that fits is placed as it measured itself, unconstrained: proposed exactly its own width, a line of
+            // words can wrap, and be clipped to the one line's height (the start screen's "How to play")
+            for (i, size, whole) in row.items {
+                subviews[i].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: whole ? .unspecified : ProposedViewSize(size))
                 x += size.width + spacing
             }
             y += row.height + lineSpacing
         }
     }
 
-    private struct Row { var items: [(Int, CGSize)] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
+    private struct Row { var items: [(Int, CGSize, Bool)] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
     private func arrange(width: CGFloat, _ subviews: Subviews) -> [Row] {
         var rows: [Row] = [], row = Row()
         for (i, v) in subviews.enumerated() {
             var s = v.sizeThatFits(.unspecified)
-            if s.width > width { s = v.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+            let whole = s.width <= width
+            if !whole { s = v.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
             if !row.items.isEmpty && row.width + spacing + s.width > width { rows.append(row); row = Row() }
             row.width += (row.items.isEmpty ? 0 : spacing) + s.width
             row.height = max(row.height, s.height)
-            row.items.append((i, s))
+            row.items.append((i, s, whole))
         }
         if !row.items.isEmpty { rows.append(row) }
         return rows

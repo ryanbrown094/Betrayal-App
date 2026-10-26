@@ -75,11 +75,11 @@ social deduction,hidden roles,mystery,bluff,deception,liar,group,friends,quiz,tr
 Sign-in required: **no**. Notes:
 
 ```
-The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every part.
+The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every part. (Before a phone's first game, five short screens explain the game; Skip passes them.)
 
-In-app purchases: tap Start a free game, and in the lobby tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). The game becomes ad-free and its locked Trials unlock at once. The same passes are under Make it ad-free on the start screen, with Restore purchases and Manage subscription.
+In-app purchases: tap Host a game, then Start a free game, and in the lobby tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). The game becomes ad-free and its locked Trials unlock at once. The same passes are under Your passes on the start screen, with Restore purchases and Manage subscription.
 
-Guests join with the six-character Table code shown on the host's phone, or by scanning the QR code on the TV screen. An iPad can be the TV: type the code and choose Use this screen as the TV.
+Guests join with the six-character Table code shown on the host's phone, or by scanning the QR code on the TV screen. An iPad can be the TV: tap Join a game, type the code and choose Use this screen as the TV.
 
 No account or sign-in is needed.
 ```
@@ -104,10 +104,10 @@ A pass for one night of ad-free games with every Trial. Its 24 hours start when 
 Review notes, Host Pass:
 
 ```
-A yearly subscription for hosts. While it's active, every game the subscriber hosts is free of ads for everyone at the Table, and includes every Trial and the full question banks. Players who join never pay. To see it: buy it under Make it ad-free on the start screen, then tap Start a free game and choose Use my Host Pass, or use it from a free game's lobby with Make it ad-free with a pass. Restore purchases brings it to another device, and Manage subscription opens Apple's subscription settings.
+A yearly subscription for hosts. While it's active, every game the subscriber hosts is free of ads for everyone at the Table, and includes every Trial and the full question banks. Players who join never pay. To see it: buy it under Your passes on the start screen, then tap Host a game, Start a game and choose Use my Host Pass, or use it from a free game's lobby with Make it ad-free with a pass. Restore purchases brings it to another device, and Manage subscription opens Apple's subscription settings.
 ```
 
-Each needs a review screenshot: the start screen's **Make it ad-free** card, or the lobby's pass sheet.
+Each needs a review screenshot: the **Your passes** screen, or the lobby's pass sheet.
 
 ## Screenshots
 
