@@ -175,6 +175,18 @@ jobs:
           done
           wait
           tail -n 3 ../shots/qa-*/drive.log
+          # each Table's device log, as /admin shows it: every device, and what kinds of event each sent
+          for name in small big; do
+            room=$(awk '/^room /{print $2; exit}' ../shots/qa-$name/drive.log)
+            curl -s -H "Authorization: Bearer dev" "http://127.0.0.1:8790/api/admin/room/$room/events" > ../shots/qa-$name/events.json
+            python3 -c '
+          import collections, json, sys
+          ev = json.load(open(sys.argv[1])).get("events", [])
+          devs = collections.defaultdict(collections.Counter)
+          for e in ev: devs[(e.get("device"), e.get("role"), e.get("app"))][e.get("k")] += 1
+          print(sys.argv[2], len(devs), "devices,", len(ev), "events")
+          for d, c in devs.items(): print("  ", d, dict(c))' ../shots/qa-$name/events.json "$name $room"
+          done
 
       - name: Build (Release)
         run: >

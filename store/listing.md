@@ -94,13 +94,13 @@ page for AdMob on iOS, which Google keeps up to date (I couldn't reach it from h
 |---|---|---|---|---|
 | Identifiers › Device ID | Google AdMob | Third-party advertising | no | **yes** |
 | Usage Data › Advertising Data | Google AdMob | Third-party advertising, Analytics | no | yes |
-| Usage Data › Product Interaction | AdMob; and the app's own daily counts | Analytics, Third-party advertising | no | AdMob: yes; ours: no |
+| Usage Data › Product Interaction | AdMob; and the app's own daily counts and each device's log at a Table (screens, actions, ads, offers) | Analytics, App Functionality, Third-party advertising | no | AdMob: yes; ours: no |
 | Location › Coarse Location | Google AdMob (from the IP address) | Third-party advertising | no | yes |
-| Diagnostics › Crash Data, Performance Data, Other Diagnostic Data | Google AdMob; the server's record of each game | App Functionality, Analytics | no | no |
+| Diagnostics › Crash Data, Performance Data, Other Diagnostic Data | Google AdMob; the server's record of each game; each device's log at a Table (errors, connection trouble, crashes from iOS's MetricKit) | App Functionality, Analytics | no | no |
 | Purchases › Purchase History | the server (Apple's record of each purchase) | App Functionality | no | no |
 | User Content › Other User Content | the server (names, the prize, last words) | App Functionality | no | no |
 
-The app's own privacy manifest (`TheBetrayal/PrivacyInfo.xcprivacy`) declares the last three and its use of UserDefaults;
+The app's own privacy manifest (`TheBetrayal/PrivacyInfo.xcprivacy`) declares what it collects itself and its use of UserDefaults;
 Google's SDK ships its own.
 
 ## In-app purchases

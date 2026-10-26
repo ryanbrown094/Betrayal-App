@@ -47,6 +47,7 @@ final class Session {
     @ObservationIgnored private var tickKey = ""
     @ObservationIgnored private var adKeys: Set<String> = [] // the breaks this phone has had its chance of an ad at
     @ObservationIgnored var demo = false // a Debug build showing a recorded moment: no polling, no sound
+    @ObservationIgnored private var whoKey = "" // who this device is at the Table, as last logged (Trail)
 
     var isTV: Bool { screen == .tv }
 
@@ -71,6 +72,7 @@ final class Session {
     // ---- starting and stopping
     func start() {
         guard !demo else { return }
+        Trail.shared.open(room, tv: isTV)
         if loop == nil {
             loop = Task { [weak self] in
                 while !Task.isCancelled {
@@ -96,6 +98,7 @@ final class Session {
     func stop() {
         loop?.cancel(); loop = nil
         beat?.cancel(); beat = nil
+        if !demo { Trail.shared.flush(room) }
     }
 
     // a Debug build's recorded moment (tools/fixtures.mjs), shown without a server
@@ -127,14 +130,22 @@ final class Session {
                     if !isTV { screen = .nogame }
                 } else { take(r.json) }
             }
+            if !online { Trail.shared.log(room, "net", "reached the server again") }
             online = true
-        } catch { online = false }
+        } catch {
+            if online { Trail.shared.log(room, "net", "can’t reach the server") }
+            online = false
+        }
     }
 
     private func take(_ j: JSON) {
         let local = Date().timeIntervalSince1970 * 1000
         if let n = j["now"].double { off = n - local }
         if let v = Snapshot(j["view"]) {
+            if let me = v.me, !demo, !isTV {
+                let key = me.id + (me.director ? " · host" : "")
+                if key != whoKey { whoKey = key; Trail.shared.role(room, me.director ? "host" : "player"); Trail.shared.log(room, "who", "player " + key) }
+            }
             // a place the Table no longer knows (taken out in the lobby, a new game without them, let back in on another
             // phone): the name screen, not "Connecting…" for ever
             if !isTV && !demo && token != nil && v.me == nil {
@@ -153,6 +164,7 @@ final class Session {
     func send(_ a: [String: Any]) {
         guard !busy, !demo else { return }
         busy = true
+        Trail.shared.log(room, "act", a["a"] as? String ?? "?") // the action's name, never what was typed
         Task {
             defer { busy = false }
             do {
@@ -225,6 +237,7 @@ final class Session {
     }
 
     func say(_ text: String, error: Bool = false) {
+        if error && !demo { Trail.shared.log(room, "error", text) } // every problem this phone shows its player
         toast = text.isEmpty ? nil : Toast(text: text, error: error)
         toastTask?.cancel()
         guard !text.isEmpty else { return }
@@ -253,7 +266,14 @@ final class Session {
     // ---- what a change of screen sets off: the fade, a buzz for this player, the TV's sound
     private func changed() {
         guard let v = view else { return }
-        if v.screenKey != freshKey { freshKey = v.screenKey; if v.phase != "roles" { rolePeek = false } }
+        if v.screenKey != freshKey {
+            freshKey = v.screenKey; if v.phase != "roles" { rolePeek = false }
+            if !demo {
+                var what = v.phase
+                if let t = v.trial { what += " · " + t.key + " " + t.stage; if let it = t.item { what += " " + it.stage } }
+                Trail.shared.log(room, "view", what + " · round \(v.round) · v\(v.ver)")
+            }
+        }
         if !isTV {
             let k = v.needsMe
             if !k.isEmpty && k != buzzed { if !buzzed.isEmpty || k != "roles" { Feedback.buzz() }; buzzed = k }

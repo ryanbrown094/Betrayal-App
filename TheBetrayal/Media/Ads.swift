@@ -47,6 +47,7 @@ final class Ads {
             #endif
             if ask, ATTrackingManager.trackingAuthorizationStatus == .notDetermined { _ = await ATTrackingManager.requestTrackingAuthorization() }
             choicesNeeded = consent.privacyOptionsRequirementStatus == .required
+            Trail.shared.here("ad", "consent \(consent.consentStatus.rawValue) · tracking \(ATTrackingManager.trackingAuthorizationStatus.rawValue) · " + (consent.canRequestAds ? "ads may load" : "no ads"))
             guard consent.canRequestAds else { return }
             _ = await MobileAds.shared.start()
             ready = true
@@ -81,7 +82,7 @@ final class Ads {
         Events.send("ad_shown", placement: placement)
     }
 
-    fileprivate func closed() { preload() }
+    fileprivate func closed() { Trail.shared.here("ad", "ad_closed"); preload() }
 
     // at launch, whether the law asks for a way to change ad choices, so the start screen offers it before any game
     // (Google's consent information only: the ads themselves still wait for a free game)

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import MetricKit
 
 @main
 struct TheBetrayalApp: App {
@@ -74,6 +75,12 @@ final class AppModel {
 // A second display gets a scene of its own (not a mirror of the phone, which would show the player's role): the TV.
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    // crashes, reported by iOS on the next launch, go to the log of the Table they happened at (Model/Trail.swift)
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        MXMetricManager.shared.add(Crashes.shared)
+        return true
+    }
+
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
         if connectingSceneSession.role == .windowExternalDisplayNonInteractive {
             let c = UISceneConfiguration(name: "TV", sessionRole: connectingSceneSession.role)

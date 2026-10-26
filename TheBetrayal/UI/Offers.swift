@@ -33,6 +33,8 @@ enum Events {
         if let placement { body["placement"] = placement }
         if let product { body["product"] = product }
         Task { _ = try? await API.call("/api/app/event", body: body) }
+        let what = [e, placement, product].compactMap { $0 }.joined(separator: " · ")
+        Task { @MainActor in Trail.shared.here(e.hasPrefix("ad_") ? "ad" : e.hasPrefix("upsell_") ? "offer" : "buy", what) }
     }
     @MainActor private static var sent: Set<String> = []
     // once a Table for each spot (and round, where it shows at two)

@@ -97,6 +97,13 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
     never mirrors the phone, so a player's role can't reach the TV.
   - **On an iPad or a spare phone:** under **Join a game**, type the Table code and choose **Use this screen as the TV**.
     The narrator and sound buttons are in its bottom-left corner, as on the website.
+- **Device logs and crashes** (`Model/Trail.swift`): each phone and TV sends what happened on it to its Table's log on
+  the server (`POST /api/g/CODE/events`, as the website's browsers do): what it is (model, iOS, app version, host,
+  player or TV), whose phone, each screen, each action sent (never anything typed), ads, offers, purchases, connection
+  trouble, going to the background, errors (everything the app shows a player as a problem) and crashes (MetricKit, on
+  the next launch, to the Table the device was last at). Each device is a random number at each Table. `/admin` → a
+  room → **What the devices saw** lists every device and shows one device's log or all; errors and crashes also reach
+  the **Errors** tab with the Table's code.
 - **What the website can't do on an iPhone, the app does:** it taps the phone when something needs its player, and
   hard ten seconds before a clock closes on an unanswered question (the page's `navigator.vibrate`, which iPhones
   ignore); it keeps the screen awake at a Table.

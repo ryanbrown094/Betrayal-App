@@ -18,7 +18,11 @@ struct TableView: View {
         .statusBarHidden(session.isTV)
         .onAppear { session.start(); Feedback.keepAwake(true); AppModel.shared.opened(session) }
         .onDisappear { session.stop(); Feedback.keepAwake(false); AppModel.shared.closed(session) }
-        .onChange(of: scenePhase) { _, p in session.background = p != .active; if p == .active { Task { await session.poll() } } }
+        .onChange(of: scenePhase) { _, p in
+            session.background = p != .active
+            if p == .active { Task { await session.poll() } }
+            if !session.demo { Trail.shared.log(session.room, "vis", p == .active ? "foreground" : p == .background ? "background" : "inactive"); if p == .background { Trail.shared.flush(session.room) } }
+        }
         .alert(session.ask?.title ?? "", isPresented: Binding(get: { session.ask != nil }, set: { if !$0 { session.ask = nil } }), presenting: session.ask) { a in
             AskButtons(ask: a)
         } message: { a in

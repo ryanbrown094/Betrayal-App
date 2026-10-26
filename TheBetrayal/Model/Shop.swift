@@ -78,13 +78,15 @@ final class Shop {
             case .success(let r):
                 let b = await collect(r, shown: true)
                 if announce { bought = b }
+                Trail.shared.here("buy", b != nil ? "bought: " + plan.id : "paid, but no pass yet: " + plan.id)
                 return b
-            case .pending: problem = "Your purchase is waiting to be approved. Your pass will appear here once it is."
-            case .userCancelled: break
+            case .pending: problem = "Your purchase is waiting to be approved. Your pass will appear here once it is."; Trail.shared.here("buy", "pending: " + plan.id)
+            case .userCancelled: Trail.shared.here("buy", "cancelled: " + plan.id)
             @unknown default: break
             }
         } catch {
             problem = "The App Store couldn’t complete the purchase. Nothing was charged. Try again in a moment."
+            Trail.shared.here("error", "purchase failed: " + plan.id + " · " + error.localizedDescription)
         }
         return nil
     }
