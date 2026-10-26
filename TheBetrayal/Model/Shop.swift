@@ -36,7 +36,7 @@ final class Shop {
         // purchases that finish away from the buy button (Ask to Buy, a renewal, another device), and any the server
         // hadn't answered for before
         listening = Task { [weak self] in
-            for await r in Transaction.updates { await self?.collect(r, shown: false) }
+            for await r in Transaction.updates { _ = await self?.collect(r, shown: false) }
         }
         Task {
             await load()
@@ -66,13 +66,18 @@ final class Shop {
     }
     @ObservationIgnored private var shown = false
 
-    func buy(_ plan: Plan) async {
-        guard let product = plan.product, buying == nil else { return }
+    // announce: show the pass in its own sheet (the start screen); a game's lobby uses it straight away instead
+    @discardableResult
+    func buy(_ plan: Plan, announce: Bool = true) async -> Bought? {
+        guard let product = plan.product, buying == nil else { return nil }
         buying = plan.id
         defer { buying = nil }
         do {
             switch try await product.purchase() {
-            case .success(let r): await collect(r, shown: true)
+            case .success(let r):
+                let b = await collect(r, shown: true)
+                if announce { bought = b }
+                return b
             case .pending: problem = "Your purchase is waiting to be approved. Your pass will appear here once it is."
             case .userCancelled: break
             @unknown default: break
@@ -80,35 +85,37 @@ final class Shop {
         } catch {
             problem = "The App Store couldn’t complete the purchase. Nothing was charged. Try again in a moment."
         }
+        return nil
     }
 
     // the Regular plan on this Apple Account (and anything else the App Store still owes this phone)
     func restore() async {
         try? await AppStore.sync()
         var found = false
-        for await r in Transaction.currentEntitlements { found = true; await collect(r, shown: true) }
+        for await r in Transaction.currentEntitlements { found = true; if let b = await collect(r, shown: true) { bought = b } }
         if !found { problem = "There’s no Host Pass on this Apple Account. A Night Pass is in Your passes on the phone that bought it." }
     }
 
-    // a purchase, exchanged for its booking code
-    private func collect(_ r: VerificationResult<Transaction>, shown: Bool) async {
+    // a purchase, exchanged for its pass
+    @discardableResult
+    private func collect(_ r: VerificationResult<Transaction>, shown: Bool) async -> Bought? {
         guard case .verified(let t) = r else {
             if shown { problem = "The App Store couldn’t confirm that purchase, so it wasn’t used." }
-            return
+            return nil
         }
-        guard t.productID == Shop.nightID || t.productID == Shop.hostID else { await t.finish(); return }
+        guard t.productID == Shop.nightID || t.productID == Shop.hostID else { await t.finish(); return nil }
         let reply: Reply
         do { reply = try await API.call("/api/appstore/claim", body: ["jws": r.jwsRepresentation]) } catch {
             if shown { problem = "Paid, but the server can’t be reached to give you your pass. It will appear here as soon as the app can reach it." }
-            return
+            return nil
         }
         if let pass = reply.json["pass"].string {
             let sub = reply.json["sub"].bool ?? false
             SavedCodes.add(pass, sub: sub)
             codes = SavedCodes.all
             await t.finish()
-            if shown { bought = Bought(pass: pass, sub: sub) }
             await refresh()
+            return Bought(pass: pass, sub: sub)
         } else if reply.status == 410 || reply.status == 403 {
             // refunded, or Xcode's StoreKit testing on a real server: asking again won't change the answer. (Anything else
             // stays unfinished, so a paid purchase is claimed once the server can give its code.)
@@ -117,6 +124,17 @@ final class Shop {
         } else if shown {
             problem = (reply.error ?? "The server couldn’t give you your pass.") + " Your purchase is safe: the app will try again."
         }
+        return nil
+    }
+
+    // the passes that would make a game ad-free now: a Host Pass that's paid up (first: using it costs nothing), then a
+    // Night Pass that's ready or in its 24 hours; one the server hasn't been asked about yet counts
+    var usable: [SavedCodes.Code] {
+        let ok = codes.filter { c in
+            guard let st = status[c.pass] else { return true }
+            return st.kind == "night" ? st.state == "ready" || st.state == "active" : st.kind == "host" && st.state == "active"
+        }
+        return ok.filter { $0.sub == true } + ok.filter { $0.sub != true }
     }
 
     func forget(_ c: SavedCodes.Code) { SavedCodes.remove(c.pass); codes = SavedCodes.all }

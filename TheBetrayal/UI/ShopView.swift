@@ -161,13 +161,7 @@ struct UsePassSheet: View {
     @State private var busy = false
     @State private var problem: String?
     private var shop: Shop { Shop.shared }
-    // a Night Pass that's ready or in its 24 hours, a Host Pass that's paid up (or not yet asked about)
-    private var usable: [SavedCodes.Code] {
-        shop.codes.filter { c in
-            guard let st = shop.status[c.pass] else { return true }
-            return st.kind == "night" ? st.state == "ready" || st.state == "active" : st.kind == "host" && st.state == "active"
-        }
-    }
+    private var usable: [SavedCodes.Code] { shop.usable }
 
     var body: some View {
         ScrollView {
@@ -197,11 +191,32 @@ struct UsePassSheet: View {
                     Button(busy ? "Using it…" : "Use this pass") { go(code) }.btn(.ghost).disabled(busy || code.count < 4)
                 }
                 if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
-                Small("No pass yet? Passes are on the start screen, under Make it ad-free.").padding(.top, 14)
+                if shop.night != nil || shop.host != nil {
+                    Label2("Or buy one, and use it now").padding(.top, 22)
+                    VStack(spacing: 10) {
+                        if let n = shop.night {
+                            Button(shop.buying == n.id ? "Waiting for the App Store…" : "Night Pass, \(n.price)") { buyAndUse(n) }
+                                .btn(.fill).disabled(busy || shop.buying != nil || n.product == nil)
+                        }
+                        if let h = shop.host {
+                            Button(shop.buying == h.id ? "Waiting for the App Store…" : "Host Pass, \(h.price) \(h.period ?? "a year")") { buyAndUse(h) }
+                                .btn(.ghost).disabled(busy || shop.buying != nil || h.product == nil)
+                            Small("Payment is taken from your Apple Account. The Host Pass renews automatically until you cancel, which you can do at any time up to 24 hours before the end of the year, in your Apple Account’s subscriptions.")
+                        }
+                    }
+                }
             }
         }
         .background(Backdrop())
         .task { await shop.refresh() }
+    }
+
+    private func buyAndUse(_ plan: Shop.Plan) {
+        problem = nil
+        Task {
+            if let b = await shop.buy(plan, announce: false) { go(b.pass) }
+            else if let p = shop.problem { problem = p; shop.problem = nil }
+        }
     }
 
     private func go(_ pass: String) {
