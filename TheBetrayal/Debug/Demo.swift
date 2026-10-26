@@ -35,7 +35,8 @@ enum Demo {
         if args.contains("-shop") || args.contains("-bought") {
             Shop.shared.show(night: .init(id: Shop.nightID, price: "£4.99", period: nil, product: nil),
                              host: .init(id: Shop.hostID, price: "£19.99", period: "a year", product: nil))
-            if !args.contains("-nosaved") {
+            if args.contains("-nosaved") { for c in SavedCodes.all { SavedCodes.remove(c.pass) } } // a run before may have saved some
+            else {
                 SavedCodes.add("OATH-K7QM-2XRD", sub: false)
                 SavedCodes.add("OATH-H4WN-P9TC", sub: true)
             }
