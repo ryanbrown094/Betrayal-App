@@ -59,7 +59,7 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
   consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
   on a player's phone at the Reckoning's debate from the second round (minutes when nobody needs their phone), and on
-  the results, never on the host's phone or the TV, at most once a break, four minutes apart and four a game (the
+  the results, on the host's phone too but never the TV, at most once a break, four minutes apart and four a game (the
   server sends these limits, and
   `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
@@ -71,7 +71,7 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
     Privacy & messaging, and add Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's
     own is there now).
 - **Offers to the host** (`UI/Offers.swift`, all their limits in one place): in a free game's lobby once three have
-  joined (instead of the host's banner, until waved away); a strip at the start of rounds 2 and 4 on the host's phone,
+  joined (instead of the host's banner, until waved away); a strip at the Reckoning's debate in rounds 2 and 4 on the host's phone,
   with a matching corner card on the TV that has nothing to tap; and the Host Pass on the host's results. Players are
   never offered anything. Each ad and offer seen or tapped, and each purchase started, is counted by the server
   (`/api/app/event`; the server repo's HANDOVER §4.8 has the figures and the weekly host conversion).

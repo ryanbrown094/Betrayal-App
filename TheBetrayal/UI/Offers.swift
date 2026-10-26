@@ -6,7 +6,7 @@ import SwiftUI
 //       consecutive (the second and the fourth)
 //   U3  the same two debates, in a corner of the TV, with nothing to tap: buying is only ever on the host's phone
 //   U4  the host's results: the Host Pass, for next time, until waved away
-// Players are never offered anything; they can't buy. Nor is anyone at a practice game, where only bots would see ads.
+// Players are never offered anything; they can't buy. Nor is anyone at a practice game, which a pass can't be used on.
 @MainActor
 enum Offers {
     static func lobbyDue(_ v: Snapshot, _ s: Session) -> Bool {
