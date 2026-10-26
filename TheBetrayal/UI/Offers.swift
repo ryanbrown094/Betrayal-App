@@ -139,11 +139,11 @@ struct HostPassSheet: View {
                 HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
                 H1("The Host Pass")
                 Sub("Every game you host ad-free, for everyone at the Table, with every Trial and the full question banks.")
-                if let done {
+                if done != nil {
                     Card(.hot, center: true) {
-                        Eyebrow("your host pass")
-                        Text(verbatim: done.pass).font(Theme.ui(26, .bold)).tracking(2).foregroundStyle(Theme.brass2).padding(.vertical, 8)
-                        Sub("Saved on this phone, under Your passes. Your next game is ad-free.")
+                        Eyebrow("thank you")
+                        Text("Your Host Pass").font(Theme.book(30)).foregroundStyle(Theme.brass2).padding(.vertical, 8)
+                        Sub("It’s on this phone, under Your passes. Your next game is ad-free.")
                     }
                 } else if let h = shop.host {
                     Button(shop.buying == h.id ? "Waiting for the App Store…" : "Subscribe for \(h.price) \(h.period ?? "a year")") {
@@ -153,7 +153,7 @@ struct HostPassSheet: View {
                         }
                     }
                     .btn(.fill).disabled(shop.buying != nil || h.product == nil)
-                    Small("Payment is taken from your Apple Account. The Host Pass renews automatically until you cancel, which you can do at any time up to 24 hours before the end of the year, in your Apple Account’s subscriptions.").padding(.top, 10)
+                    SubscriptionTerms(plan: h)
                 } else {
                     Small("The App Store isn’t answering. Try again from the start screen.")
                 }

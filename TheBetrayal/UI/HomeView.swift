@@ -73,6 +73,7 @@ struct HomeView: View {
         .onChange(of: path) { _, now in if now.isEmpty { recent = Recent.room } }
         .onAppear {
             shop.start(); follow(model.link); Task { await shop.refresh() }
+            Ads.shared.checkChoices()
             #if DEBUG
             if let r = Demo.screen, path.isEmpty { path = [r] }
             #endif
@@ -195,6 +196,7 @@ struct HomeView: View {
             link("Terms") { page = .terms }
             link("Privacy") { page = .privacy }
             link("Contact us") { openURL(URL(string: "mailto:" + Page.contact)!) }
+            link("Report an ad") { openURL(Page.reportAd) }
             if Ads.shared.choicesNeeded { link("Ad choices") { Ads.shared.showChoices() } }
         }
         .padding(.top, 10)
@@ -278,7 +280,7 @@ struct HomeView: View {
         guard Codes.isRoom(tableCode) else { return }
         let room = tableCode
         Task {
-            if await API.mode(of: room) == .classic { problem = "This Table plays Classic, which the app doesn’t play."; return }
+            if await API.mode(of: room) == .classic { problem = "This Table can’t be played in the app. Ask the host to start a new Table in the app."; return }
             enter(Target(room: room))
         }
     }
@@ -314,7 +316,7 @@ struct HomeView: View {
     private func go(room: String, pass: String?, test: Bool) async {
         switch await API.mode(of: room) {
         case .modern: enter(Target(room: room))
-        case .classic: problem = "This Table is set up for Classic, which the app doesn’t play. Only a new Table can be played in the app."
+        case .classic: problem = "This Table can’t be played in the app. Ask the host to start a new Table in the app."
         case .unset: if test, let pass { question = .test(room: room, pass: pass) } else { enter(Target(room: room, start: .create, pass: pass)) }
         }
     }

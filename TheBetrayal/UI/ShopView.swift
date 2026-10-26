@@ -7,6 +7,7 @@ struct BookCard: View {
     let open: (String) -> Void
     let show: (Page) -> Void
     @State private var managing = false
+    @Environment(\.openURL) private var openURL
     private var shop: Shop { Shop.shared }
 
     var body: some View {
@@ -29,15 +30,14 @@ struct BookCard: View {
                 }
             } else {
                 Small("Your pass appears under Your passes as soon as you’ve paid, and stays on this phone. Use it when you start a game, or on a free game from its lobby. Prices include VAT where it applies.")
-                if let h = shop.host {
-                    Small("Payment is taken from your Apple Account. The Host Pass is \(h.price) \(h.period ?? "a year") and renews automatically until you cancel, which you can do at any time up to 24 hours before the end of the year, in your Apple Account’s subscriptions.")
-                }
+                if let h = shop.host { Small(SubscriptionTerms.words(h)) }
             }
             Flow(spacing: 8) {
                 Button("Restore purchases") { Task { await shop.restore() } }.btn(.dark, .sm, fit: true)
                 Button("Manage subscription") { managing = true }.btn(.dark, .sm, fit: true)
+                Button("Terms of Use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
                 Button("Terms of sale") { show(.terms) }.btn(.dark, .sm, fit: true)
-                Button("Privacy") { show(.privacy) }.btn(.dark, .sm, fit: true)
+                Button("Privacy Policy") { show(.privacy) }.btn(.dark, .sm, fit: true)
             }
             .padding(.bottom, 8)
         }
@@ -170,6 +170,30 @@ struct BoughtSheet: View {
     }
 }
 
+// what Apple asks to be beside every way to subscribe: the subscription's name, length, price and what it gives, how it
+// renews and is cancelled, and links to the Terms of Use (Apple's standard licence) and the privacy policy
+struct SubscriptionTerms: View {
+    let plan: Shop.Plan
+    @State private var page: Page?
+    @Environment(\.openURL) private var openURL
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Small(SubscriptionTerms.words(plan))
+            Flow(spacing: 8) {
+                Button("Terms of Use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
+                Button("Terms of sale") { page = .terms }.btn(.dark, .sm, fit: true)
+                Button("Privacy Policy") { page = .privacy }.btn(.dark, .sm, fit: true)
+            }
+            .padding(.bottom, 8)
+        }
+        .padding(.top, 10)
+        .sheet(item: $page) { p in PageView(page: p) { page = nil } }
+    }
+    static func words(_ h: Shop.Plan) -> String {
+        "The Host Pass is a yearly subscription at \(h.price) \(h.period ?? "a year"): every game you host is ad-free for everyone at the Table, with every Trial and the full question banks. Payment is taken from your Apple Account when you confirm. It renews automatically at the same price unless you cancel at least 24 hours before the end of the year, in your Apple Account’s subscriptions."
+    }
+}
+
 // a Trial a free game doesn't play
 struct LockedTrial: View {
     let title: String
@@ -227,7 +251,7 @@ struct UsePassSheet: View {
                         if let h = shop.host {
                             Button(shop.buying == h.id ? "Waiting for the App Store…" : "Host Pass, \(h.price) \(h.period ?? "a year")") { buyAndUse(h) }
                                 .btn(.ghost).disabled(busy || shop.buying != nil || h.product == nil)
-                            Small("Payment is taken from your Apple Account. The Host Pass renews automatically until you cancel, which you can do at any time up to 24 hours before the end of the year, in your Apple Account’s subscriptions.")
+                            SubscriptionTerms(plan: h)
                         }
                     }
                 }

@@ -34,8 +34,8 @@ struct TableView: View {
         case .wait: ScrollView { Notice(title: "Asking the host…", text: "The game has started. The host’s phone will ask them to let you back in.") }
         case .nogame:
             ScrollView {
-                Notice(title: session.classic ? "This Table plays Classic" : "Not open yet",
-                       text: session.classic ? "Table \(session.room) is set up for Classic, which the app doesn’t play." : "Table \(session.room) hasn’t been set up. The host opens it first, then you can join.")
+                Notice(title: session.classic ? "Not a Table for the app" : "Not open yet",
+                       text: session.classic ? "Table \(session.room) can’t be played in the app. Ask the host to start a new Table in the app." : "Table \(session.room) hasn’t been set up. The host opens it first, then you can join.")
             }
             .task { while session.screen == .nogame && !Task.isCancelled { try? await Task.sleep(nanoseconds: 4_000_000_000); await recheck() } }
         case .play, .tv: PlayView()

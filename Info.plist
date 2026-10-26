@@ -27,7 +27,7 @@
 		<true/>
 	</dict>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Free games show ads between rounds. Allowing this lets them be about things you might like; either way, you play the same.</string>
+	<string>Free games show ads between rounds. Allowing tracking lets Google use this device’s advertising identifier to show you more relevant ads. The game is the same either way.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>The camera reads the QR code on the TV, to join that Table. Nothing it sees is recorded.</string>
 	<key>SKAdNetworkItems</key>

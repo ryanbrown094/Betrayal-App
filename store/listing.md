@@ -13,7 +13,7 @@ follow the server repo's `media/copy/glossary.md` (no TV-programme words, the Co
 | Primary category | Games: Board |
 | Secondary category | Games: Trivia |
 | Content rights | Contains no third-party content (all art, music and questions are our own; fonts under the SIL Open Font License) |
-| Age rating | Answer Apple's questionnaire: alcohol references *infrequent/mild* (drinks at the party), cartoon or fantasy violence *infrequent/mild* (make-believe poisoning), no gambling, contests, or unrestricted web access. The game is made for adults, so 17+ is a fair choice even if the questionnaire comes out lower. |
+| Age rating | Apple's ratings are now 4+, 9+, 13+, 16+ and 18+. Answer the questionnaire honestly: alcohol references *infrequent/mild* (drinks at the party), cartoon or fantasy violence *infrequent/mild* (make-believe poisoning), no gambling or unrestricted web access; it also asks about **advertising** (yes: free games) and **user-generated content** (yes: players type their names, the prize and last words, which the table and the TV see). The game is made for adults, so choose 16+ or 18+ even if the questionnaire comes out lower. |
 | Privacy Policy URL | https://thebetrayal.co.uk/app-privacy |
 | Copyright | 2026 The Betrayal |
 
@@ -75,14 +75,33 @@ social deduction,hidden roles,mystery,bluff,deception,liar,group,friends,quiz,tr
 Sign-in required: **no**. Notes:
 
 ```
-The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every part. (Before a phone's first game, five short screens explain the game; Skip passes them.)
+The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every part. (Before a phone's first game, five short screens explain the game; Skip passes them.) The first time you enter a free or practice game, Google's consent form (where the law requires it) and then Apple's tracking question appear; the game is the same whatever you answer.
 
-In-app purchases: tap Host a game, then Start a free game, and in the lobby tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). The game becomes ad-free and its locked Trials unlock at once. The same passes are under Your passes on the start screen, with Restore purchases and Manage subscription.
+In-app purchases: tap Host a game, then Start a free game, type a name and tap Open the Table; in the lobby, under Trials, tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). At once the list of locked Trials goes and the game is ad-free for everyone at the Table (a real game needs 8 players' phones to start). The same passes are under Your passes on the start screen, with Restore purchases and Manage subscription. A practice game can't use a pass: it's for trying the game alone.
 
 Guests join with the six-character Table code shown on the host's phone, or by scanning the QR code on the TV screen. An iPad can be the TV: tap Join a game, type the code and choose Use this screen as the TV.
 
 No account or sign-in is needed.
 ```
+
+## App Privacy (App Store Connect → App Privacy)
+
+Data collection: **yes**. Tracking: **yes** (Google AdMob uses the advertising identifier in free games, when the player
+allows it at Apple's question). Declare these; for AdMob's rows, check them against Google's current "data disclosure"
+page for AdMob on iOS, which Google keeps up to date (I couldn't reach it from here):
+
+| Data type | Who collects it | Purposes | Linked to the person | Tracking |
+|---|---|---|---|---|
+| Identifiers › Device ID | Google AdMob | Third-party advertising | no | **yes** |
+| Usage Data › Advertising Data | Google AdMob | Third-party advertising, Analytics | no | yes |
+| Usage Data › Product Interaction | AdMob; and the app's own daily counts | Analytics, Third-party advertising | no | AdMob: yes; ours: no |
+| Location › Coarse Location | Google AdMob (from the IP address) | Third-party advertising | no | yes |
+| Diagnostics › Crash Data, Performance Data, Other Diagnostic Data | Google AdMob; the server's record of each game | App Functionality, Analytics | no | no |
+| Purchases › Purchase History | the server (Apple's record of each purchase) | App Functionality | no | no |
+| User Content › Other User Content | the server (names, the prize, last words) | App Functionality | no | no |
+
+The app's own privacy manifest (`TheBetrayal/PrivacyInfo.xcprivacy`) declares the last three and its use of UserDefaults;
+Google's SDK ships its own.
 
 ## In-app purchases
 
@@ -98,7 +117,7 @@ No account or sign-in is needed.
 Review notes, Night Pass:
 
 ```
-A pass for one night of ad-free games with every Trial. Its 24 hours start when it's first used: start a game with it, or use it on a free game from the lobby (Make it ad-free with a pass).
+A pass for one night of ad-free games with every Trial. Its 24 hours start when it's first used: start a game with it, or use it on a free game from the lobby (Make it ad-free with a pass). Single use: it's consumed when its 24 hours start, can be bought again, and isn't restored to other devices, like any consumable.
 ```
 
 Review notes, Host Pass:

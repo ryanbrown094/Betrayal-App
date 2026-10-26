@@ -29,6 +29,8 @@ enum Page: String, Identifiable {
     }
 
     static let contact = "info@thebetrayal.co.uk"
+    static let eula = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    static let reportAd = URL(string: "mailto:info@thebetrayal.co.uk?subject=Reporting%20an%20ad&body=What%20the%20ad%20showed%2C%20and%20roughly%20when%3A%20")!
 
     private static let rulesText: [(String, [String])] = [
         ("", ["Everything that happens at a night of The Betrayal, from the first oath to the last betrayal. You don’t need to learn any of it before the night: every phone tells its player what to do, when."]),
@@ -126,6 +128,7 @@ enum Page: String, Identifiable {
         ("Who wins the Purse?", ["The Loyal, if they win, share the Purse they built. The Forsworn, if they win, take what it **fell short** of its target, so every point they quietly sabotage is theirs."]),
         ("I have a new phone. Where’s my pass?", ["A Host Pass comes back with **Restore purchases**, under **Your passes**. If you lose a phone with an unused Night Pass on it, email us the order ID from Apple’s receipt and we’ll restore it."]),
         ("How do I cancel the Host Pass?", ["With **Manage subscription** under **Your passes**, or in your Apple Account’s subscriptions in Settings, at any time up to 24 hours before the end of the year. It keeps working until the end of the year you’ve paid for."]),
+        ("I saw an ad that shouldn’t be there.", ["Please tell us with **Report an ad** at the foot of the start screen, or email us: what it showed, and roughly when. We’ll have it blocked."]),
         ("Who is it for?", ["Adults, at a party or a night in: it has themes of secrecy, betrayal and make-believe poisoning. Anyone under 18 should only play with a parent or guardian’s agreement."]),
     ]
 
@@ -137,7 +140,7 @@ enum Page: String, Identifiable {
             "• **A free game** costs nothing. It shows an advertisement between rounds, never while you play, and uses the base set of Trials and questions.",
             "• **A Night Pass** is one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
             "• **The Host Pass** (a yearly subscription) gives you one code that makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
-            "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. Passes bought in the app work only in the app. It is digital content: nothing is posted to you.",
+            "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. A pass works only for Tables you host in this app. It is digital content: nothing is posted to you.",
             "To play, you need an internet connection and a phone with the app for each player; a TV is optional. We don’t supply these.",
         ]),
         ("3. Buying in the app", [
@@ -228,7 +231,7 @@ struct PageView: View {
                     ForEach(Array(s.1.enumerated()), id: \.offset) { _, p in paragraph(p) }
                 }
                 if page == .terms {
-                    Button("Apple’s licence agreement for apps") { openURL(URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) }.btn(.ghost, .sm, fit: true).padding(.top, 8)
+                    Button("Apple’s licence agreement for apps") { openURL(Page.eula) }.btn(.ghost, .sm, fit: true).padding(.top, 8)
                 }
                 Button("Email us") { openURL(URL(string: "mailto:" + Page.contact)!) }.btn(.ghost, .sm, fit: true).padding(.top, 8)
             }

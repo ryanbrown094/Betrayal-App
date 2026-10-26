@@ -24,6 +24,7 @@ final class Ads {
     }
 
     private(set) var ready = false // asked for consent, and the SDK started: ads may load
+    private(set) var choicesNeeded = false // the law asks for a way to change ad choices here (the start screen's Ad choices)
     @ObservationIgnored private var starting = false
     @ObservationIgnored private var interstitial: InterstitialAd?
     @ObservationIgnored private var loading = false
@@ -45,6 +46,7 @@ final class Ads {
             let ask = true
             #endif
             if ask, ATTrackingManager.trackingAuthorizationStatus == .notDetermined { _ = await ATTrackingManager.requestTrackingAuthorization() }
+            choicesNeeded = consent.privacyOptionsRequirementStatus == .required
             guard consent.canRequestAds else { return }
             _ = await MobileAds.shared.start()
             ready = true
@@ -81,8 +83,16 @@ final class Ads {
 
     fileprivate func closed() { preload() }
 
+    // at launch, whether the law asks for a way to change ad choices, so the start screen offers it before any game
+    // (Google's consent information only: the ads themselves still wait for a free game)
+    func checkChoices() {
+        Task {
+            try? await ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters())
+            choicesNeeded = ConsentInformation.shared.privacyOptionsRequirementStatus == .required
+        }
+    }
+
     // Google's form for changing ad choices later, where the law asks for one (the start screen's Ad choices)
-    var choicesNeeded: Bool { ready && ConsentInformation.shared.privacyOptionsRequirementStatus == .required }
     func showChoices() {
         guard let vc = Ads.top() else { return }
         Task { try? await ConsentForm.presentPrivacyOptionsForm(from: vc) }
