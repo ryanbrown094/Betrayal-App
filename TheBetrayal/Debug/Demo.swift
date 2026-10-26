@@ -92,7 +92,7 @@ private struct RenderAll: View {
                 if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("phone-" + name + ".png")) }
             }
             if let s = Demo.session(name, tv: true) {
-                let r = ImageRenderer(content: TVView().environment(s).frame(width: 1280, height: 720))
+                let r = ImageRenderer(content: TVView().environment(s).environment(\.rendering, true).frame(width: 1280, height: 720))
                 r.scale = 1
                 if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("tv-" + name + ".png")) }
             }
@@ -124,7 +124,7 @@ private struct RenderStore: View {
         }
         for (i, name) in RenderStore.tv.enumerated() {
             guard let s = Demo.session(name, tv: true) else { continue }
-            let r = ImageRenderer(content: TVView().environment(s).frame(width: 1376, height: 1032))
+            let r = ImageRenderer(content: TVView().environment(s).environment(\.rendering, true).frame(width: 1376, height: 1032))
             r.scale = 2
             if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("tv-\(i + 1)-" + name + ".png")) }
             await Task.yield()

@@ -254,8 +254,7 @@ struct PlayView: View {
         if let t = session.toast { Banner(.plain, t.text) }
         PhaseView(v: v, me: me)
             .id(session.freshKey)
-            .transition(.asymmetric(insertion: reduceMotion ? .opacity : .opacity.combined(with: .offset(y: 6)), removal: .identity))
-            .animation(.easeOut(duration: 0.35), value: session.freshKey)
+            .modifier(FadeIn(rise: reduceMotion ? 0 : 6))
     }
 }
 
@@ -264,39 +263,56 @@ struct TopBar: View {
     let me: Me
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
+    // on one line if it all fits, then with shorter labels, then on two lines (a small phone, larger text)
     var body: some View {
-        HStack(spacing: 10) {
-            Button(action: leave) {
-                Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
-                    .frame(width: 28, height: 44).contentShape(Rectangle())
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) { back; who; Spacer(minLength: 8); right(short: false) }
+            HStack(spacing: 10) { back; who; Spacer(minLength: 8); right(short: true) }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) { back; who; Spacer(minLength: 0) }
+                HStack { Spacer(minLength: 0); right(short: true) }
             }
-            .buttonStyle(.plain).accessibilityLabel("Back to the start")
-            .padding(.leading, -6)
-            HStack(spacing: 8) {
-                Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
-                Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
-                if me.director { Text("host").font(Theme.sc(15, bold: true)).foregroundStyle(Theme.brass2).layoutPriority(1) }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(spacing: 12) {
-                Text(verbatim: ["lobby", "oath", "roles"].contains(v.phase) ? "Table \(session.room)" : "Purse \(v.pot)")
-                    .font(Theme.sc(14)).tracking(0.5).monospacedDigit().foregroundStyle(Theme.brass2).lineLimit(1).fixedSize()
-                if me.director && v.paused == nil && !["lobby", "end"].contains(v.phase) {
-                    Button { session.confirm("Pause the game? Every clock stops until you carry on.", yes: "Pause") { session.act("pause") } } label: {
-                        ViewThatFits { Text("Pause"); PauseBars() }
-                    }
-                    .buttonStyle(TopButton()).accessibilityLabel("Pause the game")
-                }
-                if me.director {
-                    Button(session.tools ? "Close" : "Tools") { session.tools.toggle(); session.peekList = nil }
-                        .buttonStyle(TopButton()).accessibilityLabel("Host tools")
-                }
-            }
-            .fixedSize()
         }
         .padding(.bottom, 10)
         .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: 0x2A1A2C)).frame(height: 1) }
         .padding(.bottom, 18)
+    }
+
+    private var back: some View {
+        Button(action: leave) {
+            Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
+                .frame(width: 28, height: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).accessibilityLabel("Back to the start")
+        .padding(.leading, -6)
+    }
+
+    private var who: some View {
+        HStack(spacing: 8) {
+            Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
+            Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
+            if me.director { Text("host").font(Theme.sc(15, bold: true)).foregroundStyle(Theme.brass2).fixedSize() }
+        }
+    }
+
+    // the Table's code (before the game) or the Purse, and the host's Pause and Tools; short: the code alone, Pause as bars
+    private func right(short: Bool) -> some View {
+        HStack(spacing: 12) {
+            let early = ["lobby", "oath", "roles"].contains(v.phase)
+            Text(verbatim: early ? (short ? session.room : "Table \(session.room)") : "Purse \(v.pot)")
+                .font(Theme.sc(14)).tracking(0.5).monospacedDigit().foregroundStyle(Theme.brass2).lineLimit(1).fixedSize()
+            if me.director && v.paused == nil && !["lobby", "end"].contains(v.phase) {
+                Button { session.confirm("Pause the game? Every clock stops until you carry on.", yes: "Pause") { session.act("pause") } } label: {
+                    if short { PauseBars() } else { Text("Pause") }
+                }
+                .buttonStyle(TopButton()).accessibilityLabel("Pause the game")
+            }
+            if me.director {
+                Button(session.tools ? "Close" : "Tools") { session.tools.toggle(); session.peekList = nil }
+                    .buttonStyle(TopButton()).accessibilityLabel("Host tools")
+            }
+        }
+        .fixedSize()
     }
 
     // to the start screen, which offers the way back to this Table; mid-game, asked first

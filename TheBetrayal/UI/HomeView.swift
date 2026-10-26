@@ -114,7 +114,7 @@ struct HomeView: View {
         GeometryReader { g in
             ScrollView {
                 Column {
-                    header
+                    header(crest: g.size.height >= 700)
                     if let recent { tonight(recent) }
                     VStack(spacing: 12) {
                         Button("Join a game") { path.append(.join) }.btn(.fill, .big)
@@ -140,9 +140,10 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var header: some View {
+    // a short phone (an iPhone SE) leaves the crest out, so the choices fit without scrolling
+    private func header(crest: Bool) -> some View {
         VStack(spacing: 8) {
-            Crest().frame(width: 76, height: 88).foregroundStyle(Theme.brass2)
+            if crest { Crest().frame(width: 76, height: 88).foregroundStyle(Theme.brass2) }
             Text("The Betrayal").font(Theme.disp(48)).foregroundStyle(Theme.brass2)
             Text("Everyone swore an oath. Not everyone meant it.").font(Theme.bookItalic(20)).foregroundStyle(Theme.tallow).multilineTextAlignment(.center)
         }

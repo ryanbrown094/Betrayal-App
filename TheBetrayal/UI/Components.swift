@@ -470,6 +470,20 @@ struct Label2: View { // label.l
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// a new screen fading in (the page's .fresh), from its own appearing: the screen it replaces goes at once. (As a
+// transition, with the old screen's removal animated, old screens stayed drawn under new ones in a quick game.)
+struct FadeIn: ViewModifier {
+    var rise: CGFloat = 0
+    @State private var shown = false
+    @Environment(\.rendering) private var rendering
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown || rendering ? 1 : 0)
+            .offset(y: shown || rendering ? 0 : rise)
+            .onAppear { withAnimation(.easeOut(duration: 0.35)) { shown = true } }
+    }
+}
+
 // a line of things that wraps, like the page's flex-wrap
 struct Flow: Layout {
     var spacing: CGFloat = 8

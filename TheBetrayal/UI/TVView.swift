@@ -23,8 +23,7 @@ struct TVView: View {
                         TVBody(v: v, u: u)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .id(v.screenKey)
-                            .transition(.asymmetric(insertion: .opacity, removal: .identity))
-                            .animation(.easeOut(duration: 0.35), value: v.screenKey)
+                            .modifier(FadeIn())
                     }
                     .padding(.vertical, u.vh * 4).padding(.horizontal, u.vw * 5)
                     if v.paused != nil { PauseBox(v: v, me: nil, tv: true, vh: u.vh) }
