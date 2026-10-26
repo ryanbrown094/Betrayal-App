@@ -58,7 +58,7 @@ enum Demo {
         guard let f = fixtures[key] else { return nil }
         var j = tv || f["phone"].isNull ? f["tv"] : f["phone"]
         if free, case .object(var o) = j {
-            o["locked"] = .array(["Memory Wall", "What Changed?", "Snap", "Rock Paper Scissors Royale", "The Statue", "Hum It", "Pictionary"].map { .string($0) })
+            o["locked"] = .array(["Memory Wall", "What Changed?", "Snap", "Rock Paper Scissors Royale", "The Statue", "Hum It", "Draw It"].map { .string($0) })
             j = .object(o)
         }
         guard let v = Snapshot(j) else { return nil }

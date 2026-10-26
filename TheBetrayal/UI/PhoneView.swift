@@ -404,8 +404,10 @@ struct PauseBox: View {
                     Button("Carry on") { session.act("pause", "off") }.btn(.fill, .big)
                     Spacer().frame(height: 10)
                     Button("Host tools") { session.tools = true }.btn(.ghost, .sm, fit: true)
-                    ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18)
                 }
+                // requests to come back in: the host's, and, once the host's phone has gone quiet, the host's own request
+                // on everyone's (the server sends each phone only those it may answer)
+                if !tv && !session.demo { ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18) }
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: tv ? vh * 140 : 420)

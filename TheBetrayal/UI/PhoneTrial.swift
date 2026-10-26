@@ -216,7 +216,7 @@ struct SnapPlay: View {
     }
 }
 
-// Charades, Hum It, Pictionary: the actor's secret word, and everyone else's guess
+// Charades, Hum It, Draw It: the actor's secret word, and everyone else's guess
 struct ActorPlay: View {
     let v: Snapshot
     let me: Me
