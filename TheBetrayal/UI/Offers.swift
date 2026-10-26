@@ -6,6 +6,7 @@ import SwiftUI
 //   U3  the same two rounds, in a corner of the TV, with nothing to tap: buying is only ever on the host's phone
 //   U4  the host's results: the Host Pass, for next time, until waved away
 // Players are never offered anything; they can't buy.
+@MainActor
 enum Offers {
     static func lobbyDue(_ v: Snapshot, _ s: Session) -> Bool {
         adsOn(s.tier) && v.phase == "lobby" && v.players.count >= 3 && !waved(s.room, "U1")
@@ -21,7 +22,7 @@ enum Offers {
     static func wave(_ room: String, _ spot: String) { UserDefaults.standard.set(true, forKey: "bt-offer-" + room + "-" + spot) }
 
     // "Night Pass, £4.99", or just the name while the App Store hasn't answered
-    @MainActor static func price(_ plan: Shop.Plan?) -> String { plan.map { " (" + $0.price + ($0.period.map { " " + $0 } ?? "") + ")" } ?? "" }
+    static func price(_ plan: Shop.Plan?) -> String { plan.map { " (" + $0.price + ($0.period.map { " " + $0 } ?? "") + ")" } ?? "" }
 }
 
 // what the server counts (POST /api/app/event): which ads and offers were seen and tapped, nothing about who

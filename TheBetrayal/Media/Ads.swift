@@ -21,7 +21,7 @@ final class Ads {
     @ObservationIgnored private var loading = false
     @ObservationIgnored private var lastShown: Date?
     @ObservationIgnored private var shown: [String: Int] = [:] // interstitials shown at each Table
-    @ObservationIgnored private let watcher = Watcher()
+    private let watcher = Watcher()
 
     func prepare() {
         guard !ready, !starting else { return }
@@ -92,8 +92,8 @@ private final class Watcher: NSObject, FullScreenContentDelegate {
 // the lobby's banner (P1 a player's, P4 the host's): anchored, as wide as the phone's column
 struct AdBanner: View {
     let placement: String
-    private let size = currentOrientationAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
     var body: some View {
+        let size = currentOrientationAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
         BannerBox(size: size).frame(width: size.size.width, height: size.size.height).frame(maxWidth: .infinity)
             .onAppear { Events.send("ad_requested", placement: placement) }
     }
