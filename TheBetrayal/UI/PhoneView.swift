@@ -12,7 +12,9 @@ struct TableView: View {
             if session.isTV { TVView() } else { phone }
         }
         .environment(session)
-        .toolbar(.hidden, for: .navigationBar)
+        // before the game (a name, the host's set-up, a Table not open yet), the system's back button; in it, the top
+        // bar's own (TopBar), and on the TV, nothing over the picture
+        .toolbar(session.screen == .play || session.isTV ? .hidden : .visible, for: .navigationBar)
         .statusBarHidden(session.isTV)
         .onAppear { session.start(); Feedback.keepAwake(true); AppModel.shared.opened(session) }
         .onDisappear { session.stop(); Feedback.keepAwake(false); AppModel.shared.closed(session) }
@@ -199,6 +201,7 @@ struct ChooseCard: View {
 struct PlayView: View {
     @Environment(Session.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dismiss) private var dismiss
 
     @Environment(\.rendering) private var rendering
 
@@ -210,7 +213,8 @@ struct PlayView: View {
                     VStack { Spacer(); Text("Reconnecting…").font(Theme.ui(14)).foregroundStyle(Color(hex: 0xF3B7C4)).padding(.horizontal, 12).padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x2A1316))).overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: 0x6A2733), lineWidth: 1)).padding(.bottom, 14) }
                 }
-                if v.paused != nil { PauseBox(v: v, me: me) }
+                // the host's tools open over the pause (its Host tools button), and close back to it
+                if v.paused != nil && !(session.tools && me.director) { PauseBox(v: v, me: me) }
             }
         } else if session.isTV {
             TVView()
@@ -225,6 +229,7 @@ struct PlayView: View {
                 Brand()
                 VStack(spacing: 0) { H2("You’ve left the game"); Sub("The host has taken you out of this one. Thanks for playing, and keep what you know to yourself.") }
                     .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                if !rendering { Button("Back to the start") { dismiss() }.btn(.ghost) }
             } else {
                 TopBar(v: v, me: me)
                 if let peek = session.peekList { PeekView(list: peek) }
@@ -252,8 +257,15 @@ struct TopBar: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
+    @Environment(\.dismiss) private var dismiss
     var body: some View {
         HStack(spacing: 10) {
+            Button(action: leave) {
+                Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
+                    .frame(width: 28, height: 44).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).accessibilityLabel("Back to the start")
+            .padding(.leading, -6)
             HStack(spacing: 8) {
                 Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
                 Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
@@ -279,6 +291,13 @@ struct TopBar: View {
         .padding(.bottom, 10)
         .overlay(alignment: .bottom) { Rectangle().fill(Color(hex: 0x2A1A2C)).frame(height: 1) }
         .padding(.bottom, 18)
+    }
+
+    // to the start screen, which offers the way back to this Table; mid-game, asked first
+    private func leave() {
+        if ["lobby", "end"].contains(v.phase) || !me.alive { dismiss(); return }
+        session.confirm(me.director ? "Leave the game for now? It waits for you to move it on: come back to it from the start screen."
+                                    : "Leave the game for now? It carries on, and you can come back to it from the start screen.", yes: "Leave") { dismiss() }
     }
 }
 

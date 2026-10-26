@@ -42,7 +42,8 @@ struct LobbyView: View {
         let o = v.opts
         VStack(alignment: .leading, spacing: 0) {
             H2("You’re in")
-            Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the code on the TV."))
+            if v.practice { Sub("Just you and the bots tonight.") }
+            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the code on the TV.")) }
             People(list: v.players)
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
@@ -70,7 +71,8 @@ struct LobbyView: View {
                     Label2("Twists").padding(.top, 12)
                     two("twists", (true, "On"), (false, "Off"), on: o?.twists)
                     Small(o?.twists == true ? "Once each: the Casting Vote, the Temptation, the Crown, and the Confessor in the final." : "Off: a plainer game, good for a first night.").padding(.top, 6)
-                    if !v.locked.isEmpty {
+                    // a practice game can't be made ad-free: a pass is for a real night
+                    if !v.locked.isEmpty && !v.practice {
                         Label2("Trials").padding(.top, 12)
                         Small("A free game plays 8 of the 15 Trials, with half the questions, and shows an ad between rounds. A pass takes the ads away for everyone and adds:").padding(.top, 2)
                         Flow(spacing: 6) { ForEach(v.locked, id: \.self) { LockedTrial(title: $0) } }.padding(.bottom, 10)
@@ -81,7 +83,9 @@ struct LobbyView: View {
                         session.confirm("Start the game? Nobody else can join after this.", yes: "Start") { session.act("start") }
                     }
                     .btn(.fill, .big).disabled(n < 8)
-                    Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or open the app on an iPad, type ") + b(session.room, size: 15) + Text(" and choose ") + b("Use this screen as the TV", size: 15) + Text("."), center: true).padding(.top, 12)
+                    if !v.practice {
+                        Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or open the app on an iPad, type ") + b(session.room, size: 15) + Text(" and choose ") + b("Use this screen as the TV", size: 15) + Text("."), center: true).padding(.top, 12)
+                    }
                 }
             }
         }
