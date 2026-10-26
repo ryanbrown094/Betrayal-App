@@ -35,6 +35,7 @@ truth = {}             # player id -> role, as each phone learns its own
 out_ids = set()        # players whose role the table has been shown (exiled, dead at the end)
 t0 = time.time()
 over = threading.Event()
+took_over = None       # who took over as host, once the host's phone was gone for good
 
 def note(what):
     with lock:
@@ -96,6 +97,16 @@ class Phone(threading.Thread):
                 with lock: truth[self.pid] = me["role"]
         check_view(v, self.name, self.role)
         if j.get("rejoin") and me and not self.lost: self.let_in(j["rejoin"])
+        if j.get("hostGone") and me: self.take_over()
+    def take_over(self):
+        # the host's phone has been quiet for two minutes: the first phone to see it takes over (as a person would tap)
+        global took_over
+        with lock:
+            if took_over: return
+            took_over = self.name
+        j = self.act({"a": "takeover"})
+        if j.get("error"): note(f"{self.name} couldn't take over as host: {j['error']}")
+        else: print(f"{time.time() - t0:7.1f}s  {self.name} took over as host", flush=True)
     def let_in(self, reqs):
         for r in reqs:
             if self.last_act.get("letin" + r["id"], 0) > time.time() - 5: continue
@@ -115,6 +126,7 @@ class Phone(threading.Thread):
         code, j = call(self.path(q), tok=self.tok, kind="poll")
         if j.get("same"):
             if j.get("rejoin") and not self.lost: self.let_in(j["rejoin"])
+            if j.get("hostGone"): self.take_over()
             return
         self.take(j)
     def lose_place(self):
@@ -235,8 +247,9 @@ threading.Thread(target=tv, args=(room,), daemon=True).start()
 done_chaos = set()
 def chaos(v):
     rnd_ = v.get("round", 0); ph = v["phase"]
-    host = next((p for p in phones if (p.v or {}).get("me", {}).get("director")), None)
-    guests = [p for p in phones if p is not host and p.tok and not p.removed and (p.v or {}).get("me", {}).get("alive")]
+    awake = lambda p: p.tok and not p.removed and p.quiet_until < time.time() + 120 # (not a phone gone for good)
+    host = next((p for p in phones if awake(p) and (p.v or {}).get("me", {}).get("director")), None)
+    guests = [p for p in phones if p is not host and awake(p) and (p.v or {}).get("me", {}).get("alive")]
     def once(k):
         if k in done_chaos: return False
         done_chaos.add(k); return True
@@ -254,13 +267,16 @@ def chaos(v):
         j = host.act({"a": "tool", "v": "host", "who": new.pid})
         if j.get("error"): note(f"hand-over refused: {j['error']}")
         else: host = new; guests = [p for p in guests if p is not new]
+    if rnd_ >= 4 and ph == "day" and host and "handover" in done_chaos and once("hostgone"):
+        print(f"{time.time() - t0:7.1f}s  ~ the host's phone ({host.name}) dies for good", flush=True)
+        host.quiet_until = float("inf")
     if rnd_ >= 3 and ph == "day" and host and len(guests) > 9 and once("remove"):
         p = R.choice(guests); print(f"{time.time() - t0:7.1f}s  ~ the host takes {p.name} out (gone home)", flush=True)
         p.removed = True; j = host.act({"a": "tool", "v": "remove", "who": p.pid})
         if j.get("error"): note(f"taking {p.name} out was refused: {j['error']}")
     if ph == "vote" and rnd_ >= 2 and once("burst" + str(rnd_)):
         # everyone votes in the same instant
-        vt = v.get("vote") or {}; voters = [p for p in phones if p.tok and (p.v or {}).get("me", {}).get("alive")]
+        vt = v.get("vote") or {}; voters = [p for p in phones if awake(p) and time.time() >= p.quiet_until and (p.v or {}).get("me", {}).get("alive")]
         cands = [x for x in v["players"] if x["alive"] and x["id"] != vt.get("immune") and (not vt.get("revote") or x["id"] in vt["revote"])]
         go = threading.Barrier(len(voters) or 1)
         def ballot(p):
