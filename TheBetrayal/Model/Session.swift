@@ -22,6 +22,7 @@ final class Session {
     var screen: Screen
     private(set) var view: Snapshot?
     private(set) var rejoin: [Rejoin] = []
+    private(set) var tier = Tier.full // read from every response
     var peekList: [Peek]?
     var tools = false
     var ask: Ask?
@@ -132,6 +133,7 @@ final class Session {
         let local = Date().timeIntervalSince1970 * 1000
         if let n = j["now"].double { off = n - local }
         if let v = Snapshot(j["view"]) { view = v; off = v.now - local; changed() }
+        if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
         if !j["rejoin"].isNull { rejoin = j["rejoin"].array.compactMap { r in r["id"].string.map { Rejoin(id: $0, name: r["name"].string ?? "?") } } }
         else if !j["view"].isNull { rejoin = [] }
         if !j["peek"].isNull { peekList = j["peek"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? false) } }

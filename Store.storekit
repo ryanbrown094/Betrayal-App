@@ -1,22 +1,20 @@
 {
   "identifier" : "B7B2C0DE",
-  "nonRenewingSubscriptions" : [
-
-  ],
+  "nonRenewingSubscriptions" : [],
   "products" : [
     {
-      "displayPrice" : "9.99",
+      "displayPrice" : "4.99",
       "familyShareable" : false,
       "internalID" : "6739100001",
       "localizations" : [
         {
-          "description" : "One Table for one party of 8 to 24 players, open for 48 hours from when you first use it.",
-          "displayName" : "A Table",
+          "description" : "Tonight, ad-free: every game you start in 24 hours, with every Trial.",
+          "displayName" : "Night Pass",
           "locale" : "en_GB"
         }
       ],
-      "productID" : "uk.co.thebetrayal.app.table",
-      "referenceName" : "A Table (one party)",
+      "productID" : "uk.co.thebetrayal.app.night",
+      "referenceName" : "Night Pass",
       "type" : "Consumable"
     }
   ],
@@ -27,18 +25,12 @@
   "subscriptionGroups" : [
     {
       "id" : "6739100002",
-      "localizations" : [
-
-      ],
-      "name" : "Regular",
+      "localizations" : [],
+      "name" : "Host Pass",
       "subscriptions" : [
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "19.99",
           "familyShareable" : false,
           "groupNumber" : 1,
@@ -46,14 +38,14 @@
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "One booking code that starts a new game whenever you like, one at a time.",
-              "displayName" : "Regular",
+              "description" : "Every night ad-free, whenever you host, with every Trial.",
+              "displayName" : "Host Pass",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "uk.co.thebetrayal.app.regular",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Regular (monthly)",
+          "productID" : "uk.co.thebetrayal.app.host",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Host Pass (yearly)",
           "subscriptionGroupID" : "6739100002",
           "type" : "RecurringSubscription"
         }

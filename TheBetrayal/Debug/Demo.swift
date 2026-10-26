@@ -6,7 +6,7 @@ import SwiftUI
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
-//   -shop [-scroll ID] the start screen with the App Store's plans priced as in Store.storekit, and two saved codes,
+//   -shop [-scroll ID] the start screen with the passes priced as in Store.storekit, and two saved codes,
 //                      scrolled to ID ("book")
 //   -page NAME         How to play, the terms or the privacy notice (rules, terms, privacy)
 //   -bought            the sheet after a purchase
@@ -27,8 +27,8 @@ enum Demo {
         if args.contains("-art") { return AnyView(ArtSheet()) }
         if args.contains("-render-all") { return AnyView(RenderAll()) }
         if args.contains("-shop") || args.contains("-bought") {
-            Shop.shared.show(table: .init(id: Shop.tableID, price: "£9.99", period: nil, product: nil),
-                             regular: .init(id: Shop.regularID, price: "£19.99", period: "a month", product: nil))
+            Shop.shared.show(night: .init(id: Shop.nightID, price: "£4.99", period: nil, product: nil),
+                             host: .init(id: Shop.hostID, price: "£19.99", period: "a year", product: nil))
             SavedCodes.add("OATH-K7QM-2XRD", sub: false)
             SavedCodes.add("OATH-H4WN-P9TC", sub: true)
             Shop.shared.reload()

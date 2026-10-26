@@ -25,7 +25,7 @@ struct HomeView: View {
     @State private var recent = Recent.room
 
     enum Question {
-        case regular(room: String, pass: String) // a Regular whose last game is still open
+        case regular(room: String, pass: String) // a pass whose last game is still open
         case test(room: String, pass: String)    // the master code's test Table
         var title: String {
             switch self {
@@ -66,7 +66,7 @@ struct HomeView: View {
             .navigationDestination(for: Target.self) { t in TableView(session: AppModel.shared.session(for: t)) }
         }
         .onChange(of: path) { _, now in if now.isEmpty { recent = Recent.room } }
-        .onAppear { shop.start(); follow(model.link) }
+        .onAppear { shop.start(); follow(model.link); Task { await shop.refresh() } }
         .onChange(of: model.link) { _, room in follow(room) }
         .sheet(isPresented: $scanning) { ScanSheet { room in tableCode = room; joinTable() } }
         .sheet(item: $page) { p in PageView(page: p) { page = nil } }
@@ -127,11 +127,14 @@ struct HomeView: View {
         Card {
             Eyebrow("host")
             H2("Host a game")
-            Sub("Enter your booking code to open your Table. It stays open for 48 hours from when you first open it.")
+            Sub("Start a Table, free, and everyone joins on their own phone with its code. It stays open for 48 hours.")
+            Button(busy ? "Opening…" : "Start a free game") { Task { await open(pass: nil, fresh: false) } }.btn(.fill).disabled(busy)
+            Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
             VStack(spacing: 10) {
+                Label2("Have a pass? Type its code")
                 BookingField(text: $bookingCode, submit: hostTable)
-                Button(busy ? "Opening…" : "Open my Table", action: hostTable).btn(.ghost).disabled(busy || bookingCode.count < 4)
+                Button(busy ? "Opening…" : "Start an ad-free game", action: hostTable).btn(.ghost).disabled(busy || bookingCode.count < 4)
             }
         }
     }
@@ -179,23 +182,27 @@ struct HomeView: View {
         Task { await open(pass: pass, fresh: false) }
     }
 
-    private func open(pass: String, fresh: Bool) async {
+    // a pass's code, or none for a free game
+    private func open(pass: String?, fresh: Bool) async {
         busy = true
         defer { busy = false }
         do {
             let t = try await API.open(pass: pass, fresh: fresh)
-            if !t.test { shop.remember(pass) }
-            if t.sub && t.again { question = .regular(room: t.room, pass: pass); return }
+            if let pass {
+                if !t.test { shop.remember(pass) }
+                if t.again { question = .regular(room: t.room, pass: pass); return }
+            }
             await go(room: t.room, pass: pass, test: t.test)
+            Task { await shop.refresh() }
         } catch { problem = error.localizedDescription }
     }
 
     // a Table plays Modern or Classic, chosen once; the app plays Modern, so a new Table is set up as Modern
-    private func go(room: String, pass: String, test: Bool) async {
+    private func go(room: String, pass: String?, test: Bool) async {
         switch await API.mode(of: room) {
         case .modern: path.append(Target(room: room))
         case .classic: problem = "This Table is set up for Classic, which the app doesn’t play. Only a new Table can be played in the app."
-        case .unset: if test { question = .test(room: room, pass: pass) } else { path.append(Target(room: room, start: .create, pass: pass)) }
+        case .unset: if test, let pass { question = .test(room: room, pass: pass) } else { path.append(Target(room: room, start: .create, pass: pass)) }
         }
     }
 }

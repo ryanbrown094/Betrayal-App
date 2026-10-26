@@ -26,7 +26,7 @@ phone for 7 days at a time. TestFlight and the App Store need the Apple Develope
 `uk.co.thebetrayal.app` (the old web-view app, since removed from the server repo, used the same one, so this replaces
 it on a phone).
 
-**To test on your own:** enter the master passcode as the booking code and choose **Play against bots**.
+**To test on your own:** type the master passcode where a pass's code goes and choose **Play against bots**.
 
 **Buying, from Xcode:** the shared scheme runs the app with `Store.storekit` (Xcode's StoreKit testing: test prices,
 Apple's test purchase sheet, no money). The real server refuses those purchases ("only work on a development server")
@@ -39,15 +39,20 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
 ## What it does
 
 - **The start screen** (`UI/HomeView.swift`): join a Table with its code, by scanning the TV's QR code (`UI/Scanner.swift`)
-  or from a `thebetrayal://join/CODE` link; use the device as a Table's TV; open your own Table with a booking code. It
+  or from a `thebetrayal://join/CODE` link; use the device as a Table's TV; start your own Table, free or with a pass. It
   makes the website's calls (`POST /api/games`, then `GET /api/g/CODE/m`), offers "carry on or start a new game" to a
-  Regular and the test choice to the master passcode, and refuses a Table already set up for Classic.
-- **Booking** (`Model/Shop.swift`, `UI/ShopView.swift`): a Table (consumable) and the Regular plan (monthly
-  subscription) with Apple's in-app purchase, at the App Store's price. Each purchase goes to `POST /api/appstore/claim`,
-  which checks it with Apple and returns its booking code (the server repo's HANDOVER §6.2a); only then does the app finish the purchase,
-  so a code is never lost to a dropped connection (unfinished purchases are claimed again at the next launch). Codes
-  bought, or used to open a Table, are kept on the phone under **Your booking codes**. **Restore purchases** brings a
-  Regular to a new phone; **Manage subscription** is Apple's own sheet.
+  pass whose game is still open and the test choice to the master passcode, and refuses a Table already set up for Classic.
+- **Free games and passes** (the server repo's `worker/src/tiers.js`, HANDOVER §4.8): with no code the app starts a
+  free game, with ads between rounds and the base Trials; a **Night Pass** (consumable) makes every game started in its
+  24 hours ad-free with every Trial, and the **Host Pass** (yearly subscription) every game while it's paid. The app's
+  codes are a pool of their own (every call to `/api/games` says `app: true`): website codes don't open Tables here.
+  Every response from an app-made Table carries its tier (`room.tier`), which `Model/Session.swift` keeps as `tier`.
+- **Buying passes** (`Model/Shop.swift`, `UI/ShopView.swift`): Apple's in-app purchase, at the App Store's price. Each
+  purchase goes to `POST /api/appstore/claim`, which checks it with Apple and returns its code (the server repo's
+  HANDOVER §6.2a); only then does the app finish the purchase, so a code is never lost to a dropped connection
+  (unfinished purchases are claimed again at the next launch). Passes bought, or used, are kept on the phone under
+  **Your passes**, with what each can do now (`POST /api/app/codes`: ready, ad-free until a time, used, lapsed).
+  **Restore purchases** brings a Host Pass to a new phone; **Manage subscription** is Apple's own sheet.
 - **How to play, the terms and the privacy notice** (`UI/Pages.swift`): the website's pages rewritten for the app (Apple
   takes the payments, codes are kept on the phone, the camera reads QR codes). Change them with the website's
   (`site/pages/rules.html`, `terms.html`, `privacy.html` in the server repo).
@@ -132,5 +137,5 @@ the Release bundle.
   Apple stubbed (`node qa/appstore.mjs`) and with an Xcode-style purchase on `wrangler dev`. Before release: a sandbox
   purchase of each product through TestFlight, a restore on a second device, and a sandbox refund.
 - The QR scanner and the `thebetrayal://` link need a real iPhone (the simulator has no camera).
-- App Store review: a booking code bought on the website still opens a Table in the app. Rule 3.1.3(b) (multiplatform
-  services) allows that because the same things are on sale in the app; the app never mentions or links to the website's shop.
+- App Store review: passes are sold only in the app, and the website's codes don't open Tables in it, so the app never
+  depends on anything bought elsewhere.

@@ -2,31 +2,33 @@ import Foundation
 import StoreKit
 import Observation
 
-// Buying a Table, or the Regular plan, with Apple's in-app purchase. Each purchase goes to the server
-// (POST /api/appstore/claim, worker/src/appstore.js), which checks it with Apple and gives back a booking code; only then
-// is the purchase finished, so a code is never lost to a dropped connection (unfinished purchases are claimed again when
-// the app next opens). The codes are kept on the phone (SavedCodes).
+// Buying a Night Pass, or the Host Pass, with Apple's in-app purchase (the server's tiers.js says what they do). Each
+// purchase goes to the server (POST /api/appstore/claim, worker/src/appstore.js), which checks it with Apple and gives back
+// its code; only then is the purchase finished, so a code is never lost to a dropped connection (unfinished purchases are
+// claimed again when the app next opens). The codes are kept on the phone (SavedCodes), and the server says what each
+// can do now (status).
 @MainActor @Observable
 final class Shop {
     static let shared = Shop()
-    static let tableID = "uk.co.thebetrayal.app.table"
-    static let regularID = "uk.co.thebetrayal.app.regular"
+    static let nightID = "uk.co.thebetrayal.app.night"
+    static let hostID = "uk.co.thebetrayal.app.host"
 
     struct Plan: Identifiable {
         let id: String
         let price: String       // as the App Store shows it, in the buyer's currency
-        let period: String?     // "a month" for the Regular plan
+        let period: String?     // "a year" for the Host Pass
         let product: Product?
     }
     struct Bought: Identifiable { let id = UUID(); let pass: String; let sub: Bool }
 
-    private(set) var table: Plan?
-    private(set) var regular: Plan?
+    private(set) var night: Plan?
+    private(set) var host: Plan?
     private(set) var loaded = false
     private(set) var buying: String?
     var problem: String?
     var bought: Bought?
     private(set) var codes: [SavedCodes.Code] = SavedCodes.all
+    private(set) var status: [String: API.CodeStatus] = [:]
     @ObservationIgnored private var listening: Task<Void, Never>?
 
     func start() {
@@ -39,22 +41,29 @@ final class Shop {
         Task {
             await load()
             for await r in Transaction.unfinished { await collect(r, shown: false) }
+            await refresh()
         }
     }
 
     func load() async {
         guard !shown else { return }
-        guard let ps = try? await Product.products(for: [Shop.tableID, Shop.regularID]) else { loaded = true; return }
+        guard let ps = try? await Product.products(for: [Shop.nightID, Shop.hostID]) else { loaded = true; return }
         for p in ps {
             let plan = Plan(id: p.id, price: p.displayPrice, period: p.subscription.map { Shop.period($0.subscriptionPeriod) }, product: p)
-            if p.id == Shop.tableID { table = plan } else if p.id == Shop.regularID { regular = plan }
+            if p.id == Shop.nightID { night = plan } else if p.id == Shop.hostID { host = plan }
         }
         loaded = true
     }
 
     // a Debug build's pictures: the plans as the App Store would price them, without the App Store
-    func show(table: Plan, regular: Plan) { self.table = table; self.regular = regular; loaded = true; shown = true }
+    func show(night: Plan, host: Plan) { self.night = night; self.host = host; loaded = true; shown = true }
     func reload() { codes = SavedCodes.all }
+
+    // what each code on the phone can do now (a Night Pass ready, or ad-free until a time; a Host Pass active or lapsed)
+    func refresh() async {
+        guard !shown else { return }
+        status = await API.codes(codes.map(\.pass))
+    }
     @ObservationIgnored private var shown = false
 
     func buy(_ plan: Plan) async {
@@ -64,7 +73,7 @@ final class Shop {
         do {
             switch try await product.purchase() {
             case .success(let r): await collect(r, shown: true)
-            case .pending: problem = "Your purchase is waiting to be approved. Your booking code will appear here once it is."
+            case .pending: problem = "Your purchase is waiting to be approved. Your pass will appear here once it is."
             case .userCancelled: break
             @unknown default: break
             }
@@ -78,7 +87,7 @@ final class Shop {
         try? await AppStore.sync()
         var found = false
         for await r in Transaction.currentEntitlements { found = true; await collect(r, shown: true) }
-        if !found { problem = "There’s no Regular plan on this Apple Account. A Table bought in the app is in Your booking codes on the phone that bought it." }
+        if !found { problem = "There’s no Host Pass on this Apple Account. A Night Pass is in Your passes on the phone that bought it." }
     }
 
     // a purchase, exchanged for its booking code
@@ -87,10 +96,10 @@ final class Shop {
             if shown { problem = "The App Store couldn’t confirm that purchase, so it wasn’t used." }
             return
         }
-        guard t.productID == Shop.tableID || t.productID == Shop.regularID else { await t.finish(); return }
+        guard t.productID == Shop.nightID || t.productID == Shop.hostID else { await t.finish(); return }
         let reply: Reply
         do { reply = try await API.call("/api/appstore/claim", body: ["jws": r.jwsRepresentation]) } catch {
-            if shown { problem = "Paid, but the server can’t be reached to give you your booking code. It will appear here as soon as the app can reach it." }
+            if shown { problem = "Paid, but the server can’t be reached to give you your pass. It will appear here as soon as the app can reach it." }
             return
         }
         if let pass = reply.json["pass"].string {
@@ -99,13 +108,14 @@ final class Shop {
             codes = SavedCodes.all
             await t.finish()
             if shown { bought = Bought(pass: pass, sub: sub) }
+            await refresh()
         } else if reply.status == 410 || reply.status == 403 {
             // refunded, or Xcode's StoreKit testing on a real server: asking again won't change the answer. (Anything else
             // stays unfinished, so a paid purchase is claimed once the server can give its code.)
             await t.finish()
             if shown { problem = (reply.error ?? "That purchase can’t be used.") + (reply.status == 403 ? " Nothing was charged." : "") }
         } else if shown {
-            problem = (reply.error ?? "The server couldn’t give you a booking code.") + " Your purchase is safe: the app will try again."
+            problem = (reply.error ?? "The server couldn’t give you your pass.") + " Your purchase is safe: the app will try again."
         }
     }
 
@@ -129,8 +139,8 @@ final class Shop {
     }
 }
 
-// The booking codes this phone has bought or used, newest first: a code bought in the app lives here, so it's never
-// only in a screenshot
+// The passes this phone has bought or used, newest first: a code bought in the app lives here, so it's never only in a
+// screenshot. sub: a Host Pass (true) or a Night Pass (false).
 enum SavedCodes {
     struct Code: Identifiable, Codable, Hashable {
         let pass: String

@@ -54,21 +54,52 @@ enum API {
         try await call("/api/g/" + room + "/" + path, body: body, token: token)
     }
 
-    // the home page's calls (site/index.html): a booking code opens its Table, and a Table says which way it plays
-    struct Opened { let room: String; let test: Bool; let sub: Bool; let again: Bool }
+    // the home page's calls (site/index.html): a code opens its Table, and a Table says which way it plays. The app's
+    // calls say they're the app's (app: true): its codes are a pool of their own, and no code is a free game (the
+    // server's tiers.js).
+    struct Opened { let room: String; let test: Bool; let sub: Bool; let again: Bool; let kind: String?; let until: Date? }
     enum Mode { case unset, modern, classic }
 
-    static func open(pass: String, fresh: Bool) async throws -> Opened {
+    static func open(pass: String?, fresh: Bool) async throws -> Opened {
+        var body: [String: Any] = ["app": true, "fresh": fresh]
+        if let pass { body["pass"] = pass }
         let r: Reply
-        do { r = try await call("/api/games", body: ["pass": pass, "fresh": fresh]) } catch { throw Failure("Can’t reach the server. Check you’re online.") }
+        do { r = try await call("/api/games", body: body) } catch { throw Failure("Can’t reach the server. Check you’re online.") }
         guard r.ok, let room = r.json["room"].string else { throw Failure(r.error ?? "That didn’t work. Try again.") }
-        return Opened(room: room, test: r.json["test"].bool ?? false, sub: r.json["sub"].bool ?? false, again: r.json["again"].bool ?? false)
+        return Opened(room: room, test: r.json["test"].bool ?? false, sub: r.json["sub"].bool ?? false, again: r.json["again"].bool ?? false,
+                      kind: r.json["kind"].string, until: r.json["until"].double.map { Date(timeIntervalSince1970: $0 / 1000) })
+    }
+
+    // what each of the app's codes on this phone can do now
+    struct CodeStatus { let kind: String; let state: String; let until: Date? }
+    static func codes(_ passes: [String]) async -> [String: CodeStatus] {
+        guard !passes.isEmpty, let r = try? await call("/api/app/codes", body: ["passes": passes]), r.ok else { return [:] }
+        var out: [String: CodeStatus] = [:]
+        for c in r.json["codes"].array {
+            guard let p = c["pass"].string else { continue }
+            out[p] = CodeStatus(kind: c["kind"].string ?? "", state: c["state"].string ?? "", until: c["until"].double.map { Date(timeIntervalSince1970: $0 / 1000) })
+        }
+        return out
     }
 
     static func mode(of room: String) async -> Mode {
         guard let r = try? await self.room(room, "m") else { return .unset }
         if r.json["none"].bool == true { return r.json["classic"].bool == true ? .classic : .unset }
         return r.json["view"].isNull ? .unset : .modern
+    }
+}
+
+// a room's tier (the server's tiers.js): whether it shows ads, and whether every Trial and the full question banks are
+// in it. A room the website opened has none, and plays as the website always has.
+struct Tier: Equatable {
+    let tier: String
+    let adFree: Bool
+    let content: String
+    static let full = Tier(tier: "full", adFree: true, content: "all")
+    private init(tier: String, adFree: Bool, content: String) { self.tier = tier; self.adFree = adFree; self.content = content }
+    init?(_ j: JSON) {
+        guard let t = j["tier"].string else { return nil }
+        self.init(tier: t, adFree: j["adFree"].bool ?? true, content: j["content"].string ?? "all")
     }
 }
 

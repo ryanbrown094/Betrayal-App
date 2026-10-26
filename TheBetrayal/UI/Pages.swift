@@ -34,7 +34,7 @@ enum Page: String, Identifiable {
             "In between, you play party games for a shared Purse and for protection, you argue, you make alliances, and you lie to people you’ve known for years. A typical game lasts an evening. Play it with drinks and snacks, or over dinner: the game can fit the courses between the rounds.",
         ]),
         ("Joining", [
-            "The host opens the Table with their booking code and types their name. Everyone else opens The Betrayal app, types the six-character Table code (or scans the QR code on the TV) and their name. There’s no account to make. The TV is optional: without one, the host just reads the code out. When everyone’s in, the host taps **Start**.",
+            "The host starts a Table in The Betrayal app (free, or ad-free with a pass) and types their name. Everyone else opens The Betrayal app, types the six-character Table code (or scans the QR code on the TV) and their name. There’s no account to make. The TV is optional: without one, the host just reads the code out. When everyone’s in, the host taps **Start**.",
         ]),
         ("Who’s who", [
             "**The Loyal** are most of the table. They don’t know who anyone else is. Their job is to work out who the Forsworn are and vote them out, with nothing to go on but conversation, voting patterns and gut feeling.",
@@ -106,30 +106,29 @@ enum Page: String, Identifiable {
     ]
 
     private static let termsText: [(String, [String])] = [
-        ("", ["These terms apply when you book or use a Table for The Betrayal, or use the app. Please read them before you buy. If you don’t agree with them, don’t buy or use a booking code. The app itself is licensed to you under Apple’s standard licence agreement for apps (the link is below)."]),
+        ("", ["These terms apply when you play The Betrayal in the app, or buy a pass in it. Please read them before you buy. If you don’t agree with them, don’t buy or use a pass. The app itself is licensed to you under Apple’s standard licence agreement for apps (the link is below)."]),
         ("1. Who we are", ["The Betrayal is an independent business based in England. You can contact us at info@thebetrayal.co.uk."]),
         ("2. What you’re buying", [
-            "When you book a Table (one party), you get a **booking code**, which looks like OATH-XXXX-XXXX. It opens one online game room, your Table, for one party. It is digital content: nothing is posted to you.",
-            "• When you first enter the booking code, it opens your Table. The Table can be played for **48 hours** from that moment.",
-            "• After 48 hours the Table becomes read-only. It is deleted, with everything in it, 7 days after that.",
-            "• One booking code is for one party of 8 to 24 players in one place. You may not resell a booking code, or use one for more than one event.",
-            "• Entering the booking code again within the 48 hours brings back the same Table.",
-            "**The Regular plan** (a monthly subscription) gives you one code that opens a new Table whenever you like, for as long as the subscription is paid. Each Table works like one bought on its own (open 48 hours, then read-only, then deleted), and you can have one game open at a time: starting a new game closes the one that was open. The code is for you and your own parties; you may not share it with other hosts.",
+            "Every game is played at a **Table**, an online game room. A Table can be played for **48 hours** from when it opens, then becomes read-only, and is deleted, with everything in it, 7 days after that. You can have one game open at a time with a pass: starting a new game closes the one that was open.",
+            "• **A free game** costs nothing. It shows an advertisement between rounds, never while you play, and uses the base set of Trials and questions.",
+            "• **A Night Pass** is a code, which looks like OATH-XXXX-XXXX, for one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
+            "• **The Host Pass** (a yearly subscription) gives you one code that makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
+            "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. Passes bought in the app work only in the app. It is digital content: nothing is posted to you.",
             "To play, you need an internet connection and a phone with the app for each player; a TV is optional. We don’t supply these.",
         ]),
         ("3. Buying in the app", [
             "The price is shown in the app, in your currency, before you pay, and includes VAT where it applies. Payment is taken by Apple, through your Apple Account. We never see your card details, your name or your email address.",
-            "Your contract with us starts when Apple confirms your payment and your booking code is shown to you. The app keeps the code on the phone you bought it on, under **Your booking codes**. Write it down too: if you lose the phone, contact us with the date of the purchase and the order ID from Apple’s receipt, and we’ll find it.",
+            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps its code on the phone you bought it on, under **Your passes**, and **Restore purchases** brings a Host Pass to another phone. Write it down too: if you lose the phone, contact us with the date of the purchase and the order ID from Apple’s receipt, and we’ll find it.",
             "If a price is obviously wrong, we may cancel the purchase and have it refunded in full.",
         ]),
-        ("4. The Regular plan: renewal and cancelling", [
-            "The Regular plan renews automatically every month, at the price you agreed when you subscribed, and Apple takes the payment from your Apple Account, unless you cancel at least 24 hours before the end of the month. Cancel at any time in your Apple Account’s subscriptions (in Settings, or **Manage subscription** in the app). Cancelling stops future payments; your code keeps working until the end of the month you’ve paid for. If a payment fails, the code stops opening new games until it’s paid. If the price changes, Apple tells you before it takes effect, and you can cancel first.",
+        ("4. The Host Pass: renewal and cancelling", [
+            "The Host Pass renews automatically every year, at the price you agreed when you subscribed, and Apple takes the payment from your Apple Account, unless you cancel at least 24 hours before the end of the year. Cancel at any time in your Apple Account’s subscriptions (in Settings, or **Manage subscription** in the app). Cancelling stops future payments; your code keeps working until the end of the year you’ve paid for. If a payment fails, the code stops opening new games until it’s paid. If the price changes, Apple tells you before it takes effect, and you can cancel first.",
         ]),
         ("5. Refunds and your right to cancel", [
-            "Purchases in the app are refunded by Apple: ask at reportaproblem.apple.com. If Apple refunds a Table you haven’t opened yet, its code is cancelled. You normally have 14 days to cancel a purchase of digital content, but you lose that right once the content is supplied; a booking code is supplied as soon as you’ve paid. Apple’s own terms may give you more.",
+            "Purchases in the app are refunded by Apple: ask at reportaproblem.apple.com. If Apple refunds a Night Pass whose 24 hours haven’t started, its code is cancelled. You normally have 14 days to cancel a purchase of digital content, but you lose that right once the content is supplied; a pass is supplied as soon as you’ve paid. Apple’s own terms may give you more.",
         ]),
         ("6. If something goes wrong", [
-            "The Consumer Rights Act 2015 says digital content must be as described, fit for purpose and of satisfactory quality. If the game doesn’t work as it should and we can’t fix it within a reasonable time, you are entitled to a repair, a replacement booking code, or a refund. Contact us to ask. Nothing in these terms affects your legal rights.",
+            "The Consumer Rights Act 2015 says digital content must be as described, fit for purpose and of satisfactory quality. If the game doesn’t work as it should and we can’t fix it within a reasonable time, you are entitled to a repair, a replacement pass, or a refund. Contact us to ask. Nothing in these terms affects your legal rights.",
             "The game runs over the internet. We work to keep it available, but we can’t promise it will never be interrupted, for example by a problem with your own connection or network, or with our hosting provider. If an outage on our side spoils your party, contact us and we’ll put it right.",
         ]),
         ("7. Playing safely", [
@@ -139,8 +138,8 @@ enum Page: String, Identifiable {
             "• Please drink responsibly. Don’t let anyone drive after drinking.",
             "• Only put first names or nicknames into the game. See our privacy notice.",
         ]),
-        ("8. Using the game fairly", ["Don’t try to break, overload, copy or get around the security of the service, guess other people’s booking codes or Table codes, or use it to break the law. We may cancel a booking code, without refund, if it is used in breach of these terms."]),
-        ("9. Our intellectual property", ["The name “The Betrayal” and its logo, artwork, music, questions, text and software belong to us or our licensors. A booking code gives you a personal, non-transferable licence to use the game for your party. You may not copy, sell or distribute any part of it. Fonts are used under the SIL Open Font License."]),
+        ("8. Using the game fairly", ["Don’t try to break, overload, copy or get around the security of the service, guess other people’s passes or Table codes, or use it to break the law. We may cancel a pass, without refund, if it is used in breach of these terms."]),
+        ("9. Our intellectual property", ["The name “The Betrayal” and its logo, artwork, music, questions, text and software belong to us or our licensors. The app, and any pass, gives you a personal, non-transferable licence to use the game for your parties. You may not copy, sell or distribute any part of it. Fonts are used under the SIL Open Font License."]),
         ("10. Our responsibility to you", [
             "If we break these terms, we are responsible for loss or damage you suffer that is a foreseeable result of our breach or our negligence. We are not responsible for loss that was not foreseeable. We only supply the game for domestic and private use, and are not liable to businesses for loss of profit, business or opportunity.",
             "We do not exclude or limit our liability where it would be unlawful to do so. That includes liability for death or personal injury caused by our negligence, for fraud, and for breaching your legal rights as a consumer.",
@@ -156,15 +155,15 @@ enum Page: String, Identifiable {
         ("", ["This notice explains what personal information The Betrayal collects when you use the app, why, and what your rights are. We collect as little as we can: there are no accounts, no advertising and no tracking."]),
         ("Who is responsible for your data", ["The Betrayal is the controller of your personal data under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018. Contact us at info@thebetrayal.co.uk."]),
         ("What we collect, and why", [
-            "• **Purchases in the app.** Apple takes the payment, so we never receive your name, email address or card. Apple gives us the purchase’s references, the product, the price and currency, the country of your App Store, and whether a Regular plan is active. *Why:* to give you your booking code, keep a Regular’s code working while it’s paid, handle refunds and keep our accounts. *Lawful basis:* contract; legal obligation (tax records). *How long:* 6 years after the purchase, as UK tax law requires.",
-            "• **Booking records:** the booking code, when it was created and used, and the Table it opened. *Why:* to run the service and stop booking codes being misused. *Lawful basis:* contract. *How long:* 6 years, with the purchase.",
+            "• **Purchases in the app.** Apple takes the payment, so we never receive your name, email address or card. Apple gives us the purchase’s references, the product, the price and currency, the country of your App Store, and whether a Host Pass is active. *Why:* to give you your pass, keep a Host Pass working while it’s paid, handle refunds and keep our accounts. *Lawful basis:* contract; legal obligation (tax records). *How long:* 6 years after the purchase, as UK tax law requires.",
+            "• **Pass records:** each pass’s code, when it was created and used, and the Tables it opened. *Why:* to run the service and stop codes being misused. *Lawful basis:* contract. *How long:* 6 years, with the purchase.",
             "• **Game data:** what is entered to run a game, including the name or nickname each player types, the roles, answers, votes and the score. *Why:* to run the game on the players’ phones and the TV. *Lawful basis:* contract (with the host); legitimate interests (for guests). *How long:* deleted automatically 7 days after the Table’s 48 hours run out.",
             "• **Diagnostics:** a record of each game as it is played (every change the host makes, so we can replay it to find and fix problems). *Lawful basis:* legitimate interests (keeping the game working). *How long:* deleted with the Table.",
             "• **Technical data:** your IP address and basic request details. *Why:* to deliver the game, keep it secure and limit repeated wrong codes. *Lawful basis:* legitimate interests (security). *How long:* wrong-guess counts are held in memory for up to an hour; our host’s logs are kept for up to 30 days.",
             "• **Messages you send us** by email. *Why:* to answer you. *Lawful basis:* legitimate interests. *How long:* 2 years.",
         ]),
         ("On your phone", [
-            "The app keeps a few things on the phone itself, so it can take you back to your game: the name you last played under, your place at each Table you’ve joined, your last Table, and the booking codes you’ve bought or used. They never leave the phone except to play, and deleting the app deletes them.",
+            "The app keeps a few things on the phone itself, so it can take you back to your game: the name you last played under, your place at each Table you’ve joined, your last Table, and the passes you’ve bought or used. They never leave the phone except to play, and deleting the app deletes them.",
             "The camera is used only to read a Table’s QR code, when you choose to scan one. Nothing it sees is recorded or sent anywhere.",
         ]),
         ("Guests at a party", ["If you’re a guest, the name or nickname you typed when you joined is in the game. It appears on the phones and the TV, we only use it to run that game, and it is deleted with the Table. We ask everyone to use first names or nicknames only. If you want your name removed sooner, ask the host, who can remove you, or contact us."]),
