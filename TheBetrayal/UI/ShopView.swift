@@ -55,7 +55,7 @@ struct BookCard: View {
             Small(about)
             Button(shop.buying == p.id ? "Waiting for the App Store…" : buy) { Task { await shop.buy(p) } }
                 .btn(p.id == Shop.nightID ? .fill : .ghost)
-                .disabled(shop.buying != nil || p.product == nil)
+                .disabled(shop.buying != nil || (p.product == nil && !shop.previewing))
         }
         .padding(.bottom, 18)
     }

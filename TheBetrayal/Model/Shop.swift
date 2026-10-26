@@ -58,6 +58,7 @@ final class Shop {
     // a Debug build's pictures: the plans as the App Store would price them, without the App Store
     func show(night: Plan, host: Plan) { self.night = night; self.host = host; loaded = true; shown = true }
     func reload() { codes = SavedCodes.all }
+    var previewing: Bool { shown } // a Debug build's pictures: the buttons look as they do with the App Store
 
     // what each code on the phone can do now (a Night Pass ready, or ad-free until a time; a Host Pass active or lapsed)
     func refresh() async {

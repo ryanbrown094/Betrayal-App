@@ -99,6 +99,7 @@ jobs:
           shot 01-art 4 -art
           shot 02-home-host 6 -shop -screen host
           shot 03-home-passes 6 -shop -screen passes
+          shot 03-review-passes 6 -shop -nosaved -screen passes
           shot 04-bought 4 -bought
           for p in rules faq terms privacy; do shot "05-page-$p" 4 -page "$p"; done
           shot 06-home-join 6 -screen join

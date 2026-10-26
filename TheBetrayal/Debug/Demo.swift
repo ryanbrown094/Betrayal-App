@@ -9,7 +9,8 @@ import SwiftUI
 //                      to Documents/store/*.png, then Documents/store/done (store/compose.py adds the captions)
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
-//   -shop              the start screen with the passes priced as in Store.storekit, and two saved codes
+//   -shop [-nosaved]   the start screen with the passes priced as in Store.storekit, and two saved codes (or none:
+//                      App Review's screenshot of the passes)
 //   -screen NAME       the start screen's own screens (join, host, passes), with or without -shop
 //   -intro [N]         the premise, at its Nth screen (from 0)
 //   -page NAME         How to play, the questions, the terms or the privacy notice (rules, faq, terms, privacy)
@@ -34,8 +35,10 @@ enum Demo {
         if args.contains("-shop") || args.contains("-bought") {
             Shop.shared.show(night: .init(id: Shop.nightID, price: "£4.99", period: nil, product: nil),
                              host: .init(id: Shop.hostID, price: "£19.99", period: "a year", product: nil))
-            SavedCodes.add("OATH-K7QM-2XRD", sub: false)
-            SavedCodes.add("OATH-H4WN-P9TC", sub: true)
+            if !args.contains("-nosaved") {
+                SavedCodes.add("OATH-K7QM-2XRD", sub: false)
+                SavedCodes.add("OATH-H4WN-P9TC", sub: true)
+            }
             Shop.shared.reload()
             if args.contains("-bought") { return AnyView(BoughtSheet(bought: .init(pass: "OATH-K7QM-2XRD", sub: false), open: { _ in })) }
             return AnyView(HomeView())
