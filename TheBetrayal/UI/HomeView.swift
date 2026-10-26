@@ -230,13 +230,13 @@ struct HomeView: View {
             Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big).disabled(busy)
             Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
-            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Your passes") { path.append(.passes) }.btn(.ghost)
+            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Passes and gift codes") { path.append(.passes) }.btn(.ghost)
         }
     }
 
     private var passesScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
-            H1("Your passes")
+            H1("Passes")
             if shop.codes.isEmpty { Sub("None on this phone yet. A pass you buy, or a gift code you add, appears here.") }
             YourCodes(open: openCode)
             BookCard(open: openCode, show: { page = $0 })
