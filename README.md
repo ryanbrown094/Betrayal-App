@@ -3,10 +3,10 @@
 A native iPhone and iPad app for **Modern**: everyone plays on their own phone, against the same game server and API as
 the website. Nothing in it is a web view.
 
-**The server is another repo:** [ryanbrown094/Claude](https://github.com/ryanbrown094/Claude), the Cloudflare Worker
+**The server is another repo:** [ryanbrown094/Betrayal-Website](https://github.com/ryanbrown094/Betrayal-Website), the Cloudflare Worker
 that runs thebetrayal.co.uk (its `HANDOVER.md` explains it, §4.8 and §6.2a for the app). Paths below such as
 `worker/src/modern.js` or `src/modern-ui.js` are in that repo. The tools here expect a clone of it beside this one
-(`../Claude`), or its path in `SERVER`.
+(`../Betrayal-Website`), or its path in `SERVER`.
 
 Every screen of the server repo's `src/modern-ui.js` is redrawn in SwiftUI, with the palette and type of
 `src/modern.css`, the art of `src/art.js` and the music of `src/audio.js`. It stands on its own: booking, joining, the TV, How to play, the terms and the privacy notice
@@ -110,7 +110,7 @@ with options to play the whole game and to choose the server repo's branch):
 **The server repo is private,** so step 3 (and the fixtures check) needs a token, made once:
 
 1. GitHub → your picture → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate
-   new token**. Repository access: **Only select repositories → ryanbrown094/Claude**. Permissions: **Contents:
+   new token**. Repository access: **Only select repositories → ryanbrown094/Betrayal-Website**. Permissions: **Contents:
    Read-only**. Pick an expiry, generate it and copy it.
 2. This repo → **Settings → Secrets and variables → Actions → New repository secret**: name `SERVER_REPO_TOKEN`, the
    token as its value.

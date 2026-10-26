@@ -2,7 +2,7 @@ name: iOS app
 
 # Builds the app on one of GitHub's Macs, checks its model against a game recorded from the real rules engine, and runs
 # it in the simulator: recorded moments (-demo), every moment drawn offscreen (-render-all), and a game against bots on
-# a local Worker, the app playing the host. The Worker is the game server's repo (ryanbrown094/Claude), checked out
+# a local Worker, the app playing the host. The Worker is the game server's repo (ryanbrown094/Betrayal-Website), checked out
 # with the SERVER_REPO_TOKEN secret (README → Checks); without it, the game against bots is skipped. The pictures go to
 # the run's "ios-native-screens" artifact, and as one commit to refs/screens/ios-native (not a branch), for a session
 # that can reach git but not the artifact store:  git fetch origin refs/screens/ios-native
@@ -42,7 +42,7 @@ jobs:
         if: env.SERVER_TOKEN != ''
         uses: actions/checkout@v4
         with:
-          repository: ryanbrown094/Claude
+          repository: ryanbrown094/Betrayal-Website
           ref: ${{ inputs.server || 'main' }}
           token: ${{ secrets.SERVER_REPO_TOKEN }}
           path: server

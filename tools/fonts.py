@@ -7,7 +7,7 @@ from fontTools.ttLib import TTFont
 from fontTools.merge import Merger
 from fontTools.varLib.instancer import instantiateVariableFont
 
-SRC, OUT = os.path.join(os.environ.get("SERVER", "../Claude"), "worker/public/fonts"), "TheBetrayal/Resources/Fonts"
+SRC, OUT = os.path.join(os.environ.get("SERVER", "../Betrayal-Website"), "worker/public/fonts"), "TheBetrayal/Resources/Fonts"
 FACES = [  # (web file stem, weight to fix for a variable font, output name, family, style)
     ("AlegreyaSans-n400", None, "AlegreyaSans-Regular", "Alegreya Sans", "Regular"),
     ("AlegreyaSans-n500", None, "AlegreyaSans-Medium", "Alegreya Sans Medium", "Regular"),

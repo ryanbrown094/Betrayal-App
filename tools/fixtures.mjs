@@ -5,7 +5,7 @@
 // set to it):
 //   node tools/fixtures.mjs > TheBetrayal/Debug/Fixtures.json
 import path from "node:path"; import { pathToFileURL } from "node:url";
-const SERVER = process.env.SERVER || "../Claude";
+const SERVER = process.env.SERVER || "../Betrayal-Website";
 const { newGame, join, act, tick, viewFor } = await import(pathToFileURL(path.resolve(SERVER, "worker/src/modern.js")).href);
 
 let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

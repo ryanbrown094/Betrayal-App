@@ -48,7 +48,7 @@ const wav = (pcm) => {
 };
 
 fs.mkdirSync(OUT, { recursive: true });
-const root = path.resolve(process.env.SERVER || "../Claude", "worker/public");
+const root = path.resolve(process.env.SERVER || "../Betrayal-Website", "worker/public");
 const srv = http.createServer((req, res) => {
   const f = path.join(root, decodeURIComponent(new URL(req.url, "http://x").pathname));
   if (!f.startsWith(root) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
