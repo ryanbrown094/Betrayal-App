@@ -2,7 +2,7 @@ import SwiftUI
 
 // What the start screen opens: a Table, and how (as a player, as the host setting it up, or as the TV)
 struct Target: Hashable {
-    enum Start: Hashable { case play, create, bots, tv }
+    enum Start: Hashable { case play, create, bots, practice, tv }
     let room: String
     var start: Start = .play
     var pass: String? = nil
@@ -15,6 +15,7 @@ struct HomeView: View {
     @State private var path: [Target] = []
     @State private var scanning = false
     @State private var page: Page?
+    @State private var gifting = false
     private var shop: Shop { Shop.shared }
     private let model = AppModel.shared
     @State private var tableCode = ""
@@ -73,6 +74,7 @@ struct HomeView: View {
         .onChange(of: model.link) { _, room in follow(room) }
         .sheet(isPresented: $scanning) { ScanSheet { room in tableCode = room; joinTable() } }
         .sheet(item: $page) { p in PageView(page: p) { page = nil } }
+        .sheet(isPresented: $gifting) { GiftCodeSheet() }
         .sheet(item: Binding(get: { shop.bought }, set: { shop.bought = $0 })) { b in BoughtSheet(bought: b, open: openCode) }
         .alert("Booking", isPresented: Binding(get: { shop.problem != nil }, set: { if !$0 { shop.problem = nil } })) {
             Button("OK", role: .cancel) {}
@@ -137,11 +139,9 @@ struct HomeView: View {
             Button(busy ? "Opening…" : "Start a free game", action: startGame).btn(.fill).disabled(busy)
             Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
-            VStack(spacing: 10) {
-                Label2("Have a pass? Type its code")
-                BookingField(text: $bookingCode, submit: hostTable)
-                Button(busy ? "Opening…" : "Start an ad-free game", action: hostTable).btn(.ghost).disabled(busy || bookingCode.count < 4)
-            }
+            Button("Practice against bots") { Task { await practise() } }.btn(.ghost).disabled(busy)
+            Small("On your own? Play a whole game with bots as the rest of the Table.").padding(.top, 8)
+            Button("Have a gift code?") { gifting = true }.btn(.dark, .sm, fit: true)
         }
     }
 
@@ -167,6 +167,16 @@ struct HomeView: View {
         path = []
         tableCode = room
         joinTable()
+    }
+
+    // one person and the bots (the server's practice games)
+    private func practise() async {
+        busy = true
+        defer { busy = false }
+        do {
+            let t = try await API.open(pass: nil, fresh: false, practice: true)
+            path.append(Target(room: t.room, start: .practice))
+        } catch { problem = error.localizedDescription }
     }
 
     private func openCode(_ pass: String) {

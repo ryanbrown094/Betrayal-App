@@ -101,6 +101,7 @@ enum Page: String, Identifiable {
             "• 8 to 24 players. 8 to 16 is the sweet spot.",
             "• An evening: about 3 to 3½ hours for 8 to 12 players (half an hour to an hour more if you stop for dinner), about 4¼ hours for 16, and 5 to 6 for 20 and up.",
             "• A prize.",
+            "On your own, or learning the game? **Practice against bots** on the start screen: the bots play every part, and the Trials that need people in the room are left out.",
             "• A phone each, with The Betrayal app. A TV makes it a show, but it’s optional: AirPlay the host’s phone to it (the TV shows the game, never the phone’s screen), or open the app on an iPad connected to it and choose **Use this screen as the TV**.",
         ]),
     ]
@@ -111,14 +112,14 @@ enum Page: String, Identifiable {
         ("2. What you’re buying", [
             "Every game is played at a **Table**, an online game room. A Table can be played for **48 hours** from when it opens, then becomes read-only, and is deleted, with everything in it, 7 days after that. You can have one game open at a time with a pass: starting a new game closes the one that was open.",
             "• **A free game** costs nothing. It shows an advertisement between rounds, never while you play, and uses the base set of Trials and questions.",
-            "• **A Night Pass** is a code, which looks like OATH-XXXX-XXXX, for one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
+            "• **A Night Pass** is one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
             "• **The Host Pass** (a yearly subscription) gives you one code that makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
             "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. Passes bought in the app work only in the app. It is digital content: nothing is posted to you.",
             "To play, you need an internet connection and a phone with the app for each player; a TV is optional. We don’t supply these.",
         ]),
         ("3. Buying in the app", [
             "The price is shown in the app, in your currency, before you pay, and includes VAT where it applies. Payment is taken by Apple, through your Apple Account. We never see your card details, your name or your email address.",
-            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps its code on the phone you bought it on, under **Your passes**, and **Restore purchases** brings a Host Pass to another phone. Write it down too: if you lose the phone, contact us with the date of the purchase and the order ID from Apple’s receipt, and we’ll find it.",
+            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps it on the phone you bought it on, under **Your passes**, and uses it when you start a game. **Restore purchases** brings a Host Pass to your other devices. If you lose the phone with an unused Night Pass on it, contact us with the order ID from Apple’s receipt and we’ll restore it. Gift codes we give you are added under **Have a gift code?**.",
             "If a price is obviously wrong, we may cancel the purchase and have it refunded in full.",
         ]),
         ("4. The Host Pass: renewal and cancelling", [

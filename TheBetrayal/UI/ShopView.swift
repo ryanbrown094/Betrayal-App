@@ -61,10 +61,10 @@ struct BookCard: View {
     }
 }
 
-// the passes this phone has bought or opened a Table with, newest first, with what each can do now
+// the passes this phone holds, newest first, by name and what each can do now: their codes stay out of sight (the app
+// uses them itself), and one that's used up can be cleared away
 struct YourCodes: View {
     let open: (String) -> Void
-    @State private var copied: String?
     private var shop: Shop { Shop.shared }
 
     var body: some View {
@@ -72,39 +72,72 @@ struct YourCodes: View {
             VStack(alignment: .leading, spacing: 0) {
                 Label2("Your passes")
                 ForEach(shop.codes) { c in
+                    let (name, state, usable) = YourCodes.describe(c, shop.status[c.pass])
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(verbatim: c.pass).font(Theme.ui(20, .bold)).tracking(1.5).foregroundStyle(Theme.tallow).textSelection(.enabled)
-                            Text(copied == c.pass ? "Copied" : label(c))
-                                .font(Theme.sc(13)).tracking(0.6).foregroundStyle(Theme.tallow2)
+                            Text(name).font(Theme.ui(19, .bold)).foregroundStyle(usable ? Theme.tallow : Theme.tallow2)
+                            if let state { Text(state).font(Theme.sc(13)).tracking(0.6).foregroundStyle(Theme.tallow2) }
                         }
                         Spacer()
-                        Button("Open") { open(c.pass) }.btn(.ghost, .sm, fit: true)
+                        if usable { Button("Use") { open(c.pass) }.btn(.ghost, .sm, fit: true) }
+                        else { Button("Clear") { shop.forget(c) }.btn(.dark, .sm, fit: true) }
                     }
                     .padding(.vertical, 8)
                     .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
-                    .contextMenu {
-                        Button("Copy the code") { UIPasteboard.general.string = c.pass; copied = c.pass }
-                        Button("Forget this code", role: .destructive) { shop.forget(c) }
-                    }
                 }
-                Small("Touch and hold a code to copy it or forget it.").padding(.top, 8)
             }
-            .padding(.bottom, 14)
+            .padding(.vertical, 14)
         }
     }
 
-    private func label(_ c: SavedCodes.Code) -> String {
-        let name = c.sub == true ? "Host Pass" : c.sub == false ? "Night Pass" : "Pass"
-        guard let st = shop.status[c.pass] else { return name }
+    // (its name, its state, whether it would make a game ad-free now)
+    static func describe(_ c: SavedCodes.Code, _ st: API.CodeStatus?) -> (String, String?, Bool) {
+        let name = c.sub == true ? "Host Pass" : "Night Pass"
+        guard let st else { return (name, nil, true) }
         switch (st.kind, st.state) {
-        case ("night", "ready"): return "Night Pass · ready"
-        case ("night", "active"): return "Night Pass · ad-free until " + (st.until.map { $0.formatted(date: .omitted, time: .shortened) } ?? "tonight")
-        case ("night", "ended"): return "Night Pass · used"
-        case ("host", "active"): return "Host Pass"
-        case ("host", "lapsed"): return "Host Pass · lapsed"
-        case (_, "cancelled"): return name + " · cancelled"
-        default: return name
+        case ("night", "ready"): return ("Night Pass", "ready for a night", true)
+        case ("night", "active"): return ("Night Pass", "ad-free until " + (st.until.map { $0.formatted(date: .omitted, time: .shortened) } ?? "tonight"), true)
+        case ("night", "ended"): return ("Night Pass", "used", false)
+        case ("host", "active"): return ("Host Pass", st.until.map { "renews " + $0.formatted(date: .abbreviated, time: .omitted) }, true)
+        case ("host", "lapsed"): return ("Host Pass", "lapsed: renew it under Manage subscription", false)
+        case (_, "cancelled"): return (name, "cancelled", false)
+        default: return (name, nil, true)
+        }
+    }
+}
+
+// a code you've been given (codes the admin page makes): checked with the server, then kept with the phone's passes
+struct GiftCodeSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var code = ""
+    @State private var busy = false
+    @State private var problem: String?
+    var body: some View {
+        ScrollView {
+            Column {
+                HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
+                H1("A gift code")
+                Sub("Type the code you were given. It joins your passes on this phone.")
+                VStack(spacing: 10) {
+                    BookingField(text: $code) { add() }
+                    Button(busy ? "Checking…" : "Add it", action: add).btn(.fill).disabled(busy || code.count < 4)
+                }
+                if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
+            }
+        }
+        .background(Backdrop())
+    }
+    private func add() {
+        guard !busy, let pass = SavedCodes.shown(code) else { problem = "That isn’t a code. It looks like OATH-XXXX-XXXX."; return }
+        busy = true
+        Task {
+            let st = await API.codes([pass])[pass]
+            busy = false
+            guard let st else { problem = "That code isn’t one the app knows. Check it, and try again."; return }
+            SavedCodes.add(pass, sub: st.kind == "host")
+            Shop.shared.reload()
+            await Shop.shared.refresh()
+            dismiss()
         }
     }
 }
@@ -114,23 +147,21 @@ struct BoughtSheet: View {
     let bought: Shop.Bought
     let open: (String) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var copied = false
 
     var body: some View {
         ScrollView {
             Column {
-                Brand(mark: "booked")
+                Brand(mark: "ad-free")
                 Card(.hot, center: true) {
-                    Eyebrow(bought.sub ? "your host pass" : "your night pass")
-                    Text(verbatim: bought.pass).font(Theme.ui(30, .bold)).tracking(2).foregroundStyle(Theme.brass2).textSelection(.enabled).padding(.vertical, 10)
+                    Eyebrow("thank you")
+                    Text(bought.sub ? "Your Host Pass" : "Your Night Pass").font(Theme.book(30)).foregroundStyle(Theme.brass2).padding(.vertical, 10)
                     Sub(bought.sub
                         ? "Every game you host is ad-free while it’s active, with every Trial and the full question banks."
                         : "Its 24 hours start when you first use it: start a game with it, or use it on a free game from its lobby.")
                 }
-                Small("It’s saved on this phone, under Your passes. Write the code down or take a screenshot too.", center: true)
+                Small(bought.sub ? "It’s on this phone, under Your passes, and Restore purchases brings it to your other devices." : "It’s on this phone, under Your passes, ready when you are.", center: true)
                 VStack(spacing: 10) {
                     Button("Start an ad-free game now") { dismiss(); open(bought.pass) }.btn(.fill)
-                    Button(copied ? "Copied" : "Copy the code") { UIPasteboard.general.string = bought.pass; copied = true }.btn(.ghost)
                     Button("Later") { dismiss() }.btn(.dark, .sm)
                 }
             }
@@ -157,7 +188,6 @@ struct LockedTrial: View {
 struct UsePassSheet: View {
     let use: (String) async -> String?
     @Environment(\.dismiss) private var dismiss
-    @State private var code = ""
     @State private var busy = false
     @State private var problem: String?
     private var shop: Shop { Shop.shared }
@@ -172,10 +202,11 @@ struct UsePassSheet: View {
                 if !usable.isEmpty {
                     Label2("Your passes")
                     ForEach(usable) { c in
+                        let (name, state, _) = YourCodes.describe(c, shop.status[c.pass])
                         HStack(spacing: 12) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: c.pass).font(Theme.ui(20, .bold)).tracking(1.5).foregroundStyle(Theme.tallow)
-                                Text(c.sub == true ? "Host Pass" : "Night Pass").font(Theme.sc(13)).tracking(0.6).foregroundStyle(Theme.tallow2)
+                                Text(name).font(Theme.ui(19, .bold)).foregroundStyle(Theme.tallow)
+                                if let state { Text(state).font(Theme.sc(13)).tracking(0.6).foregroundStyle(Theme.tallow2) }
                             }
                             Spacer()
                             Button("Use") { go(c.pass) }.btn(.fill, .sm, fit: true).disabled(busy)
@@ -185,14 +216,9 @@ struct UsePassSheet: View {
                     }
                     Spacer().frame(height: 18)
                 }
-                Label2(usable.isEmpty ? "Type a pass’s code" : "Or type a pass’s code")
-                VStack(spacing: 10) {
-                    BookingField(text: $code) { go(code) }
-                    Button(busy ? "Using it…" : "Use this pass") { go(code) }.btn(.ghost).disabled(busy || code.count < 4)
-                }
                 if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
                 if shop.night != nil || shop.host != nil {
-                    Label2("Or buy one, and use it now").padding(.top, 22)
+                    Label2(usable.isEmpty ? "Buy one, and use it now" : "Or buy one, and use it now").padding(.top, usable.isEmpty ? 4 : 22)
                     VStack(spacing: 10) {
                         if let n = shop.night {
                             Button(shop.buying == n.id ? "Waiting for the App Store…" : "Night Pass, \(n.price)") { buyAndUse(n) }

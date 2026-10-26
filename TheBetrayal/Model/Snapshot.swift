@@ -5,6 +5,7 @@ import Foundation
 struct Snapshot {
     let raw: JSON
     let test: Bool
+    let practice: Bool // the app's practice game: one person and the bots
     let ver: Int
     let now: Double
     let phase: String
@@ -37,6 +38,7 @@ struct Snapshot {
         guard let phase = j["phase"].string else { return nil }
         raw = j
         test = j["test"].bool ?? false
+        practice = j["practice"].bool ?? false
         ver = j["ver"].int ?? 0
         now = j["now"].double ?? Date().timeIntervalSince1970 * 1000
         self.phase = phase

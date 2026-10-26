@@ -47,8 +47,8 @@ struct LobbyView: View {
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
                 LobbyOffer(v: v)
-                if v.test {
-                    Banner(.plain, "Test game: the bots play themselves, Trials score at random, and every countdown is ten seconds.")
+                if v.test || v.practice {
+                    Banner(.plain, v.practice ? "Practice game: the bots play every part themselves, and the clocks are short. Start when you’re ready." : "Test game: the bots play themselves, Trials score at random, and every countdown is ten seconds.")
                     Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14)
                 }
                 Card(.dir) {

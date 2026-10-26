@@ -31,6 +31,7 @@ final class Session {
     private(set) var busy = false
     private(set) var classic = false
     var pass: String?           // the booking code, for the host setting the Table up
+    var practice = false        // a practice game being set up: one person and the bots
     var rolePeek = false        // the role card is showing (the veil was tapped)
     var background = false      // the app is in the background: poll slowly
     private(set) var freshKey = "" // the screen's key: a new one fades the screen in

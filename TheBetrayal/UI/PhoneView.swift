@@ -139,12 +139,15 @@ struct CreateCard: View {
     let test: Bool
     @Environment(Session.self) private var session
     @State private var name = UserDefaults.standard.string(forKey: "bt-name") ?? ""
-    @State private var bots = 8
+    @State private var bots = 10
     var body: some View {
         Column {
-            Brand(mark: test ? "test game" : "modern")
+            Brand(mark: session.practice ? "practice" : test ? "test game" : "modern")
             Card {
-                if test {
+                if session.practice {
+                    H2("A practice game")
+                    Sub("Table \(session.room). You and the bots: they swear, play the Trials, vote, choose at night and trust by themselves, so you can play a whole game on your own. The Trials that need people in the room are left out.")
+                } else if test {
                     H2("A test game against bots")
                     Sub("Table \(session.room). You host, and the bots swear, vote, choose at night and trust by themselves. Trials give everyone a random score, and every countdown is ten seconds.")
                 } else {
@@ -156,14 +159,14 @@ struct CreateCard: View {
                 if test {
                     Spacer().frame(height: 10)
                     Label2("Players, you included")
-                    Picker("Players, you included", selection: $bots) { ForEach(8...24, id: \.self) { Text("\($0)").tag($0) } }
+                    Picker("Players, you included", selection: $bots) { ForEach(8...(session.practice ? 16 : 24), id: \.self) { Text("\($0)").tag($0) } }
                         .pickerStyle(.menu).tint(Theme.tallow)
                         .frame(maxWidth: .infinity, minHeight: 54, alignment: .leading).padding(.horizontal, 6)
                         .background(RoundedRectangle(cornerRadius: 4).fill(Theme.field))
                         .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.edge, lineWidth: 1))
                 }
                 Spacer().frame(height: 12)
-                Button(test ? "Start the test game" : "Open the Table", action: go).btn(.fill, .big)
+                Button(session.practice ? "Start the practice game" : test ? "Start the test game" : "Open the Table", action: go).btn(.fill, .big)
                 Msg()
             }
         }

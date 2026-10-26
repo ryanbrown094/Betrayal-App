@@ -60,9 +60,11 @@ enum API {
     struct Opened { let room: String; let test: Bool; let sub: Bool; let again: Bool; let kind: String?; let until: Date? }
     enum Mode { case unset, modern, classic }
 
-    static func open(pass: String?, fresh: Bool) async throws -> Opened {
+    // no pass: a free game, or a practice game (one person and the bots)
+    static func open(pass: String?, fresh: Bool, practice: Bool = false) async throws -> Opened {
         var body: [String: Any] = ["app": true, "fresh": fresh]
         if let pass { body["pass"] = pass }
+        if practice { body["practice"] = true }
         let r: Reply
         do { r = try await call("/api/games", body: body) } catch { throw Failure("Can’t reach the server. Check you’re online.") }
         guard r.ok, let room = r.json["room"].string else { throw Failure(r.error ?? "That didn’t work. Try again.") }

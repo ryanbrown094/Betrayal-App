@@ -26,7 +26,8 @@ phone for 7 days at a time. TestFlight and the App Store need the Apple Develope
 `uk.co.thebetrayal.app` (the old web-view app, since removed from the server repo, used the same one, so this replaces
 it on a phone).
 
-**To test on your own:** type the master passcode where a pass's code goes and choose **Play against bots**.
+**To test on your own:** **Practice against bots** on the start screen: one person and the bots, who play every part,
+Trials included. It's also how Apple's reviewer plays a whole game.
 
 **Buying, from Xcode:** the shared scheme runs the app with `Store.storekit` (Xcode's StoreKit testing: test prices,
 Apple's test purchase sheet, no money). The real server refuses those purchases ("only work on a development server")
@@ -46,6 +47,10 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   free game, with ads between rounds and the base Trials; a **Night Pass** (consumable) makes every game started in its
   24 hours ad-free with every Trial, and the **Host Pass** (yearly subscription) every game while it's paid. The app's
   codes are a pool of their own (every call to `/api/games` says `app: true`): website codes don't open Tables here.
+  Pass codes stay out of sight: **Your passes** lists each by name and state and the app uses it itself; a code you're
+  given (one minted on the admin page with `pool: "app"`) goes in under **Have a gift code?**. **Practice against
+  bots** opens a practice game (`practice: true`): the bots play every part and the Trials that need people in the
+  room are left out.
   Every response from an app-made Table carries its tier (`room.tier`), which `Model/Session.swift` keeps as `tier`.
 - **Ads in free games** (`Media/Ads.swift`), with Google's AdMob SDK (`GoogleMobileAds` through Swift Package Manager,
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
