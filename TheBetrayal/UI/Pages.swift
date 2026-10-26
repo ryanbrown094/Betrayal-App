@@ -10,7 +10,7 @@ enum Page: String, Identifiable {
 
     var title: String {
         switch self {
-        case .rules: return "How to play"
+        case .rules: return "The full rules"
         case .faq: return "FAQs"
         case .terms: return "Terms of sale and use"
         case .privacy: return "Privacy notice"

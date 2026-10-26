@@ -70,7 +70,7 @@ struct YourCodes: View {
     var body: some View {
         if !shop.codes.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                Label2("Your passes")
+                Label2("On this phone")
                 ForEach(shop.codes) { c in
                     let (name, state, usable) = YourCodes.describe(c, shop.status[c.pass])
                     HStack(spacing: 12) {

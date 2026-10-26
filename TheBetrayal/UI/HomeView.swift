@@ -237,7 +237,7 @@ struct HomeView: View {
 
     private var passesScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
-            H1("Passes")
+            H1("Your passes")
             if shop.codes.isEmpty { Sub("None on this phone yet. A pass you buy appears here.") }
             YourCodes(open: openCode)
             BookCard(open: openCode, show: { page = $0 })
