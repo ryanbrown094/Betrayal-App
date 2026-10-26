@@ -11,6 +11,7 @@ struct TheBetrayalApp: App {
     var body: some Scene {
         WindowGroup {
             Root()
+                .background(TVAccessory().frame(width: 0, height: 0))
                 .preferredColorScheme(.dark)
                 .tint(Theme.brass2)
                 .onOpenURL { url in AppModel.shared.link = Codes.room(in: url.absoluteString) }
@@ -110,6 +111,27 @@ final class ExternalDisplay: NSObject, UIWindowSceneDelegate {
     func sceneDidDisconnect(_ scene: UIScene) {
         window = nil
         AppModel.shared.externalConnected = false
+    }
+}
+
+// From iOS 27 (an app built with its SDK), a second display gets the app's own scene only while a view controller asks
+// for one, a scene accessory; before, the system offered it unasked, and without one it mirrors the phone. Asked for by
+// name, so the app still builds with the iOS 26 SDK: where the names aren't there (an earlier iOS), nothing happens.
+private struct TVAccessory: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> Host { Host() }
+    func updateUIViewController(_ vc: Host, context: Context) {}
+
+    final class Host: UIViewController {
+        private var registration: AnyObject? // kept for the app's life: the accessory lasts as long as it's held
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            let make = NSSelectorFromString("externalNonInteractiveSceneAccessoryWithConfiguration:"), register = NSSelectorFromString("registerSceneAccessory:")
+            guard registration == nil, let kind = NSClassFromString("UISceneAccessory") as AnyObject?, kind.responds(to: make), responds(to: register) else { return }
+            let tv = UISceneConfiguration(name: "TV", sessionRole: .windowExternalDisplayNonInteractive)
+            tv.delegateClass = ExternalDisplay.self
+            guard let accessory = kind.perform(make, with: tv)?.takeUnretainedValue() else { return }
+            registration = perform(register, with: accessory)?.takeUnretainedValue()
+        }
     }
 }
 
