@@ -22,7 +22,7 @@ on:
         type: string
         default: main
       qa:
-        description: "QA: a whole practice game on a small iPhone and on a large one with bigger text, every screen photographed"
+        description: "QA: a whole game hosted on a small iPhone, and one as a guest on a large one with bigger text, every screen photographed"
         type: boolean
         default: false
 
@@ -143,9 +143,10 @@ jobs:
             --shot "xcrun simctl io $UDID screenshot ../shots/{name}.png > /dev/null"
 
       # QA (by hand, with "qa"): the smallest iPhone (375 points wide) at the usual text size, and the big one with its
-      # text two sizes larger; on each, the start screen's screens, then a whole practice game as someone on their own
-      # plays it, every new screen photographed (-noatt: the simulator can't answer Apple's tracking question)
-      - name: QA, a whole practice game on a small iPhone and on a large one with bigger text
+      # text two sizes larger; on each, the start screen's screens, then a whole game, every new screen photographed:
+      # the small one hosting a practice game as someone on their own plays it, the big one a guest at a test game
+      # (-noatt: the simulator can't answer Apple's tracking question)
+      - name: QA, a whole game as the host on a small iPhone, as a guest on a large one with bigger text, and a stress game on an iPad TV
         if: env.SERVER_TOKEN != '' && inputs.qa
         run: |
           set -o pipefail
@@ -162,21 +163,37 @@ jobs:
           xcrun simctl status_bar "$SMALL" override --time 9:41 --batteryState charged --batteryLevel 100 || true
           xcrun simctl install "$SMALL" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
           xcrun simctl ui "$UDID" content_size extra-extra-large || echo "::warning::couldn't set the big phone's text size"
-          mkdir -p shots/qa-small shots/qa-big
+          # an iPad as the TV, for a stress game: a full Table of 24 (seven bots and seventeen scripted phones), with
+          # the night's trouble (ci/stress.py --chaos), photographed at each new screen
+          IPAD=$(xcrun simctl list devicetypes -j | python3 -c '
+          import json, sys
+          t = [x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPad-Pro" in x["identifier"] and "13" in x["identifier"]]
+          print(t[-1] if t else "")')
+          TV=$(xcrun simctl create qa-tv "$IPAD" "$RT" 2>/dev/null) || echo "::warning::no iPad simulator for the TV"
+          [ -n "$TV" ] && { xcrun simctl boot "$TV"; xcrun simctl bootstatus "$TV" -b; xcrun simctl install "$TV" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app; }
+          mkdir -p shots/qa-small shots/qa-big shots/qa-tv
           for d in small:$SMALL big:$UDID; do
             name=${d%%:*}; dev=${d#*:}
             snap() { xcrun simctl terminate "$dev" "$APP" 2>/dev/null || true; xcrun simctl launch "$dev" "$APP" "${@:2}" > /dev/null; sleep 5; xcrun simctl io "$dev" screenshot "shots/qa-$name/00-$1.png" > /dev/null; }
             snap home; snap join -screen join; snap tv -screen tv; snap host -shop -screen host; snap passes -shop -screen passes; snap intro -intro 0; snap faq -page faq
           done
           cd server
+          # the small phone hosts a practice game; the big one is a guest's phone at a test game (the host played by the script)
           for d in small:$SMALL big:$UDID; do
-            name=${d%%:*}; dev=${d#*:}
-            python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --practice --prefix "" --limit 1800 \
+            name=${d%%:*}; dev=${d#*:}; how=$([ "$name" = small ] && echo --practice || echo --guest)
+            python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST $how --prefix "" --limit 1800 \
               --launch "xcrun simctl terminate $dev $APP 2>/dev/null; xcrun simctl launch $dev $APP -server http://127.0.0.1:8790 -noatt -adclose -play {room} {tok} > /dev/null" \
               --shot "xcrun simctl io $dev screenshot ../shots/qa-$name/{name}.png > /dev/null" > ../shots/qa-$name/drive.log 2>&1 &
           done
+          if [ -n "$TV" ]; then
+            python3 ../ci/stress.py http://127.0.0.1:8790 --players 24 --chaos --master MASTERTEST --test --limit 1500 \
+              --launch "xcrun simctl launch $TV $APP -server http://127.0.0.1:8790 -watch {room} > /dev/null" \
+              --shot "xcrun simctl io $TV screenshot ../shots/qa-tv/{name}.png > /dev/null" > ../shots/qa-tv/stress.log 2>&1 &
+          fi
           wait
           tail -n 3 ../shots/qa-*/drive.log
+          sed -n '/^== requests/,$p' ../shots/qa-tv/stress.log 2>/dev/null || true
+          for f in ../shots/qa-tv/*.png; do [ -f "$f" ] && sips -s format jpeg -s formatOptions 60 "$f" --out "${f%.png}.jpg" > /dev/null && rm "$f"; done # (an iPad's screens are big)
           # each Table's device log, as /admin shows it: every device, and what kinds of event each sent
           for name in small big; do
             room=$(awk '/^room /{print $2; exit}' ../shots/qa-$name/drive.log)

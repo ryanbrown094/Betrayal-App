@@ -9,6 +9,7 @@ import SwiftUI
 //                      to Documents/store/*.png, then Documents/store/done (store/compose.py adds the captions)
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
+//   -watch ROOM        a Table as its TV (with -server URL)
 //   -shop [-nosaved]   the start screen with the passes priced as in Store.storekit, and two saved codes (or none:
 //                      App Review's screenshot of the passes)
 //   -screen NAME       the start screen's own screens (join, host, passes, tv), with or without -shop
@@ -50,6 +51,9 @@ enum Demo {
             let room = args[i + 1]
             UserDefaults.standard.set(args[i + 2], forKey: Session.tokKey(room))
             return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: room))) })
+        }
+        if let i = args.firstIndex(of: "-watch"), i + 1 < args.count {
+            return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: args[i + 1], start: .tv))) })
         }
         if let i = args.firstIndex(of: "-demo"), i + 1 < args.count, let s = session(args[i + 1], tv: args.contains("-tv")) {
             return AnyView(TableView(session: s))

@@ -5,8 +5,10 @@
 # handing over to someone else, a guest taken out mid-game, and every phone voting at the same instant. A TV polls too.
 # It checks, all the way: no server errors, no phone ever sees a role it shouldn't (only the Forsworn see each other;
 # a role shows when its player is out), every phone keeps its place, nothing waits for ever, and the game ends.
+# With --test (the master code's test game: ten-second clocks, bots filling the first seats), --launch opens a TV on the
+# Table and --shot photographs it at each new screen, as ci/drive.py does for a phone.
 #   python3 ci/stress.py http://127.0.0.1:8790 --players 24 --chaos
-import argparse, json, random, statistics, sys, threading, time, urllib.error, urllib.request, collections
+import argparse, json, random, statistics, subprocess, sys, threading, time, urllib.error, urllib.request, collections
 
 ap = argparse.ArgumentParser()
 ap.add_argument("base")
@@ -16,6 +18,9 @@ ap.add_argument("--master", default="", help="the master code: a test game (ten-
 ap.add_argument("--limit", type=float, default=3600, help="seconds before giving up")
 ap.add_argument("--stall", type=float, default=300, help="seconds on one screen that count as stuck")
 ap.add_argument("--seed", type=int, default=None)
+ap.add_argument("--test", action="store_true", help="with --master: a test game (ten-second clocks; bots take the first seats)")
+ap.add_argument("--launch", default="", help="command to open a TV on the Table; {room} is filled in")
+ap.add_argument("--shot", default="", help="command to photograph the TV; {name} is filled in")
 a = ap.parse_args()
 R = random.Random(a.seed)
 OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({})) # a local Worker, never the proxy
@@ -199,9 +204,11 @@ code, j = call("/api/games", body, kind="games")
 room = j.get("room")
 if not room: print("couldn't open a Table:", code, j); sys.exit(1)
 names = NAMES[:a.players]
-code, j = call(f"/api/g/{room}/m/create", {"name": names[0], "pass": ""}, kind="create")
+code, j = call(f"/api/g/{room}/m/create", {"name": names[0], "pass": "", **({"test": True, "bots": 8} if a.test else {})}, kind="create")
 if not j.get("tok"): print("couldn't set up the Table:", code, j); sys.exit(1)
 phones = [Phone(room, names[0], j["tok"])]
+names = names[:a.players - len(j["view"]["players"]) + 1] # (a test game's bots have taken some seats)
+if a.launch: subprocess.run(a.launch.format(room=room), shell=True)
 print(f"room {room} · {'test game' if a.master else 'free app game'} · {a.players} phones" + (" · chaos" if a.chaos else ""), flush=True)
 
 # everyone joins at once, plus some who shouldn't get in (a name already taken, one too many)
@@ -211,6 +218,7 @@ def join(n):
         with lock: phones.append(Phone(room, n, j["tok"]))
     return code, j
 ts = [threading.Thread(target=join, args=(n,)) for n in names[1:]]
+time.sleep(4 if a.launch else 0) # the TV's lobby, before everyone arrives
 for x in ts: x.start()
 for x in ts: x.join()
 code, j = call(f"/api/g/{room}/m/join", {"name": names[1].upper()}, kind="join")
@@ -219,7 +227,7 @@ if a.players >= 24:
     code, j = call(f"/api/g/{room}/m/join", {"name": "TwentyFifth"}, kind="join")
     if j.get("tok"): note("a 25th phone got in")
 print(f"{len(phones)} phones in", flush=True)
-if len(phones) != a.players: note(f"only {len(phones)} of {a.players} phones got in")
+if len(phones) != len(names): note(f"only {len(phones)} of {len(names)} phones got in")
 for p in phones: p.start()
 threading.Thread(target=tv, args=(room,), daemon=True).start()
 
@@ -245,6 +253,7 @@ def chaos(v):
         new = R.choice(guests); print(f"{time.time() - t0:7.1f}s  ~ {host.name} hands the host to {new.name}", flush=True)
         j = host.act({"a": "tool", "v": "host", "who": new.pid})
         if j.get("error"): note(f"hand-over refused: {j['error']}")
+        else: host = new; guests = [p for p in guests if p is not new]
     if rnd_ >= 3 and ph == "day" and host and len(guests) > 9 and once("remove"):
         p = R.choice(guests); print(f"{time.time() - t0:7.1f}s  ~ the host takes {p.name} out (gone home)", flush=True)
         p.removed = True; j = host.act({"a": "tool", "v": "remove", "who": p.pid})
@@ -264,7 +273,7 @@ def chaos(v):
         print(f"{time.time() - t0:7.1f}s  ~ {len(voters)} phones voted at once", flush=True)
 
 # ---- watch: the game moves on, and ends
-seen, last_key, since, phases = set(), None, time.time(), collections.Counter()
+seen, last_key, since, phases, shots = set(), None, time.time(), collections.Counter(), set()
 while time.time() - t0 < a.limit:
     alive_phones = [p for p in phones if p.v and p.tok]
     if not alive_phones: time.sleep(1); continue
@@ -274,6 +283,11 @@ while time.time() - t0 < a.limit:
     if key != last_key:
         last_key, since = key, time.time(); phases[v["phase"]] += 1
         print(f"{time.time() - t0:7.1f}s  {key}  purse {v['pot']}  {sum(1 for p in v['players'] if p['alive'])} in", flush=True)
+        # the TV at each new screen: each phase, and each Trial's stage (not every question)
+        shot_key = f"{v['phase']}-{t.get('key', '')}-{t.get('stage', '')}-{v['round']}"
+        if a.shot and shot_key not in shots:
+            shots.add(shot_key); time.sleep(2.5)
+            subprocess.run(a.shot.format(name=f"{len(shots):03d}-{v['phase']}" + (f"-{t.get('key')}-{t.get('stage')}" if t else "")), shell=True)
     elif time.time() - since > a.stall and not v.get("paused"):
         note(f"stuck on {key} for {int(time.time() - since)} s"); since = time.time()
     if a.chaos: chaos(v)
@@ -281,6 +295,8 @@ while time.time() - t0 < a.limit:
         time.sleep(8)
         r = v.get("result") or {}
         print(f"the end: {r.get('winner')} win · {len(r.get('to') or [])} share the prize", flush=True)
+        for p in phones: # a phone in a pocket at the end: out of the pocket, it should land on the end too
+            if p.tok and not p.removed and not p.seen_end: p.quiet_until = 0; p.poll(); p.seen_end = (p.v or {}).get("phase") == "end"
         behind = [p.name for p in phones if p.tok and not p.removed and not p.seen_end]
         if behind: note(f"phones that never saw the end: {behind}")
         break

@@ -42,7 +42,7 @@ struct HomeView: View {
     enum Question {
         case regular(room: String, pass: String) // a pass whose last game is still open
         case test(room: String, pass: String)    // the master code's test Table
-        case usePass(pass: String, host: Bool)   // starting a game with a pass on the phone
+        case usePass(pass: String, host: Bool, until: Date?) // starting a game with a pass on the phone (a Night Pass's end, once begun)
         var title: String {
             switch self {
             case .regular: return "You have a game open"
@@ -54,7 +54,10 @@ struct HomeView: View {
             switch self {
             case .regular: return "Carry on with it, or start a new one? A new game closes the one that’s open."
             case .test: return "Play Modern with real phones, or against bots that play by themselves."
-            case .usePass(_, let host): return host ? "Your Host Pass makes this game ad-free, with every Trial." : "Your Night Pass makes tonight ad-free, with every Trial. Its 24 hours start now."
+            case .usePass(_, let host, let until):
+                if host { return "Your Host Pass makes this game ad-free, with every Trial." }
+                if let until { return "Your Night Pass makes this game ad-free, with every Trial. Its 24 hours run until " + until.formatted(date: .omitted, time: .shortened) + "." }
+                return "Your Night Pass makes tonight ad-free, with every Trial. Its 24 hours start now."
             }
         }
     }
@@ -91,7 +94,7 @@ struct HomeView: View {
                 i.then?()
             }
         }
-        .alert("Booking", isPresented: Binding(get: { shop.problem != nil }, set: { if !$0 { shop.problem = nil } })) {
+        .alert("Your pass", isPresented: Binding(get: { shop.problem != nil }, set: { if !$0 { shop.problem = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(shop.problem ?? "") }
         .confirmationDialog(question?.title ?? "", isPresented: Binding(get: { question != nil }, set: { if !$0 { question = nil } }), titleVisibility: .visible, presenting: question) { q in
@@ -99,7 +102,7 @@ struct HomeView: View {
             case .regular(let room, let pass):
                 Button("Carry on") { Task { await go(room: room, pass: pass, test: false) } }
                 Button("Start a new game", role: .destructive) { Task { await open(pass: pass, fresh: true) } }
-            case .usePass(let pass, let host):
+            case .usePass(let pass, let host, _):
                 Button(host ? "Use my Host Pass" : "Use my Night Pass") { Task { await open(pass: pass, fresh: false) } }
                 Button("Start a free game instead") { Task { await open(pass: nil, fresh: false) } }
             case .test(let room, let pass):
@@ -248,9 +251,13 @@ struct HomeView: View {
     private var hostScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Host a game")
-            Sub("Start a Table, and everyone joins on their own phone with its code, you included. It stays open for 48 hours. Best with 8 to 16 players.")
-            Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big).disabled(busy)
-            Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
+            Sub("Start a Table on this phone. You play too, and your phone moves the evening on; everyone else joins on their own phone with the Table’s code. It stays open for 48 hours. Best with 8 to 16 players.")
+            Label2("Your name")
+            Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: startGame)
+            Spacer().frame(height: 10)
+            Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big)
+                .disabled(busy || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
+            Small("Free games show a short ad as each Reckoning opens and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
             Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { path.append(.passes) }.btn(.ghost)
         }
@@ -319,7 +326,13 @@ struct HomeView: View {
 
     // with a pass on the phone, the host is asked whether to use it tonight
     private func startGame() {
-        if let p = shop.usable.first { question = .usePass(pass: p.pass, host: p.sub == true) }
+        let name = playerName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, !busy else { return }
+        UserDefaults.standard.set(name, forKey: "bt-name")
+        if let p = shop.usable.first {
+            let st = shop.status[p.pass]
+            question = .usePass(pass: p.pass, host: p.sub == true, until: st?.state == "active" ? st?.until : nil)
+        }
         else { Task { await open(pass: nil, fresh: false) } }
     }
 

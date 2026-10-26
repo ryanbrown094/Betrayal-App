@@ -35,6 +35,7 @@ final class AppModel {
 
     private(set) var current: Session?   // the phone's own Table, as a player
     private(set) var externalTV: Session? // the same Table as the TV sees it, for a second display
+    private(set) var watching: Session?   // the Table this device is the TV of (an iPad or a spare phone): a second display shows it too
     var link: String?                      // a Table to join, from a link the app was opened with
     var externalConnected = false { didSet { sync() } }
     @ObservationIgnored private var sessions: [Target: Session] = [:]
@@ -44,8 +45,8 @@ final class AppModel {
         let s: Session
         switch t.start {
         case .play: s = Session(room: t.room)
-        case .named: s = Session(room: t.room); s.joinNow = true
-        case .create: s = Session(room: t.room, screen: .create(test: false), pass: t.pass)
+        case .named: s = Session(room: t.room); s.useSavedName = true
+        case .create: s = Session(room: t.room, screen: .create(test: false), pass: t.pass); s.useSavedName = true
         case .bots: s = Session(room: t.room, screen: .create(test: true), pass: t.pass)
         case .practice: s = Session(room: t.room, screen: .create(test: true)); s.practice = true
         case .tv: s = Session(room: t.room, screen: .tv)
@@ -54,10 +55,11 @@ final class AppModel {
         return s
     }
 
-    func opened(_ s: Session) { if !s.isTV { current = s; sync() } }
+    func opened(_ s: Session) { if s.isTV { watching = s } else { current = s; sync() } }
 
     func closed(_ s: Session) {
         if current === s { current = nil; sync() }
+        if watching === s { watching = nil }
         sessions = sessions.filter { $0.value !== s }
         Sound.shared.release(s)
     }
@@ -115,14 +117,14 @@ private struct ExternalTV: View {
     private let model = AppModel.shared
     var body: some View {
         ZStack {
-            if let tv = model.externalTV { TVView(external: true).environment(tv).id(tv.room) }
+            if let tv = model.externalTV ?? model.watching { TVView(external: true).environment(tv).id(tv.room) }
             else {
                 ZStack {
                     Backdrop(tv: true)
                     VStack(spacing: 18) {
                         Crest().frame(width: 140, height: 164).foregroundStyle(Theme.brass2)
                         Text("The Betrayal").font(Theme.disp(80, fixed: true)).foregroundStyle(Theme.brass2)
-                        Text("Join a Table on your phone, and its TV appears here.").font(Theme.ui(28, fixed: true)).foregroundStyle(Theme.tallow2)
+                        Text("Join a Table, or set this device up as its TV, and the game appears here.").font(Theme.ui(28, fixed: true)).foregroundStyle(Theme.tallow2)
                     }
                 }
             }

@@ -39,7 +39,7 @@ enum Page: String, Identifiable {
             "In between, you play party games for a shared Purse and for protection, you argue, you make alliances, and you lie to people you’ve known for years. A typical game lasts an hour or two. Play it with drinks and snacks.",
         ]),
         ("Joining", [
-            "The host starts a Table in The Betrayal app (free, or ad-free with a pass) and types their name. Everyone else opens The Betrayal app, types the six-character Table code (or scans the QR code on the TV) and their name. There’s no account to make. The TV is optional: without one, the host just reads the code out. When everyone’s in, the host taps **Start**.",
+            "The host starts a Table in The Betrayal app (free, or ad-free with a pass) and types their name. Everyone else opens The Betrayal app, types the six-character Table code (or scans its QR code, on the host’s phone or the TV) and their name. There’s no account to make. The TV is optional. When everyone’s in, the host taps **Start**.",
         ]),
         ("Who’s who", [
             "**The Loyal** are most of the table. They don’t know who anyone else is. Their job is to work out who the Forsworn are and vote them out, with nothing to go on but conversation, voting patterns and gut feeling.",
@@ -49,13 +49,13 @@ enum Page: String, Identifiable {
             "Nobody is told how many Forsworn there are. Players only find out as Forsworn are exiled and revealed.",
         ]),
         ("A round", [
-            "The game is played in rounds, planned from the size of the table so that the final starts with five or fewer. Each round goes like this:",
+            "The game is played in rounds, planned from the size of the table so that the final starts with five or fewer (sooner, if every Forsworn has been exiled). Each round goes like this:",
             "• **A Trial.** A party game played on the phones: a quiz, a guessing game, charades and so on (all of them are listed below). Each question closes by itself when everyone has answered or the clock runs out. Trials add to the Purse, and most give Sanctuary to the winner. Most tables open the evening with Most Likely To, as the icebreaker.",
             "• **The Reckoning.** A few minutes of open debate on a timer, then everyone votes on their phone, in secret. The vote closes when everyone’s in. The player with the most votes is exiled. A tie goes to a revote between the tied players; a second tie is settled by lot. At a table bigger than sixteen, there are two exiles.",
             "• **The reveal.** The exiled player’s role is shown: Forsworn or Loyal. They can type one last line for the TV on the way out.",
             "• **The night.** Heads down. The Forsworn choose a victim on their phones (two at a table of twelve or more, three at twenty or more). Everyone else taps someone too, so nobody at the table can tell who is choosing. The Forsworn can also whisper to each other in set phrases (“Vote with me tomorrow”). A player holding Sanctuary can’t be poisoned.",
             "• **Dawn.** The victim learns first, in secret on their phone. Then the host reveals the night to everyone. The victim was poisoned: they stand, announce it and get thirty seconds of last words, then leave the table. If the table voted them most likely to something, the TV remembers that too.",
-            "The host can call a short break whenever they like, or pause the game, which stops every clock, for the doorbell or a top-up. If someone is taken ill, the host can take them out of the game without anyone learning their role.",
+            "Between the parts of the evening, the host can call a short break; and at any time they can pause the game, which stops every clock, for the doorbell or a top-up. If someone is taken ill, the host can take them out of the game without anyone learning their role.",
         ]),
         ("The dead", [
             "Nobody goes home when they’re out. Exiled and poisoned players become **Ghosts**: they stay at the party and watch the game on their phones. They can’t vote, but at every Reckoning they can call who they think goes, and the table is told which Ghosts called it. In The Statue, the Ghosts do their worst to make the living laugh.",
@@ -71,11 +71,11 @@ enum Page: String, Identifiable {
             "• **The Confessor**, in the final: the winner of its Trial is told, privately, the name of a Forsworn still at the table.",
         ]),
         ("The Purse", [
-            "Every Trial adds to a shared Purse, up to its target: the better the table plays, the more goes in. The winners take it at the end: the Loyal take what they built, but the Forsworn take what it fell short of the target, so every point they quietly sabotage is theirs. Each wrong answer from a Forsworn costs the Purse, and the table hears how many there were, never whose. A Loyal player can guess freely, so a shrinking Purse is a clue.",
+            "Every Trial adds to a shared Purse, up to its target: the better the table plays, the more goes in. The winners take it at the end: the Loyal take what they built, but the Forsworn take what it fell short of the target, so every point they quietly sabotage is theirs. In Rapid Quiz, What Changed? and Snap, each wrong answer from a Forsworn costs the Purse 50 (up to half the Trial’s points), and the table hears how many there were, never whose. A Loyal player can guess freely, so a shrinking Purse is a clue.",
             "There is also **a prize**, chosen by the host: something worth lying to your friends for. If they don’t choose one, it’s chocolate coins, one for every 100 points the winners take from the Purse. The host can set better prizes for a fuller Purse, or, if the Forsworn win, an emptier one; the table knows the Purse decides the prize, but not what it is.",
         ]),
         ("The end game", [
-            "The last round is **the final**, with five or fewer at the table.",
+            "The last round is **the final**, with five or fewer at the table, or sooner if every Forsworn has been exiled.",
             "• **A last Trial**, for the Purse and perhaps something more. There’s no Sanctuary in the final, because there is no night left to survive.",
             "• **The Reckoning, without reveals.** The table votes a player out, but this time their role is not shown.",
             "• **Trust or Doubt.** With four or fewer left, each survivor chooses on their phone, in secret: TRUST if they believe every Forsworn is gone, DOUBT if not. Only a unanimous TRUST ends the game. Otherwise, it’s back to the Reckoning for another exile, and another vote.",
@@ -106,8 +106,8 @@ enum Page: String, Identifiable {
             "• 8 to 24 players. 8 to 16 is the sweet spot.",
             "• An hour or two: about an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24.",
             "• A prize.",
-            "On your own, or learning the game? **Practice against bots** on the start screen: the bots play every part, and the Trials that need people in the room are left out.",
-            "• A phone each, with The Betrayal app. A TV makes it a show, but it’s optional: AirPlay the host’s phone to it (the TV shows the game, never the phone’s screen), or open the app on an iPad connected to it and choose **Use this screen as the TV**.",
+            "On your own, or learning the game? **Practice against bots** on the start screen: the bots play every part, and the Trials that need people in the room are left out. A practice game is a free game, with ads.",
+            "• A phone each, with The Betrayal app. A TV makes it a show, but it’s optional: AirPlay the host’s phone to it (while the game is open, the TV shows the game, not the phone’s screen), or make an iPad or a spare phone the TV with **Set up a TV**, on the start screen.",
         ]),
     ]
 
@@ -116,17 +116,17 @@ enum Page: String, Identifiable {
         ("Does everyone need the app?", ["Yes: everyone plays on their own phone with The Betrayal app, the host included. There’s no account to make, and joining a game is always free."]),
         ("How long does a game take?", ["About an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24. A Table stays open for 48 hours, so you can set it up in the afternoon."]),
         ("What does it cost?", [
-            "Hosting is free. A free game shows an ad between rounds, never while you play, and plays 8 of the 15 Trials with half the questions.",
+            "Hosting is free. A free game shows a short ad on each phone as each Reckoning opens (from round 2) and at the end, never during a Trial or a vote, and a banner in the lobby; it plays 8 of the 15 Trials with half the questions.",
             "• A **Night Pass** makes one night ad-free, with every Trial and the full question banks: every game you start in the 24 hours after you first use it.",
             "• The **Host Pass**, a yearly subscription, makes every game you host ad-free, with every Trial.",
             "A pass is the host’s, and takes the ads away for everyone at the Table: guests never need one. The prices are under **Your passes**.",
         ]),
         ("Does the host get to play?", ["Yes. The host has a secret role like everyone else and never sees anyone else’s. Their phone also moves the evening on, beginning the next part or calling a break."]),
-        ("Do we need a TV?", ["No, but it makes it a show. AirPlay the host’s phone to it (the TV shows the game, never the phone’s screen), or open the app on an iPad connected to it and choose **Use this screen as the TV** under **Join a game**. Without a TV, the host just reads out the Table code."]),
-        ("Can I try it on my own?", ["Yes: **Practice against bots** on the start screen. The bots play every part, the clocks are short, and the Trials that need people in the room are left out."]),
-        ("What if the Wi-Fi drops?", ["Every phone reconnects by itself and picks up where it was: the game lives on our server, not on anyone’s phone. If someone’s battery dies, they join again on another phone, and the host lets them back in."]),
+        ("Do we need a TV?", ["No, but it makes it a show. AirPlay the host’s phone to it (while the game is open, the TV shows the game, not the phone’s screen), or make an iPad or a spare phone the TV with **Set up a TV**, on the start screen. Without a TV, everyone joins with the code on the host’s phone."]),
+        ("Can I try it on my own?", ["Yes: **Practice against bots** on the start screen. The bots play every part, the clocks are short, and the Trials that need people in the room are left out. A practice game is a free game: it shows ads, and a pass can’t be used on it."]),
+        ("What if the Wi-Fi drops?", ["Every phone reconnects by itself and picks up where it was: the game lives on our server, not on anyone’s phone. If someone’s battery dies, they join again on another phone, and the host lets them back in. If it’s the host’s, anyone at the Table can let the host back in, or, after two quiet minutes, take over as host."]),
         ("Who wins the Purse?", ["The Loyal, if they win, share the Purse they built. The Forsworn, if they win, take what it **fell short** of its target, so every point they quietly sabotage is theirs."]),
-        ("I have a new phone. Where’s my pass?", ["A Host Pass comes back with **Restore purchases**, under **Your passes**. If you lose a phone with an unused Night Pass on it, email us the order ID from Apple’s receipt and we’ll restore it."]),
+        ("I have a new phone. Where’s my pass?", ["A Host Pass comes back with **Restore purchases**, under **Your passes**. A Night Pass stays on the phone that bought it: if you lose a phone with an unused one on it, Apple can refund it at reportaproblem.apple.com."]),
         ("How do I cancel the Host Pass?", ["With **Manage subscription** under **Your passes**, or in your Apple Account’s subscriptions in Settings, at any time up to 24 hours before the end of the year. It keeps working until the end of the year you’ve paid for."]),
         ("I saw an ad that shouldn’t be there.", ["Please tell us with **Report an ad** at the foot of the start screen, or email us: what it showed, and roughly when. We’ll have it blocked."]),
         ("Who is it for?", ["Adults, at a party or a night in: it has themes of secrecy, betrayal and make-believe poisoning. Anyone under 18 should only play with a parent or guardian’s agreement."]),
@@ -137,22 +137,22 @@ enum Page: String, Identifiable {
         ("1. Who we are", ["The Betrayal is an independent business based in England. You can contact us at info@thebetrayal.co.uk."]),
         ("2. What you’re buying", [
             "Every game is played at a **Table**, an online game room. A Table can be played for **48 hours** from when it opens, then becomes read-only, and is deleted, with everything in it, 7 days after that. You can have one game open at a time with a pass: starting a new game closes the one that was open.",
-            "• **A free game** costs nothing. It shows an advertisement between rounds, never while you play, and uses the base set of Trials and questions.",
+            "• **A free game** costs nothing. It shows advertisements (a short one on each phone as each Reckoning opens, from round 2, and at the end, and a banner in the lobby), never during a Trial or a vote, and uses the base set of Trials and questions. A practice game is a free game.",
             "• **A Night Pass** is one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
-            "• **The Host Pass** (a yearly subscription) gives you one code that makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
+            "• **The Host Pass** (a yearly subscription) makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
             "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. A pass works only for Tables you host in this app. It is digital content: nothing is posted to you.",
             "To play, you need an internet connection and a phone with the app for each player; a TV is optional. We don’t supply these.",
         ]),
         ("3. Buying in the app", [
             "The price is shown in the app, in your currency, before you pay, and includes VAT where it applies. Payment is taken by Apple, through your Apple Account. We never see your card details, your name or your email address.",
-            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps it on the phone you bought it on, under **Your passes**, and uses it when you start a game. **Restore purchases** brings a Host Pass to your other devices. If you lose the phone with an unused Night Pass on it, contact us with the order ID from Apple’s receipt and we’ll restore it.",
+            "Your contract with us starts when Apple confirms your payment and your pass is shown to you. The app keeps it on the phone you bought it on, under **Your passes**, and uses it when you start a game. **Restore purchases** brings a Host Pass to your other devices. A Night Pass stays on the phone it was bought on: if you lose that phone before using it, Apple can refund it (see 5).",
             "If a price is obviously wrong, we may cancel the purchase and have it refunded in full.",
         ]),
         ("4. The Host Pass: renewal and cancelling", [
-            "The Host Pass renews automatically every year, at the price you agreed when you subscribed, and Apple takes the payment from your Apple Account, unless you cancel at least 24 hours before the end of the year. Cancel at any time in your Apple Account’s subscriptions (in Settings, or **Manage subscription** in the app). Cancelling stops future payments; your code keeps working until the end of the year you’ve paid for. If a payment fails, the code stops opening new games until it’s paid. If the price changes, Apple tells you before it takes effect, and you can cancel first.",
+            "The Host Pass renews automatically every year, at the price you agreed when you subscribed, and Apple takes the payment from your Apple Account, unless you cancel at least 24 hours before the end of the year. Cancel at any time in your Apple Account’s subscriptions (in Settings, or **Manage subscription** in the app). Cancelling stops future payments; your Host Pass keeps working until the end of the year you’ve paid for. If a payment fails, it stops opening new games until it’s paid. If the price changes, Apple tells you before it takes effect, and you can cancel first.",
         ]),
         ("5. Refunds and your right to cancel", [
-            "Purchases in the app are refunded by Apple: ask at reportaproblem.apple.com. If Apple refunds a Night Pass whose 24 hours haven’t started, its code is cancelled. You normally have 14 days to cancel a purchase of digital content, but you lose that right once the content is supplied; a pass is supplied as soon as you’ve paid. Apple’s own terms may give you more.",
+            "Purchases in the app are refunded by Apple: ask at reportaproblem.apple.com. If Apple refunds a Night Pass whose 24 hours haven’t started, the pass is cancelled. You normally have 14 days to cancel a purchase of digital content, but you lose that right once the content is supplied; a pass is supplied as soon as you’ve paid. Apple’s own terms may give you more.",
         ]),
         ("6. If something goes wrong", [
             "The Consumer Rights Act 2015 says digital content must be as described, fit for purpose and of satisfactory quality. If the game doesn’t work as it should and we can’t fix it within a reasonable time, you are entitled to a repair, a replacement pass, or a refund. Contact us to ask. Nothing in these terms affects your legal rights.",

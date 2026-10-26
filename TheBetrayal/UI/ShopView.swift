@@ -186,7 +186,7 @@ struct UsePassSheet: View {
             Column {
                 HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
                 H1("Make tonight ad-free")
-                Sub("A pass takes the ads away for everyone at this Table, and adds every Trial and the full question banks from the next Trial on. A Night Pass’s 24 hours start now.")
+                Sub("A pass takes the ads away for everyone at this Table, and adds every Trial and the full question banks from the next Trial on. A Night Pass’s 24 hours start the first time it’s used.")
                 if !usable.isEmpty {
                     Label2("Your passes")
                     ForEach(usable) { c in

@@ -51,7 +51,7 @@ struct LobbyView: View {
                 LobbyOffer(v: v)
                 if v.test || v.practice {
                     Banner(.plain, v.practice ? "Practice game: the bots play every part themselves, and the clocks are short. Start when you’re ready." : "Test game: the bots play themselves, Trials score at random, and every countdown is ten seconds.")
-                    Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14)
+                    if n < (v.practice ? 16 : 24) { Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14) }
                 }
                 Card(.dir) {
                     H2("Before you start", sec: true, first: true)
@@ -60,7 +60,7 @@ struct LobbyView: View {
                     Small(o?.shield == "public" ? "Everyone sees who won Sanctuary." : "Only the winner knows they hold Sanctuary. (A Forsworn winner gets nothing, and learns so.)").padding(.top, 6)
                     Label2("The prize")
                     Field(placeholder: "", text: $prize, max: 80, submit: sendPrize).focused($focus, equals: "prize")
-                    if o?.coins == true { Small("Every 100 points in the Purse is one chocolate coin.").padding(.top, 6) }
+                    if o?.coins == true { Small("One chocolate coin for every 100 points the winners take from the Purse.").padding(.top, 6) }
                     More("Better prizes for a fuller Purse", open: !(o?.prizes.isEmpty ?? true)) {
                         Small("Optional. If the Forsworn win it works the other way: half empty wins them the better prize, empty the best. Nobody sees these until the end.")
                         Label2("At a half-full Purse")
@@ -75,7 +75,7 @@ struct LobbyView: View {
                     // a practice game can't be made ad-free: a pass is for a real night
                     if !v.locked.isEmpty && !v.practice {
                         Label2("Trials").padding(.top, 12)
-                        Small("A free game plays 8 of the 15 Trials, with half the questions, and shows an ad between rounds. A pass takes the ads away for everyone and adds:").padding(.top, 2)
+                        Small("A free game plays 8 of the 15 Trials, with half the questions, and shows ads. A pass takes the ads away for everyone and adds:").padding(.top, 2)
                         Flow(spacing: 6) { ForEach(v.locked, id: \.self) { LockedTrial(title: $0) } }.padding(.bottom, 10)
                         Button("Make it ad-free with a pass") { passing = true }.btn(.ghost, .sm, fit: true)
                     }

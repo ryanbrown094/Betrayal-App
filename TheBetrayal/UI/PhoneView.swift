@@ -36,7 +36,7 @@ struct TableView: View {
         case .join: ScrollView { JoinCard(back: { dismiss() }) }.scrollDismissesKeyboard(.interactively)
         case .create(let test): ScrollView { CreateCard(test: test) }.scrollDismissesKeyboard(.interactively)
         case .choose: ScrollView { ChooseCard() }
-        case .wait: ScrollView { Notice(title: "Asking the host…", text: "The game has started. The host’s phone will ask them to let you back in.") }
+        case .wait: ScrollView { Notice(title: "Asking to come back in…", text: "The game has started, so someone lets you back in: the host, from their phone. If you’re the host, anyone at the Table can, once your old phone has been quiet for half a minute.") }
         case .nogame:
             ScrollView {
                 Notice(title: session.classic ? "Not a Table for the app" : "Not open yet",
@@ -306,6 +306,7 @@ struct PlayView: View {
 
     @ViewBuilder private func game(_ v: Snapshot, _ me: Me) -> some View {
         ForEach(session.rejoin) { r in RejoinCard(r: r) }
+        if session.hostGone { TakeOverCard(v: v) }
         if !me.alive && !["lobby", "oath", "roles", "end", "dawn", "reveal"].contains(v.phase) && v.trial?.key != "statue" {
             Banner(.ghost, icon: "ghost", "You’re a Ghost. You still watch, cheer and call it at the Reckoning, but you don’t vote or play.")
         }
@@ -460,6 +461,22 @@ struct RejoinCard: View {
     }
 }
 
+// the host's phone has been quiet for two minutes (flat, lost, gone home): anyone at the Table can take over, or the
+// game would wait for ever on the one phone that moves it on
+struct TakeOverCard: View {
+    let v: Snapshot
+    @Environment(Session.self) private var session
+    var body: some View {
+        let host = v.director?.name ?? "The host"
+        Card(.hot) {
+            Para(b(host) + Text("’s phone has gone quiet. If they can’t come back, someone can take over as host and move the evening on."))
+            Button("Take over as host") {
+                session.confirm("Take over as host?", yes: "Take over") { session.act("takeover") }
+            }.btn(.fill, .sm)
+        }
+    }
+}
+
 // the host stopped the clocks: everything waits, and nothing can be answered, until they carry on
 struct PauseBox: View {
     let v: Snapshot
@@ -482,7 +499,10 @@ struct PauseBox: View {
                 }
                 // requests to come back in: the host's, and, once the host's phone has gone quiet, the host's own request
                 // on everyone's (the server sends each phone only those it may answer)
-                if !tv && !session.demo { ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18) }
+                if !tv && !session.demo {
+                    ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18)
+                    if session.hostGone, let v = session.view { TakeOverCard(v: v).multilineTextAlignment(.leading).padding(.top, 18) }
+                }
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: tv ? vh * 140 : 420)
