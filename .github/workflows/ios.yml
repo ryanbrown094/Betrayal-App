@@ -21,6 +21,10 @@ on:
         description: "The server repo's branch to play against"
         type: string
         default: main
+      qa:
+        description: "QA: a whole practice game on a small iPhone and on a large one with bigger text, every screen photographed"
+        type: boolean
+        default: false
 
 concurrency:
   group: ios-${{ github.ref }}
@@ -106,6 +110,7 @@ jobs:
           done
 
       - name: Every moment, drawn offscreen
+        if: ${{ !inputs.qa }}
         run: |
           xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
           xcrun simctl launch "$UDID" "$APP" -render-all > /dev/null
@@ -115,6 +120,7 @@ jobs:
           for f in "$DATA"/Documents/shots/*.png; do sips -s format jpeg -s formatOptions 70 "$f" --out "shots/render/$(basename "${f%.png}").jpg" > /dev/null; done
 
       - name: The App Store's pictures, drawn offscreen
+        if: ${{ !inputs.qa }}
         run: |
           xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
           xcrun simctl launch "$UDID" "$APP" -render-store > /dev/null
@@ -133,6 +139,42 @@ jobs:
           python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --rounds ${{ inputs.full && '0' || '1' }} \
             --launch "xcrun simctl terminate $UDID $APP 2>/dev/null; xcrun simctl launch $UDID $APP -server http://127.0.0.1:8790 -play {room} {tok} > /dev/null" \
             --shot "xcrun simctl io $UDID screenshot ../shots/{name}.png > /dev/null"
+
+      # QA (by hand, with "qa"): the smallest iPhone (375 points wide) at the usual text size, and the big one with its
+      # text two sizes larger; on each, the start screen's screens, then a whole practice game as someone on their own
+      # plays it, every new screen photographed (-noatt: the simulator can't answer Apple's tracking question)
+      - name: QA, a whole practice game on a small iPhone and on a large one with bigger text
+        if: env.SERVER_TOKEN != '' && inputs.qa
+        run: |
+          set -o pipefail
+          # the last step's Worker, or a fresh one
+          curl -sf -o /dev/null http://127.0.0.1:8790/ || { (cd server && CI=true WRANGLER_SEND_METRICS=false npx wrangler dev --port 8790 --ip 127.0.0.1 --var ADMIN_TOKEN:dev --var MASTER_PASS:MASTERTEST --var SITE_PASSWORD: > wrangler-qa.log 2>&1 &)
+            for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:8790/ && break; sleep 2; done; }
+          RT=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          r = [x for x in json.load(sys.stdin)["runtimes"] if x["identifier"].split(".")[-1].startswith("iOS") and x["isAvailable"]]
+          print(sorted(r, key=lambda x: [int(n) for n in x["version"].split(".")])[-1]["identifier"])')
+          SMALL=$(xcrun simctl create qa-small com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation "$RT" 2>/dev/null \
+            || xcrun simctl create qa-small com.apple.CoreSimulator.SimDeviceType.iPhone-13-mini "$RT")
+          xcrun simctl boot "$SMALL"; xcrun simctl bootstatus "$SMALL" -b
+          xcrun simctl status_bar "$SMALL" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+          xcrun simctl install "$SMALL" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
+          xcrun simctl ui "$UDID" content_size extra-extra-large || echo "::warning::couldn't set the big phone's text size"
+          mkdir -p shots/qa-small shots/qa-big
+          for d in small:$SMALL big:$UDID; do
+            name=${d%%:*}; dev=${d#*:}
+            snap() { xcrun simctl terminate "$dev" "$APP" 2>/dev/null || true; xcrun simctl launch "$dev" "$APP" "${@:2}" > /dev/null; sleep 5; xcrun simctl io "$dev" screenshot "shots/qa-$name/00-$1.png" > /dev/null; }
+            snap home; snap join -screen join; snap host -shop -screen host; snap passes -shop -screen passes; snap intro -intro 0; snap faq -page faq
+          done
+          cd server
+          for d in small:$SMALL big:$UDID; do
+            name=${d%%:*}; dev=${d#*:}
+            python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --practice --prefix "" --limit 1800 \
+              --launch "xcrun simctl terminate $dev $APP 2>/dev/null; xcrun simctl launch $dev $APP -server http://127.0.0.1:8790 -noatt -play {room} {tok} > /dev/null" \
+              --shot "xcrun simctl io $dev screenshot ../shots/qa-$name/{name}.png > /dev/null" > ../shots/qa-$name/drive.log 2>&1 &
+          done
+          wait
+          tail -n 3 ../shots/qa-*/drive.log
 
       - name: Build (Release)
         run: >

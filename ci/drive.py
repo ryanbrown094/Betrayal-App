@@ -1,6 +1,7 @@
 # A whole Modern game against bots on a local Worker, with the host played from here and the app showing the host's
 # phone: the CI photographs the simulator at each new screen. The bots and the ten-second clocks of a test game
-# (worker/src/modern.js, the master passcode's room) do the rest.
+# (worker/src/modern.js, the master passcode's room) do the rest; with --practice, the app's practice game instead (a
+# free room, the bots answering the Trials too, thirty-second clocks), as someone on their own plays it.
 #   python3 ci/drive.py http://127.0.0.1:8790 MASTERTEST --launch "CMD {room} {tok}" --shot "CMD {name}"
 import argparse, json, random, subprocess, sys, time, urllib.request
 
@@ -11,6 +12,8 @@ ap.add_argument("--shot", default="", help="command to photograph the app; {name
 ap.add_argument("--players", type=int, default=10)
 ap.add_argument("--limit", type=float, default=900, help="seconds before giving up")
 ap.add_argument("--rounds", type=int, default=0, help="stop once this many rounds are over (0: play to the end)")
+ap.add_argument("--practice", action="store_true", help="the app's practice game, not the master code's test game")
+ap.add_argument("--prefix", default="e2e-", help="the pictures' names start with this")
 a = ap.parse_args()
 
 def call(path, body=None, tok=None):
@@ -20,7 +23,7 @@ def call(path, body=None, tok=None):
         with urllib.request.urlopen(req, timeout=15) as r: return json.loads(r.read() or b"{}")
     except urllib.error.HTTPError as e: return json.loads(e.read() or b"{}")
 
-room = call("/api/games", {"pass": a.master})["room"]
+room = call("/api/games", {"app": True, "practice": True} if a.practice else {"pass": a.master})["room"]
 made = call(f"/api/g/{room}/m/create", {"name": "Ryan", "pass": "", "test": True, "bots": a.players})
 tok = made["tok"]
 print("room", room, "host token", tok[:6] + "…", flush=True)
@@ -41,7 +44,7 @@ while time.time() - start < a.limit:
     key = ph + "." + str(t.get("stage", "")) + str(t.get("i", "")) + str(it.get("stage", "")) + str(v.get("round"))
     if key != last:
         last = key; n += 1
-        name = f"e2e-{n:02d}-{ph}" + (f"-{t.get('key')}-{t.get('stage')}" if t else "")
+        name = f"{a.prefix}{n:02d}-{ph}" + (f"-{t.get('key')}-{t.get('stage')}" if t else "") + (f"-{it.get('stage')}" if it.get("stage") else "")
         time.sleep(2.5) # the app polls every 1.2 s
         if a.shot and key not in seen: subprocess.run(a.shot.format(name=name), shell=True)
         seen.add(key)
@@ -71,7 +74,7 @@ while time.time() - start < a.limit:
     elif ph == "honour" and me.get("role") == "f" and me["alive"] and not v["honour"].get("mine"): act({"a": "honour", "v": "honour"})
     elif ph == "end":
         print("the end:", v["result"]["winner"], "win · prize", v["result"]["prize"], flush=True)
-        if a.shot: time.sleep(2.5); subprocess.run(a.shot.format(name=f"e2e-{n + 1:02d}-end-final"), shell=True)
+        if a.shot: time.sleep(2.5); subprocess.run(a.shot.format(name=f"{a.prefix}{n + 1:02d}-end-final"), shell=True)
         sys.exit(0)
     time.sleep(1.5)
 print("gave up at", last, file=sys.stderr); sys.exit(1)

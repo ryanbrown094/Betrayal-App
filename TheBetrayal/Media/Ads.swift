@@ -39,7 +39,12 @@ final class Ads {
             let consent = ConsentInformation.shared
             try? await consent.requestConsentInfoUpdate(with: RequestParameters())
             if let vc = Ads.top() { try? await ConsentForm.loadAndPresentIfRequired(from: vc) }
-            if ATTrackingManager.trackingAuthorizationStatus == .notDetermined { _ = await ATTrackingManager.requestTrackingAuthorization() }
+            #if DEBUG
+            let ask = !ProcessInfo.processInfo.arguments.contains("-noatt") // the CI's simulator can't answer Apple's question
+            #else
+            let ask = true
+            #endif
+            if ask, ATTrackingManager.trackingAuthorizationStatus == .notDetermined { _ = await ATTrackingManager.requestTrackingAuthorization() }
             guard consent.canRequestAds else { return }
             _ = await MobileAds.shared.start()
             ready = true
