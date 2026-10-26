@@ -116,8 +116,8 @@ struct AdsConfig: Equatable {
     init?(_ j: JSON) {
         guard !j.isNull else { return nil }
         enabled = j["enabled"].bool ?? false
-        minGap = j["interstitialMinGapSec"].double ?? 240
-        maxPerRoom = j["interstitialMaxPerRoom"].int ?? 4
+        minGap = j["interstitialMinGapSec"].double ?? 0
+        maxPerRoom = j["interstitialMaxPerRoom"].int ?? 30
         afterRound = j["firstInterstitialAfterRound"].int ?? 1
         banner = j["bannerEnabled"].bool ?? true
     }

@@ -59,7 +59,7 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
   consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
   on a player's phone at the Reckoning's debate from the second round (minutes when nobody needs their phone), and on
-  the results, on the host's phone too but never the TV, at most once a break, four minutes apart and four a game (the
+  the results, on the host's phone too but never the TV, once a break, with no gap or cap beyond that (the
   server sends these limits, and
   `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
