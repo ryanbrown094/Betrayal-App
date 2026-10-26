@@ -44,6 +44,7 @@ final class Session {
     @ObservationIgnored private var buzzEnd: Double = 0
     @ObservationIgnored private var cueKey = ""
     @ObservationIgnored private var tickKey = ""
+    @ObservationIgnored private var adKeys: Set<String> = [] // the breaks this phone has had its chance of an ad at
     @ObservationIgnored var demo = false // a Debug build showing a recorded moment: no polling, no sound
 
     var isTV: Bool { screen == .tv }
@@ -134,6 +135,7 @@ final class Session {
         if let n = j["now"].double { off = n - local }
         if let v = Snapshot(j["view"]) { view = v; off = v.now - local; changed() }
         if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
+        if tier.tier == "free", tier.ads?.enabled == true, !isTV, !demo { Ads.shared.prepare() }
         if !j["rejoin"].isNull { rejoin = j["rejoin"].array.compactMap { r in r["id"].string.map { Rejoin(id: $0, name: r["name"].string ?? "?") } } }
         else if !j["view"].isNull { rejoin = [] }
         if !j["peek"].isNull { peekList = j["peek"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? false) } }
@@ -250,6 +252,21 @@ final class Session {
         if Sound.shared.follows(self) {
             Sound.shared.scene(v.scene)
             if v.cueKey != cueKey { cueKey = v.cueKey; Sound.shared.cue(v.cueSound) }
+        }
+        adMoment(v)
+    }
+
+    // a free game's natural breaks, on a player's phone (never the host's, which runs the game, nor the TV): the start
+    // of each new round from the second, and the results once they've been seen
+    private func adMoment(_ v: Snapshot) {
+        guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, let me = v.me, !me.director else { return }
+        let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
+        guard !key.isEmpty, !adKeys.contains(key) else { return }
+        adKeys.insert(key)
+        let phase = v.phase
+        Task {
+            try? await Task.sleep(for: .seconds(phase == "end" ? 8 : 1.5))
+            if view?.phase == phase && view?.paused == nil { Ads.shared.interstitial(room: room, limits: limits) }
         }
     }
 

@@ -95,11 +95,29 @@ struct Tier: Equatable {
     let tier: String
     let adFree: Bool
     let content: String
-    static let full = Tier(tier: "full", adFree: true, content: "all")
-    private init(tier: String, adFree: Bool, content: String) { self.tier = tier; self.adFree = adFree; self.content = content }
+    let ads: AdsConfig? // a free game's: whether ads show, and their limits
+    static let full = Tier(tier: "full", adFree: true, content: "all", ads: nil)
+    private init(tier: String, adFree: Bool, content: String, ads: AdsConfig?) { self.tier = tier; self.adFree = adFree; self.content = content; self.ads = ads }
     init?(_ j: JSON) {
         guard let t = j["tier"].string else { return nil }
-        self.init(tier: t, adFree: j["adFree"].bool ?? true, content: j["content"].string ?? "all")
+        self.init(tier: t, adFree: j["adFree"].bool ?? true, content: j["content"].string ?? "all", ads: AdsConfig(j["ads"]))
+    }
+}
+
+// the server's adsConfig (tiers.js), so the limits change without an app update
+struct AdsConfig: Equatable {
+    let enabled: Bool
+    let minGap: Double   // seconds between interstitials on one phone
+    let maxPerRoom: Int
+    let afterRound: Int  // none before the round after this one
+    let banner: Bool
+    init?(_ j: JSON) {
+        guard !j.isNull else { return nil }
+        enabled = j["enabled"].bool ?? false
+        minGap = j["interstitialMinGapSec"].double ?? 240
+        maxPerRoom = j["interstitialMaxPerRoom"].int ?? 4
+        afterRound = j["firstInterstitialAfterRound"].int ?? 1
+        banner = j["bannerEnabled"].bool ?? true
     }
 }
 

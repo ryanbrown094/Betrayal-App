@@ -47,6 +47,18 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   24 hours ad-free with every Trial, and the **Host Pass** (yearly subscription) every game while it's paid. The app's
   codes are a pool of their own (every call to `/api/games` says `app: true`): website codes don't open Tables here.
   Every response from an app-made Table carries its tier (`room.tier`), which `Model/Session.swift` keeps as `tier`.
+- **Ads in free games** (`Media/Ads.swift`), with Google's AdMob SDK (`GoogleMobileAds` through Swift Package Manager,
+  13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
+  consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
+  on a player's phone at the start of each new round from the second, and on the results, never on the host's phone
+  or the TV, at most once a break, four minutes apart and four a game (the server sends these limits, and
+  `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
+  player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
+  Google's form where the law asks for it.
+  - **Before release:** the app uses Google's demo app ID (`GADApplicationIdentifier` in `Info.plist`) and demo ad
+    units. Make the app in AdMob, put its app ID there and its two ad units in `Info.plist` as `BTAdBanner` and
+    `BTAdInterstitial`; in AdMob's Privacy & messaging, publish a GDPR message (and an IDFA explainer if wanted); add
+    Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's own is there now).
 - **Buying passes** (`Model/Shop.swift`, `UI/ShopView.swift`): Apple's in-app purchase, at the App Store's price. Each
   purchase goes to `POST /api/appstore/claim`, which checks it with Apple and returns its code (the server repo's
   HANDOVER §6.2a); only then does the app finish the purchase, so a code is never lost to a dropped connection

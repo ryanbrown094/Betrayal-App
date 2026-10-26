@@ -152,7 +152,7 @@ enum Page: String, Identifiable {
     ]
 
     private static let privacyText: [(String, [String])] = [
-        ("", ["This notice explains what personal information The Betrayal collects when you use the app, why, and what your rights are. We collect as little as we can: there are no accounts, no advertising and no tracking."]),
+        ("", ["This notice explains what personal information The Betrayal collects when you use the app, why, and what your rights are. We collect as little as we can: there are no accounts. Free games show ads from Google, as described below; games with a pass show none."]),
         ("Who is responsible for your data", ["The Betrayal is the controller of your personal data under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018. Contact us at info@thebetrayal.co.uk."]),
         ("What we collect, and why", [
             "• **Purchases in the app.** Apple takes the payment, so we never receive your name, email address or card. Apple gives us the purchase’s references, the product, the price and currency, the country of your App Store, and whether a Host Pass is active. *Why:* to give you your pass, keep a Host Pass working while it’s paid, handle refunds and keep our accounts. *Lawful basis:* contract; legal obligation (tax records). *How long:* 6 years after the purchase, as UK tax law requires.",
@@ -165,15 +165,17 @@ enum Page: String, Identifiable {
         ("On your phone", [
             "The app keeps a few things on the phone itself, so it can take you back to your game: the name you last played under, your place at each Table you’ve joined, your last Table, and the passes you’ve bought or used. They never leave the phone except to play, and deleting the app deletes them.",
             "The camera is used only to read a Table’s QR code, when you choose to scan one. Nothing it sees is recorded or sent anywhere.",
+            "Your choices about ads (Google’s consent form, and Apple’s question about tracking) are kept on the phone too. Change them with **Ad choices** on the start screen, where the law asks for it, and Apple’s in Settings, under Privacy & Security, Tracking.",
         ]),
         ("Guests at a party", ["If you’re a guest, the name or nickname you typed when you joined is in the game. It appears on the phones and the TV, we only use it to run that game, and it is deleted with the Table. We ask everyone to use first names or nicknames only. If you want your name removed sooner, ask the host, who can remove you, or contact us."]),
         ("Who we share it with", [
             "We don’t sell your data or share it for marketing. We use these providers:",
             "• **Cloudflare, Inc.** hosts the game server and the game rooms, and processes data for us under contract.",
             "• **Apple** takes payments in the app and handles refunds and subscriptions, as an independent controller under its own privacy policy.",
+            "• **Google Ireland Limited (AdMob)** shows the ads in free games, and only there: a game with a pass never starts it. It may collect your device’s IP address, information about the device and app, and how you interact with ads, to show and measure ads and prevent fraud; it uses your device’s advertising identifier, and personalises ads, only if you agree in its consent form and allow tracking when Apple asks. If you don’t, the ads are not personalised. Google uses this data as an independent controller under its own privacy policy (policies.google.com/privacy). *Lawful basis:* consent for personalised ads; legitimate interests (paying for free games) for the rest.",
             "We may also share data where the law requires it.",
         ]),
-        ("International transfers", ["Cloudflare and Apple may process data outside the UK, including in the United States. When they do, the transfer is protected by the UK–US data bridge or by the UK International Data Transfer Addendum to the EU standard contractual clauses."]),
+        ("International transfers", ["Cloudflare, Apple and Google may process data outside the UK, including in the United States. When they do, the transfer is protected by the UK–US data bridge or by the UK International Data Transfer Addendum to the EU standard contractual clauses."]),
         ("Your rights", [
             "You have the right to ask for a copy of your data, and to have it corrected or deleted. You can also object to or restrict how we use it, and ask for it in a portable format. Ask us at info@thebetrayal.co.uk. We’ll reply within 24 hours, and complete your request within one month. There is normally no charge.",
             "If you’re unhappy with how we’ve handled your data, you can complain to the Information Commissioner’s Office at ico.org.uk or on 0303 123 1113. We’d appreciate the chance to put it right first.",

@@ -202,7 +202,7 @@ struct PlayView: View {
     var body: some View {
         if let v = session.view, let me = v.me {
             ZStack {
-                if rendering { page(v, me) } else { ScrollView { page(v, me) }.scrollDismissesKeyboard(.interactively) }
+                if rendering { page(v, me) } else { ScrollView { page(v, me) }.scrollDismissesKeyboard(.interactively).safeAreaInset(edge: .bottom) { AdStrip(v: v, me: me) } }
                 if !session.online {
                     VStack { Spacer(); Text("Reconnecting…").font(Theme.ui(14)).foregroundStyle(Color(hex: 0xF3B7C4)).padding(.horizontal, 12).padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x2A1316))).overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: 0x6A2733), lineWidth: 1)).padding(.bottom, 14) }

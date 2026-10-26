@@ -153,6 +153,7 @@ struct HomeView: View {
                 Button("Terms") { page = .terms }.btn(.dark, .sm, fit: true)
                 Button("Privacy") { page = .privacy }.btn(.dark, .sm, fit: true)
                 Link("Contact us", destination: URL(string: "mailto:" + Page.contact)!).btn(.dark, .sm, fit: true)
+                if Ads.shared.choicesNeeded { Button("Ad choices") { Ads.shared.showChoices() }.btn(.dark, .sm, fit: true) }
             }
         }
         .frame(maxWidth: .infinity)
