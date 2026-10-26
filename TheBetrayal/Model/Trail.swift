@@ -40,7 +40,7 @@ final class Trail {
         roles[room] = roles[room] ?? (tv ? "tv" : "player")
         UserDefaults.standard.set(room, forKey: "bt-trail-room") // where a crash on the next launch is reported
         guard opened.insert(room).inserted else { return }
-        let s = Ads.top()?.view.bounds.size ?? .zero, text = UIApplication.shared.preferredContentSizeCategory.rawValue.replacingOccurrences(of: "UICTContentSizeCategory", with: "")
+        let s = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first?.screen.bounds.size ?? .zero, text = UIApplication.shared.preferredContentSizeCategory.rawValue.replacingOccurrences(of: "UICTContentSizeCategory", with: "")
         log(room, "open", "app " + Trail.build + " · " + (tv ? "TV" : "phone") + " · " + Trail.model + " · iOS " + UIDevice.current.systemVersion
             + " · " + "\(Int(s.width))×\(Int(s.height))" + " · text " + text)
     }

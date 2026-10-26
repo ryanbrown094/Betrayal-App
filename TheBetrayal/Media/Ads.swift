@@ -47,7 +47,9 @@ final class Ads {
             #endif
             if ask, ATTrackingManager.trackingAuthorizationStatus == .notDetermined { _ = await ATTrackingManager.requestTrackingAuthorization() }
             choicesNeeded = consent.privacyOptionsRequirementStatus == .required
-            Trail.shared.here("ad", "consent \(consent.consentStatus.rawValue) · tracking \(ATTrackingManager.trackingAuthorizationStatus.rawValue) · " + (consent.canRequestAds ? "ads may load" : "no ads"))
+            let asked = ["unknown", "required", "not required", "obtained"], tracked = ["not asked", "restricted", "denied", "allowed"]
+            let c = consent.consentStatus.rawValue, t = Int(ATTrackingManager.trackingAuthorizationStatus.rawValue)
+            Trail.shared.here("ad", "consent " + (asked.indices.contains(c) ? asked[c] : "\(c)") + " · tracking " + (tracked.indices.contains(t) ? tracked[t] : "\(t)") + " · " + (consent.canRequestAds ? "ads may load" : "no ads"))
             guard consent.canRequestAds else { return }
             _ = await MobileAds.shared.start()
             ready = true
@@ -80,6 +82,12 @@ final class Ads {
         lastShown = Date()
         ad.present(from: vc)
         Events.send("ad_shown", placement: placement)
+        #if DEBUG
+        // the CI's QA run can't tap the ad's close button: it closes itself, so the game's screens can be photographed
+        if ProcessInfo.processInfo.arguments.contains("-adclose") {
+            Task { try? await Task.sleep(nanoseconds: 3_000_000_000); vc.presentedViewController?.dismiss(animated: false) { [weak self] in self?.closed() } }
+        }
+        #endif
     }
 
     fileprivate func closed() { Trail.shared.here("ad", "ad_closed"); preload() }

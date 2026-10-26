@@ -170,7 +170,7 @@ jobs:
           for d in small:$SMALL big:$UDID; do
             name=${d%%:*}; dev=${d#*:}
             python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --practice --prefix "" --limit 1800 \
-              --launch "xcrun simctl terminate $dev $APP 2>/dev/null; xcrun simctl launch $dev $APP -server http://127.0.0.1:8790 -noatt -play {room} {tok} > /dev/null" \
+              --launch "xcrun simctl terminate $dev $APP 2>/dev/null; xcrun simctl launch $dev $APP -server http://127.0.0.1:8790 -noatt -adclose -play {room} {tok} > /dev/null" \
               --shot "xcrun simctl io $dev screenshot ../shots/qa-$name/{name}.png > /dev/null" > ../shots/qa-$name/drive.log 2>&1 &
           done
           wait
