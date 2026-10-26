@@ -11,9 +11,17 @@ import AppTrackingTransparency
 @MainActor @Observable
 final class Ads {
     static let shared = Ads()
-    // Google's demo units until AdMob's own are set in Info.plist (BTAdBanner, BTAdInterstitial), with its app ID
-    static let bannerUnit = Bundle.main.object(forInfoDictionaryKey: "BTAdBanner") as? String ?? "ca-app-pub-3940256099942544/2435281174"
-    static let interstitialUnit = Bundle.main.object(forInfoDictionaryKey: "BTAdInterstitial") as? String ?? "ca-app-pub-3940256099942544/4411468910"
+    // AdMob's units are in Info.plist (BTAdBanner, BTAdInterstitial); a Debug build (run from Xcode) always shows Google's
+    // test ads, as AdMob's rules require while developing, and so does a Release build without its own unit yet
+    static let bannerUnit = unit("BTAdBanner", test: "ca-app-pub-3940256099942544/2435281174")
+    static let interstitialUnit = unit("BTAdInterstitial", test: "ca-app-pub-3940256099942544/4411468910")
+    private static func unit(_ key: String, test: String) -> String {
+        #if DEBUG
+        return test
+        #else
+        return Bundle.main.object(forInfoDictionaryKey: key) as? String ?? test
+        #endif
+    }
 
     private(set) var ready = false // asked for consent, and the SDK started: ads may load
     @ObservationIgnored private var starting = false

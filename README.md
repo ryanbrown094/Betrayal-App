@@ -60,10 +60,12 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
   Google's form where the law asks for it.
-  - **Before release:** the app uses Google's demo app ID (`GADApplicationIdentifier` in `Info.plist`) and demo ad
-    units. Make the app in AdMob, put its app ID there and its two ad units in `Info.plist` as `BTAdBanner` and
-    `BTAdInterstitial`; in AdMob's Privacy & messaging, publish a GDPR message (and an IDFA explainer if wanted); add
-    Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's own is there now).
+  - **AdMob's IDs** are in `Info.plist`: the app ID (`GADApplicationIdentifier`) and the units (`BTAdBanner`, and
+    `BTAdInterstitial` once it exists; without it the interstitial is Google's test unit). Only Release builds
+    (TestFlight, the App Store) use the real units: a Debug build always shows Google's test ads, as AdMob's rules
+    require while developing. Before release: publish a GDPR message (and an IDFA explainer if wanted) in AdMob's
+    Privacy & messaging, and add Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's
+    own is there now).
 - **Offers to the host** (`UI/Offers.swift`, all their limits in one place): in a free game's lobby once three have
   joined (instead of the host's banner, until waved away); a strip at the start of rounds 2 and 4 on the host's phone,
   with a matching corner card on the TV that has nothing to tap; and the Host Pass on the host's results. Players are
