@@ -60,8 +60,8 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
   Google's form where the law asks for it.
-  - **AdMob's IDs** are in `Info.plist`: the app ID (`GADApplicationIdentifier`) and the units (`BTAdBanner`, and
-    `BTAdInterstitial` once it exists; without it the interstitial is Google's test unit). Only Release builds
+  - **AdMob's IDs** are in `Info.plist`: the app ID (`GADApplicationIdentifier`) and the units (`BTAdBanner`,
+    `BTAdInterstitial`). Only Release builds
     (TestFlight, the App Store) use the real units: a Debug build always shows Google's test ads, as AdMob's rules
     require while developing. Before release: publish a GDPR message (and an IDFA explainer if wanted) in AdMob's
     Privacy & messaging, and add Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's
