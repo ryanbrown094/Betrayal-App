@@ -5,6 +5,8 @@ import SwiftUI
 //   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
 //                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
+//   -render-store      the App Store's moments at its sizes (iPhone 6.9", 1320 × 2868; the TV as an iPad 13", 2752 × 2064)
+//                      to Documents/store/*.png, then Documents/store/done (store/compose.py adds the captions)
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
 //   -shop [-scroll ID] the start screen with the passes priced as in Store.storekit, and two saved codes,
@@ -27,6 +29,7 @@ enum Demo {
         let args = ProcessInfo.processInfo.arguments
         if args.contains("-art") { return AnyView(ArtSheet()) }
         if args.contains("-render-all") { return AnyView(RenderAll()) }
+        if args.contains("-render-store") { return AnyView(RenderStore()) }
         if args.contains("-shop") || args.contains("-bought") {
             Shop.shared.show(night: .init(id: Shop.nightID, price: "£4.99", period: nil, product: nil),
                              host: .init(id: Shop.hostID, price: "£19.99", period: "a year", product: nil))
@@ -92,6 +95,36 @@ private struct RenderAll: View {
                 if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("tv-" + name + ".png")) }
             }
             done += 1
+            await Task.yield()
+        }
+        try? Data("ok".utf8).write(to: dir.appendingPathComponent("done"))
+    }
+}
+
+// the App Store's pictures: the phone at 440 × 956 points at 3×, the TV at 1376 × 1032 points at 2×
+private struct RenderStore: View {
+    static let phone = ["oath", "roles-forsworn", "likely-open", "vote-mine", "night-forsworn-picked", "end-winner"]
+    static let tv = ["lobby-host", "quiz-open", "talk", "reveal-exiled", "dawn-revealed", "end-host"]
+    var body: some View {
+        ZStack { Backdrop(); Text("Rendering the store’s pictures…").font(Theme.ui(18)).foregroundStyle(Theme.tallow) }
+            .task { await render() }
+    }
+    @MainActor private func render() async {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("store")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        for (i, name) in RenderStore.phone.enumerated() {
+            guard let s = Demo.session(name, tv: false) else { continue }
+            let r = ImageRenderer(content: PlayView().environment(s).environment(\.rendering, true)
+                .frame(width: 440, height: 956, alignment: .top).clipped().background(Backdrop()))
+            r.scale = 3
+            if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("phone-\(i + 1)-" + name + ".png")) }
+            await Task.yield()
+        }
+        for (i, name) in RenderStore.tv.enumerated() {
+            guard let s = Demo.session(name, tv: true) else { continue }
+            let r = ImageRenderer(content: TVView().environment(s).frame(width: 1376, height: 1032))
+            r.scale = 2
+            if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("tv-\(i + 1)-" + name + ".png")) }
             await Task.yield()
         }
         try? Data("ok".utf8).write(to: dir.appendingPathComponent("done"))
