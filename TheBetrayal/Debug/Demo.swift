@@ -11,7 +11,7 @@ import SwiftUI
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
 //   -shop [-nosaved]   the start screen with the passes priced as in Store.storekit, and two saved codes (or none:
 //                      App Review's screenshot of the passes)
-//   -screen NAME       the start screen's own screens (join, host, passes), with or without -shop
+//   -screen NAME       the start screen's own screens (join, host, passes, tv), with or without -shop
 //   -intro [N]         the premise, at its Nth screen (from 0)
 //   -page NAME         How to play, the questions, the terms or the privacy notice (rules, faq, terms, privacy)
 //   -bought            the sheet after a purchase
@@ -19,7 +19,7 @@ enum Demo {
     static let screen: Route? = {
         let args = ProcessInfo.processInfo.arguments
         guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return nil }
-        return ["join": Route.join, "host": .host, "passes": .passes][args[i + 1]]
+        return ["join": Route.join, "host": .host, "passes": .passes, "tv": .tv][args[i + 1]]
     }()
 
     static let fixtures: [String: JSON] = {

@@ -43,7 +43,8 @@ struct LobbyView: View {
         VStack(alignment: .leading, spacing: 0) {
             H2("You’re in")
             if v.practice { Sub("Just you and the bots tonight.") }
-            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the code on the TV.")) }
+            else if me.director { CodeCard(room: session.room) }
+            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the QR code on the host’s phone or the TV.")) }
             People(list: v.players)
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
@@ -84,7 +85,7 @@ struct LobbyView: View {
                     }
                     .btn(.fill, .big).disabled(n < 8)
                     if !v.practice {
-                        Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or open the app on an iPad, type ") + b(session.room, size: 15) + Text(" and choose ") + b("Use this screen as the TV", size: 15) + Text("."), center: true).padding(.top, 12)
+                        Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or use an iPad: ") + b("Set up a TV", size: 15) + Text(", on the start screen."), center: true).padding(.top, 12)
                     }
                 }
             }
@@ -111,6 +112,27 @@ struct LobbyView: View {
             Button(a.1) { session.send(["a": "opts", "opts": [k: a.0]]) }.btn(on == a.0 ? .on : .dark, .sm)
             Button(c.1) { session.send(["a": "opts", "opts": [k: c.0]]) }.btn(on == c.0 ? .on : .dark, .sm)
         }
+    }
+}
+
+// the Table's code, large, and its QR code, for the host to show the room (there may be no TV to show it)
+struct CodeCard: View {
+    let room: String
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Eyebrow("the table code")
+                Text(room).font(Theme.ui(40, .bold)).tracking(4).foregroundStyle(Theme.brass2).lineLimit(1).minimumScaleFactor(0.5)
+                    .accessibilityLabel(room.map(String.init).joined(separator: " "))
+                Text("Friends join in The Betrayal app: Join a game, then type this code or scan the QR code.").font(Theme.ui(15)).foregroundStyle(Theme.tallow2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            QRBox(text: Server.joinLink(room)).frame(width: 118, height: 118).accessibilityHidden(true)
+        }
+        .padding(14)
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.brass, lineWidth: 1))
+        .padding(.top, 2).padding(.bottom, 14)
     }
 }
 

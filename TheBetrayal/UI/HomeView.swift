@@ -1,19 +1,20 @@
 import SwiftUI
 
-// What the start screen opens: a Table, and how (as a player, as the host setting it up, or as the TV)
+// What the start screen opens: a Table, and how (as a player, as a player joining with the name saved on this phone,
+// as the host setting it up, or as the TV)
 struct Target: Hashable {
-    enum Start: Hashable { case play, create, bots, practice, tv }
+    enum Start: Hashable { case play, named, create, bots, practice, tv }
     let room: String
     var start: Start = .play
     var pass: String? = nil
 }
 
 // The start screen's own screens, before a Table
-enum Route: Hashable { case join, host, passes, table(Target) }
+enum Route: Hashable { case join, host, passes, tv, table(Target) }
 
 // The start screen: two choices, join a Table or host one, and the rest underneath (practice, the passes, how to play,
-// the questions). Joining takes a Table's code (typed, scanned or from a link); hosting opens a Table, free or with a
-// pass. The same calls as the website's home page (site/index.html: open, go, subChoice); buying is the App Store's
+// the questions, setting up a TV). Joining takes a Table's code (typed, scanned or from a link) and a name; hosting opens
+// a Table, free or with a pass. The same calls as the website's home page (site/index.html: open, go, subChoice); buying is the App Store's
 // (Model/Shop.swift).
 struct HomeView: View {
     @State private var path: [Route] = []
@@ -24,6 +25,7 @@ struct HomeView: View {
     private var shop: Shop { Shop.shared }
     private let model = AppModel.shared
     @State private var tableCode = ""
+    @State private var playerName = UserDefaults.standard.string(forKey: "bt-name") ?? ""
     @State private var bookingCode = ""
     @State private var busy = false
     @State private var problem: String?
@@ -65,6 +67,7 @@ struct HomeView: View {
                     case .join: screen { joinScreen }
                     case .host: screen { hostScreen }
                     case .passes: screen { passesScreen }
+                    case .tv: screen { tvScreen }
                     case .table(let t): TableView(session: AppModel.shared.session(for: t))
                     }
                 }
@@ -169,6 +172,7 @@ struct HomeView: View {
         VStack(spacing: 0) {
             row("raven", busy ? "Opening…" : "Practice against bots") { if !busy { Task { await practise() } } }
             row("key", "Your passes") { path.append(.passes) }
+            row("eye", "Set up a TV") { path.append(.tv) }
             row("scroll", "How to play") { intro = Intro() }
             row("candle", "FAQs") { page = .faq }
         }
@@ -208,19 +212,36 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
+    // the Table's code and this player's name, together: one screen, then the Table
     private var joinScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Join a game")
-            Sub("Type the Table code from the host’s phone or the TV, or scan the TV’s code.")
-            VStack(spacing: 10) {
+            Sub("Type the Table code from the host’s phone or the TV, or scan its QR code.")
+            VStack(alignment: .leading, spacing: 10) {
                 Field(placeholder: "ABC123", text: $tableCode, code: true, submit: joinTable)
-                Button("Join", action: joinTable).btn(.fill, .big).disabled(!Codes.isRoom(tableCode))
-                Button("Scan the TV’s code") { scanning = true }.btn(.ghost)
+                Label2("Your name")
+                Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: joinTable)
+                Button("Join", action: joinTable).btn(.fill, .big)
+                    .disabled(!Codes.isRoom(tableCode) || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Scan a QR code") { scanning = true }.btn(.ghost)
             }
-            Label2("Setting up the TV?").padding(.top, 30)
-            Small("On an iPad or a spare phone connected to the TV, type the Table code above, then:")
-            Button("Use this screen as the TV") { if Codes.isRoom(tableCode) { enter(Target(room: tableCode, start: .tv)) } }
-                .btn(.dark, .sm).disabled(!Codes.isRoom(tableCode))
+            Button("Setting up a TV instead?") { path.append(.tv) }.btn(.dark, .sm).padding(.top, 24)
+        }
+    }
+
+    // an iPad or a spare phone as the TV, or the host's phone over AirPlay
+    private var tvScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            H1("Set up a TV")
+            Sub("The TV shows the game to the whole room: the Table, the Trials, the votes and the reveals, with music. Never anyone’s role. It’s optional.")
+            Label2("This screen as the TV")
+            Small("On an iPad or a spare phone: connect it to the TV with a cable or AirPlay, or stand it where everyone can see it. Type the Table code from the host’s phone.")
+            VStack(spacing: 10) {
+                Field(placeholder: "ABC123", text: $tableCode, code: true, submit: watchTable)
+                Button("Use this screen as the TV", action: watchTable).btn(.fill, .big).disabled(!Codes.isRoom(tableCode))
+            }
+            Label2("Or the host’s phone").padding(.top, 26)
+            Small("AirPlay the host’s phone to the TV (Control Centre, then Screen Mirroring). While the game is open, the TV shows the game, not the phone’s screen.")
         }
     }
 
@@ -274,13 +295,20 @@ struct HomeView: View {
         hostTable()
     }
 
+    // with a name, straight in; without one (a scanned code, a link), the Table asks for it
     private func joinTable() {
         guard Codes.isRoom(tableCode) else { return }
-        let room = tableCode
+        let room = tableCode, name = playerName.trimmingCharacters(in: .whitespaces)
+        if !name.isEmpty { UserDefaults.standard.set(name, forKey: "bt-name") }
         Task {
             if await API.mode(of: room) == .classic { problem = "This Table can’t be played in the app. Ask the host to start a new Table in the app."; return }
-            enter(Target(room: room))
+            enter(Target(room: room, start: name.isEmpty ? .play : .named))
         }
+    }
+
+    private func watchTable() {
+        guard Codes.isRoom(tableCode) else { return }
+        enter(Target(room: tableCode, start: .tv))
     }
 
     private func hostTable() {

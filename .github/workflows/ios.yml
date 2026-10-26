@@ -103,6 +103,7 @@ jobs:
           shot 04-bought 4 -bought
           for p in rules faq terms privacy; do shot "05-page-$p" 4 -page "$p"; done
           shot 06-home-join 6 -screen join
+          shot 06-home-tv 6 -screen tv
           for i in 0 1 2 3 4; do shot "07-intro-$i" 3 -intro "$i"; done
           for d in lobby-host oath roles-veil roles-forsworn day-host trial-intro-forsworn quiz-open quiz-reveal-host trial-done-winner \
                    word-open change-open snap-open truths-prep-teller talk-crown vote-mine reveal-words night-forsworn-picked \
@@ -165,7 +166,7 @@ jobs:
           for d in small:$SMALL big:$UDID; do
             name=${d%%:*}; dev=${d#*:}
             snap() { xcrun simctl terminate "$dev" "$APP" 2>/dev/null || true; xcrun simctl launch "$dev" "$APP" "${@:2}" > /dev/null; sleep 5; xcrun simctl io "$dev" screenshot "shots/qa-$name/00-$1.png" > /dev/null; }
-            snap home; snap join -screen join; snap host -shop -screen host; snap passes -shop -screen passes; snap intro -intro 0; snap faq -page faq
+            snap home; snap join -screen join; snap tv -screen tv; snap host -shop -screen host; snap passes -shop -screen passes; snap intro -intro 0; snap faq -page faq
           done
           cd server
           for d in small:$SMALL big:$UDID; do

@@ -2,7 +2,8 @@ import SwiftUI
 import AVFoundation
 import UIKit
 
-// The TV's QR code, read with the camera (the iPhone's own Camera app opens the app from it too: thebetrayal://join/CODE)
+// A Table's QR code (on the TV, or the host's phone in the lobby), read with the camera (the iPhone's own Camera app
+// opens the app from it too: thebetrayal://join/CODE)
 struct ScanSheet: View {
     let found: (String) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -21,7 +22,7 @@ struct ScanSheet: View {
                 .ignoresSafeArea()
                 VStack {
                     Spacer()
-                    Text(unreadable ? "That isn’t a Table’s code. Point at the code on the TV." : "Point at the code on the TV.")
+                    Text(unreadable ? "That isn’t a Table’s code. Point at the QR code on the TV or the host’s phone." : "Point at the QR code on the TV or the host’s phone.")
                         .font(Theme.ui(18)).foregroundStyle(Theme.tallow)
                         .padding(.horizontal, 18).padding(.vertical, 12)
                         .background(Capsule().fill(Theme.soot.opacity(0.8)))

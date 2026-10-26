@@ -44,6 +44,7 @@ final class AppModel {
         let s: Session
         switch t.start {
         case .play: s = Session(room: t.room)
+        case .named: s = Session(room: t.room); s.joinNow = true
         case .create: s = Session(room: t.room, screen: .create(test: false), pass: t.pass)
         case .bots: s = Session(room: t.room, screen: .create(test: true), pass: t.pass)
         case .practice: s = Session(room: t.room, screen: .create(test: true)); s.practice = true
