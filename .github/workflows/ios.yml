@@ -232,17 +232,18 @@ jobs:
           osascript ../ci/external.applescript 2>&1 | tee "$OUT/menu.txt" || true
           sleep 5
           # what the app makes of the second display: its [TV] notes, and the Mac's screen with the Simulator's windows
+          xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true # (the offscreen drawing's app, still open)
           xcrun simctl launch --stdout="$OUT/probe-out.log" --stderr="$OUT/probe-err.log" "$UDID" "$APP" > /dev/null
           sleep 10
           screencapture -x "$OUT/00-mac.png" 2>&1 || echo "no screencapture"
           xcrun simctl io "$UDID" screenshot --display=external "$OUT/00-external.png" > /dev/null 2>&1 || echo "no external display to photograph"
           xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
-          echo "== the app's [TV] notes:"; cat "$OUT/probe-out.log"
+          echo "== the app's [TV] notes:"; cat "$OUT/probe-out.log" || true
           # the game, the TV's session in the phone's process with its sound, as an AirPlayed phone runs it: on the second
           # display if the app drew its TV there, or else drawn at 1080p in the phone's corner (-twin)
           TWIN=-twin
           shot="xcrun simctl io $UDID screenshot $OUT/{name}.png > /dev/null"
-          if grep -q "second display connected" "$OUT/probe-out.log"; then
+          if grep -q "second display connected" "$OUT/probe-out.log" 2>/dev/null; then
             TWIN=""; shot="$shot; xcrun simctl io $UDID screenshot --display=external $OUT/{name}-tv.png > /dev/null 2>&1"
             echo "the TV is on the second display"
           else echo "::warning::the app didn't draw its TV on the second display: the game draws it in the phone's corner (-twin)"; fi
