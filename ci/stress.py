@@ -195,13 +195,14 @@ class Phone(threading.Thread):
         elif ph == "break" and self.once("brk", 5): self.act({"a": "brkEnd"})
         elif ph == "trial":
             if t.get("stage") == "done" and self.once("cont", 4): self.act({"a": "cont"})
-            elif t.get("stage") == "intro" and self.once("intro", 4): self.act({"a": "tool", "v": "skip"})
+            elif t.get("stage") == "intro" and self.once("intro", 4): self.act({"a": "cont"}) # the host starts it
             elif it.get("stage") in ("open", "study", "prep", "blank") and self.once("skip" + str(t.get("i")), 12): self.act({"a": "tool", "v": "skip"})
         elif ph == "talk" and self.once("voteNow", 8): self.act({"a": "tool", "v": "voteNow"})
         elif ph == "vote" and self.once("closeVote", 30): self.act({"a": "tool", "v": "closeVote"})
         elif ph == "reveal" and ((v.get("reveal") or {}).get("role") or (v.get("reveal") or {}).get("secret")) and self.once("rev", 4): self.act({"a": "cont"})
         elif ph == "night" and self.once("dawnNow", 40): self.act({"a": "tool", "v": "dawnNow"})
         elif ph == "dawn" and self.once("dawn" + str((v.get("dawn") or {}).get("revealed")), 4): self.act({"a": "cont"})
+        elif ph == "trust" and (v.get("trust") or {}).get("result") and self.once("trusted", 4): self.act({"a": "cont"})
 
 def tv(room):
     last = None

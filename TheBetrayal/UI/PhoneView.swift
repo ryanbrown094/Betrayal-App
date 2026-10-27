@@ -315,6 +315,7 @@ struct PlayView: View {
         PhaseView(v: v, me: me)
             .id(session.freshKey)
             .modifier(FadeIn(rise: reduceMotion ? 0 : 6))
+        if me.director { HostQuick(v: v) }
     }
 }
 

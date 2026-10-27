@@ -243,7 +243,7 @@ struct TVTrial: View, TVType {
 
     var body: some View {
         if t.stage == "intro" {
-            eyebrow("trial" + TrialView.prizeLine(t)); h1(t.title, disp: true); sub(t.rules); clock(t.introEnd)
+            eyebrow("trial" + TrialView.prizeLine(t)); h1(t.title, disp: true); sub(t.rules); if t.introEnd != nil { clock(t.introEnd) }
         } else if t.stage == "done" {
             let w = t.winners.first
             eyebrow(t.title)
@@ -367,6 +367,7 @@ struct TVEnd: View, TVType {
         HStack(alignment: .center, spacing: u.vw * 4) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(fw ? "The Forsworn win" : "The Loyal win").font(Theme.disp(u.size.width / u.size.height < 1.5 ? u.vh * 7 : u.vh * 9, fixed: true)).foregroundStyle(fw ? Theme.blood2 : Theme.brass2)
+                if r.early { Text("The host ended the game here.").font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2) }
                 VStack(alignment: .leading, spacing: u.vh * 0.6) {
                     Text("the prize").font(Theme.sc(u.vh * 2.2, fixed: true)).tracking(u.vh * 0.3).foregroundStyle(Theme.brass2)
                     Text(Words.prize(r)).font(Theme.book(u.vh * 5, fixed: true)).foregroundStyle(Theme.tallow)

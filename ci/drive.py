@@ -77,7 +77,7 @@ while time.time() - start < a.limit:
     elif ph == "roles" and not me.get("acked"): act({"a": "ack"})
     elif ph == "day": act({"a": "next"})
     elif ph == "trial":
-        if t.get("stage") == "done": act({"a": "cont"})
+        if t.get("stage") in ("done", "intro"): act({"a": "cont"}) # (the host starts each Trial)
         elif it.get("k") == "tempt" and it.get("stage") == "open" and me["alive"] and it.get("mine") is None: act({"a": "ans", "v": "purse"})
         elif it and it.get("stage") == "open": act({"a": "tool", "v": "skip"})
     elif ph == "break": act({"a": "brkEnd"})
@@ -91,6 +91,7 @@ while time.time() - start < a.limit:
         else: act({"a": "sleep"})
     elif ph == "dawn": act({"a": "cont"})
     elif ph == "trust" and me["alive"] and not v["trust"].get("mine") and not v["trust"].get("result"): act({"a": "trust", "v": "trust"})
+    elif ph == "trust" and v["trust"].get("result"): act({"a": "cont"})
     elif ph == "honour" and me.get("role") == "f" and me["alive"] and not v["honour"].get("mine"): act({"a": "honour", "v": "honour"})
     elif ph == "end":
         print("the end:", v["result"]["winner"], "win · prize", v["result"]["prize"], flush=True)

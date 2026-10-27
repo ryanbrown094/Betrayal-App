@@ -555,6 +555,8 @@ struct TrustView: View {
                 if let r = t.result {
                     H1(r == "trust" ? "The table trusts" : "Doubt")
                     Sub(r == "trust" ? "Everyone chose Trust. The masks come off." : Words.plural(t.count, "player") + " doubted. Another Reckoning.")
+                    DirCard { Button("Continue") { session.act("cont") }.btn(.fill) }
+                    WaitHost(v: v)
                 } else if !me.alive {
                     Eyebrow("trust or doubt"); H1("The survivors decide"); Sub("\(t.voted) of \(t.of) have chosen.")
                 } else {
@@ -627,6 +629,7 @@ struct EndView: View {
             let fw = r.forsworn
             VStack(alignment: .leading, spacing: 0) {
                 H1(fw ? "The Forsworn win" : "The Loyal win", disp: true)
+                if r.early { Small("The host ended the game here, so it’s scored as it stood.") }
                 Sub(EndView.how(r))
                 if me.director { ResultsOffer(v: v) }
                 VStack(spacing: 0) {

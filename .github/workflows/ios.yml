@@ -117,7 +117,6 @@ jobs:
           done
 
       - name: Every moment, drawn offscreen
-        if: ${{ !inputs.qa }}
         run: |
           xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
           xcrun simctl launch "$UDID" "$APP" -render-all > /dev/null

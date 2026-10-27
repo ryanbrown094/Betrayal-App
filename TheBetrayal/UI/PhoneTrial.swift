@@ -4,6 +4,7 @@ import SwiftUI
 struct TrialView: View {
     let v: Snapshot
     let me: Me
+    @Environment(Session.self) private var session
     var body: some View {
         if let t = v.trial {
             if t.stage == "intro" { intro(t) }
@@ -23,7 +24,15 @@ struct TrialView: View {
                        ? "Forsworn: every wrong answer here costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
                        : "Forsworn: if you win, you take every point the Purse falls short, so sabotage quietly.")
             }
-            HStack(spacing: 6) { Text("Starts in").font(Theme.ui(18)).foregroundStyle(Theme.tallow2); Clock(end: t.introEnd) }
+            if t.introEnd != nil {
+                HStack(spacing: 6) { Text("Starts in").font(Theme.ui(18)).foregroundStyle(Theme.tallow2); Clock(end: t.introEnd) }
+            } else {
+                DirCard {
+                    Button("Start the Trial") { session.act("cont") }.btn(.fill, .big)
+                    Small("When everyone has heard the rules.", center: true)
+                }
+                WaitHost(v: v)
+            }
         }
     }
 
