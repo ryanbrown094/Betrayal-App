@@ -1,19 +1,20 @@
 import SwiftUI
 
-// What the start screen opens: a Table, and how (as a player, as the host setting it up, or as the TV)
+// What the start screen opens: a Table, and how (as a player, as a player joining with the name saved on this phone,
+// as the host setting it up, or as the TV)
 struct Target: Hashable {
-    enum Start: Hashable { case play, create, bots, practice, tv }
+    enum Start: Hashable { case play, named, create, bots, practice, tv }
     let room: String
     var start: Start = .play
     var pass: String? = nil
 }
 
 // The start screen's own screens, before a Table
-enum Route: Hashable { case join, host, passes, table(Target) }
+enum Route: Hashable { case join, host, passes, tv, table(Target) }
 
 // The start screen: two choices, join a Table or host one, and the rest underneath (practice, the passes, how to play,
-// the questions). Joining takes a Table's code (typed, scanned or from a link); hosting opens a Table, free or with a
-// pass. The same calls as the website's home page (site/index.html: open, go, subChoice); buying is the App Store's
+// the questions, setting up a TV). Joining takes a Table's code (typed, scanned or from a link) and a name; hosting opens
+// a Table, free or with a pass. The same calls as the website's home page (site/index.html: open, go, subChoice); buying is the App Store's
 // (Model/Shop.swift).
 struct HomeView: View {
     @State private var path: [Route] = []
@@ -24,6 +25,7 @@ struct HomeView: View {
     private var shop: Shop { Shop.shared }
     private let model = AppModel.shared
     @State private var tableCode = ""
+    @State private var playerName = UserDefaults.standard.string(forKey: "bt-name") ?? ""
     @State private var bookingCode = ""
     @State private var busy = false
     @State private var problem: String?
@@ -40,7 +42,7 @@ struct HomeView: View {
     enum Question {
         case regular(room: String, pass: String) // a pass whose last game is still open
         case test(room: String, pass: String)    // the master code's test Table
-        case usePass(pass: String, host: Bool)   // starting a game with a pass on the phone
+        case usePass(pass: String, host: Bool, until: Date?) // starting a game with a pass on the phone (a Night Pass's end, once begun)
         var title: String {
             switch self {
             case .regular: return "You have a game open"
@@ -52,7 +54,10 @@ struct HomeView: View {
             switch self {
             case .regular: return "Carry on with it, or start a new one? A new game closes the one that’s open."
             case .test: return "Play Modern with real phones, or against bots that play by themselves."
-            case .usePass(_, let host): return host ? "Your Host Pass makes this game ad-free, with every Trial." : "Your Night Pass makes tonight ad-free, with every Trial. Its 24 hours start now."
+            case .usePass(_, let host, let until):
+                if host { return "Your Host Pass makes this game ad-free, with every Trial." }
+                if let until { return "Your Night Pass makes this game ad-free, with every Trial. Its 24 hours run until " + until.formatted(date: .omitted, time: .shortened) + "." }
+                return "Your Night Pass makes tonight ad-free, with every Trial. Its 24 hours start now."
             }
         }
     }
@@ -65,6 +70,7 @@ struct HomeView: View {
                     case .join: screen { joinScreen }
                     case .host: screen { hostScreen }
                     case .passes: screen { passesScreen }
+                    case .tv: screen { tvScreen }
                     case .table(let t): TableView(session: AppModel.shared.session(for: t))
                     }
                 }
@@ -88,7 +94,7 @@ struct HomeView: View {
                 i.then?()
             }
         }
-        .alert("Booking", isPresented: Binding(get: { shop.problem != nil }, set: { if !$0 { shop.problem = nil } })) {
+        .alert("Your pass", isPresented: Binding(get: { shop.problem != nil }, set: { if !$0 { shop.problem = nil } })) {
             Button("OK", role: .cancel) {}
         } message: { Text(shop.problem ?? "") }
         .confirmationDialog(question?.title ?? "", isPresented: Binding(get: { question != nil }, set: { if !$0 { question = nil } }), titleVisibility: .visible, presenting: question) { q in
@@ -96,7 +102,7 @@ struct HomeView: View {
             case .regular(let room, let pass):
                 Button("Carry on") { Task { await go(room: room, pass: pass, test: false) } }
                 Button("Start a new game", role: .destructive) { Task { await open(pass: pass, fresh: true) } }
-            case .usePass(let pass, let host):
+            case .usePass(let pass, let host, _):
                 Button(host ? "Use my Host Pass" : "Use my Night Pass") { Task { await open(pass: pass, fresh: false) } }
                 Button("Start a free game instead") { Task { await open(pass: nil, fresh: false) } }
             case .test(let room, let pass):
@@ -121,7 +127,7 @@ struct HomeView: View {
                         Button("Host a game") { path.append(.host) }.btn(.ghost, .big)
                     }
                     .padding(.bottom, 26)
-                    menu
+                    menu(short: g.size.height < 700)
                     footer
                 }
                 .frame(minHeight: g.size.height)
@@ -165,17 +171,19 @@ struct HomeView: View {
         .padding(.bottom, 18)
     }
 
-    private var menu: some View {
+    // (a short phone's rows are a little lower, so the start screen still fits without scrolling)
+    private func menu(short: Bool) -> some View {
         VStack(spacing: 0) {
-            row("raven", busy ? "Opening…" : "Practice against bots") { if !busy { Task { await practise() } } }
-            row("key", "Your passes") { path.append(.passes) }
-            row("scroll", "How to play") { intro = Intro() }
-            row("candle", "FAQs") { page = .faq }
+            row("raven", busy ? "Opening…" : "Practice against bots", short: short) { if !busy { Task { await practise() } } }
+            row("key", "Your passes", short: short) { path.append(.passes) }
+            row("eye", "Set up a TV", short: short) { path.append(.tv) }
+            row("scroll", "How to play", short: short) { intro = Intro() }
+            row("candle", "FAQs", short: short) { page = .faq }
         }
         .overlay(alignment: .top) { Rectangle().fill(Theme.rule).frame(height: 1) }
     }
 
-    private func row(_ icon: String, _ title: String, action: @escaping () -> Void) -> some View {
+    private func row(_ icon: String, _ title: String, short: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Icon(name: icon).frame(width: 24, height: 24).foregroundStyle(Theme.brass2)
@@ -183,7 +191,7 @@ struct HomeView: View {
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.tallow2)
             }
-            .frame(minHeight: 50)
+            .frame(minHeight: short ? 42 : 50)
             .contentShape(Rectangle())
             .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
         }
@@ -208,28 +216,49 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
+    // the Table's code and this player's name, together: one screen, then the Table
     private var joinScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Join a game")
-            Sub("Type the Table code from the host’s phone or the TV, or scan the TV’s code.")
-            VStack(spacing: 10) {
+            Sub("Type the Table code from the host’s phone or the TV, or scan its QR code.")
+            VStack(alignment: .leading, spacing: 10) {
                 Field(placeholder: "ABC123", text: $tableCode, code: true, submit: joinTable)
-                Button("Join", action: joinTable).btn(.fill, .big).disabled(!Codes.isRoom(tableCode))
-                Button("Scan the TV’s code") { scanning = true }.btn(.ghost)
+                Label2("Your name")
+                Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: joinTable)
+                Button("Join", action: joinTable).btn(.fill, .big)
+                    .disabled(!Codes.isRoom(tableCode) || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Scan a QR code") { scanning = true }.btn(.ghost)
             }
-            Label2("Setting up the TV?").padding(.top, 30)
-            Small("On an iPad or a spare phone connected to the TV, type the Table code above, then:")
-            Button("Use this screen as the TV") { if Codes.isRoom(tableCode) { enter(Target(room: tableCode, start: .tv)) } }
-                .btn(.dark, .sm).disabled(!Codes.isRoom(tableCode))
+            Button("Setting up a TV instead?") { path.append(.tv) }.btn(.dark, .sm).padding(.top, 24)
+        }
+    }
+
+    // an iPad or a spare phone as the TV, or the host's phone over AirPlay
+    private var tvScreen: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            H1("Set up a TV")
+            Sub("The TV shows the game to the whole room: the Table, the Trials, the votes and the reveals, with music. Never anyone’s role. It’s optional.")
+            Label2("This screen as the TV")
+            Small("On an iPad or a spare phone: connect it to the TV with a cable or AirPlay, or stand it where everyone can see it. Type the Table code from the host’s phone.")
+            VStack(spacing: 10) {
+                Field(placeholder: "ABC123", text: $tableCode, code: true, submit: watchTable)
+                Button("Use this screen as the TV", action: watchTable).btn(.fill, .big).disabled(!Codes.isRoom(tableCode))
+            }
+            Label2("Or the host’s phone").padding(.top, 26)
+            Small("AirPlay the host’s phone to the TV (Control Centre, then Screen Mirroring). While the game is open, the TV shows the game, not the phone’s screen.")
         }
     }
 
     private var hostScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Host a game")
-            Sub("Start a Table, and everyone joins on their own phone with its code, you included. It stays open for 48 hours. Best with 8 to 16 players.")
-            Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big).disabled(busy)
-            Small("Free games show an ad between rounds, never while you play, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
+            Sub("Start a Table on this phone. You play too, and your phone moves the evening on; everyone else joins on their own phone with the Table’s code. It stays open for 48 hours. Best with 8 to 16 players.")
+            Label2("Your name")
+            Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: startGame)
+            Spacer().frame(height: 10)
+            Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big)
+                .disabled(busy || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
+            Small("Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
             Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { path.append(.passes) }.btn(.ghost)
         }
@@ -274,13 +303,20 @@ struct HomeView: View {
         hostTable()
     }
 
+    // with a name, straight in; without one (a scanned code, a link), the Table asks for it
     private func joinTable() {
         guard Codes.isRoom(tableCode) else { return }
-        let room = tableCode
+        let room = tableCode, name = playerName.trimmingCharacters(in: .whitespaces)
+        if !name.isEmpty { UserDefaults.standard.set(name, forKey: "bt-name") }
         Task {
             if await API.mode(of: room) == .classic { problem = "This Table can’t be played in the app. Ask the host to start a new Table in the app."; return }
-            enter(Target(room: room))
+            enter(Target(room: room, start: name.isEmpty ? .play : .named))
         }
+    }
+
+    private func watchTable() {
+        guard Codes.isRoom(tableCode) else { return }
+        enter(Target(room: tableCode, start: .tv))
     }
 
     private func hostTable() {
@@ -291,7 +327,13 @@ struct HomeView: View {
 
     // with a pass on the phone, the host is asked whether to use it tonight
     private func startGame() {
-        if let p = shop.usable.first { question = .usePass(pass: p.pass, host: p.sub == true) }
+        let name = playerName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty, !busy else { return }
+        UserDefaults.standard.set(name, forKey: "bt-name")
+        if let p = shop.usable.first {
+            let st = shop.status[p.pass]
+            question = .usePass(pass: p.pass, host: p.sub == true, until: st?.state == "active" ? st?.until : nil)
+        }
         else { Task { await open(pass: nil, fresh: false) } }
     }
 

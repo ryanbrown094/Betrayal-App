@@ -49,10 +49,11 @@ struct TVView: View {
     }
 }
 
-// the page's units: a hundredth of the screen's height and width
+// the page's units: a hundredth of the screen's height and width; on a screen taller than 4:3 (an iPad stood upright),
+// a hundredth of the height a 4:3 screen of its width would have, so the TV's landscape layout fits across it
 struct TVUnits {
     let size: CGSize
-    var vh: CGFloat { size.height / 100 }
+    var vh: CGFloat { min(size.height, size.width * 0.75) / 100 }
     var vw: CGFloat { size.width / 100 }
 }
 
@@ -87,7 +88,7 @@ private struct TVButtons: View {
     }
 }
 
-struct TVBody: View {
+struct TVBody: View, TVType {
     let v: Snapshot
     let u: TVUnits
     @Environment(Session.self) private var session
@@ -97,18 +98,6 @@ struct TVBody: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    // the type, in the page's sizes (.tvmain h1, h2, .sub …)
-    private func h1(_ s: String, disp: Bool = false, color: Color? = nil) -> some View {
-        Text(s).font(disp ? Theme.disp(u.vh * 11, fixed: true) : Theme.book(u.vh * 8, fixed: true)).foregroundStyle(color ?? (disp ? Theme.brass2 : Theme.tallow)).lineLimit(3).minimumScaleFactor(0.6)
-    }
-    private func h2(_ s: String) -> some View { Text(s).font(Theme.book(u.vh * 5.4, fixed: true)).foregroundStyle(Theme.tallow).frame(maxWidth: u.vw * 80).lineLimit(4).minimumScaleFactor(0.6) }
-    private func sub(_ s: String) -> some View { Text(s).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2).frame(maxWidth: u.vw * 70).fixedSize(horizontal: false, vertical: true) }
-    private func eyebrow(_ s: String) -> some View { Eyebrow(s, size: u.vh * 2.6, tv: true) }
-    private func ans(_ s: String) -> some View { Text(s).font(Theme.book(u.vh * 7, fixed: true)).monospacedDigit().foregroundStyle(Theme.brass2).lineLimit(2).minimumScaleFactor(0.5) }
-    private func count(_ s: String) -> some View { Text(s).font(Theme.sc(u.vh * 2.8, fixed: true)).tracking(u.vh * 0.28).foregroundStyle(Theme.tallow2) }
-    private func clock(_ end: Double?) -> some View { Clock(end: end, size: u.vh * 5, tv: true) }
-    private func meter() -> some View { Meter(pot: v.pot, cap: v.potCap, tiers: v.tiers, height: u.vh * 3.4, font: u.vh * 2).frame(width: u.vw * 40) }
 
     @ViewBuilder private var content: some View {
         switch v.phase {
@@ -137,7 +126,7 @@ struct TVBody: View {
         case "break":
             eyebrow("a break"); h1(v.brk?.name ?? "A break"); clock(v.brk?.end)
         case "trial":
-            if let t = v.trial { trial(t) }
+            if let t = v.trial { TVTrial(v: v, t: t, u: u) }
         case "talk":
             eyebrow("the reckoning"); h1("Make your accusations"); clock(v.vote?.talkEnd)
             TVPeople(v: v, list: v.players, u: u)
@@ -189,149 +178,8 @@ struct TVBody: View {
                 HStack(spacing: u.vw * 0.6) { count("\(h.made) of \(h.of) chosen" + (h.end != nil ? " · " : "")); if let e = h.end { clock(e) } }
             }
         case "end":
-            if let r = v.result { end(r) }
+            if let r = v.result { TVEnd(v: v, r: r, u: u) }
         default: EmptyView()
-        }
-    }
-
-    @ViewBuilder private func trial(_ t: Trial) -> some View {
-        if t.stage == "intro" {
-            eyebrow("trial" + TrialView.prizeLine(t)); h1(t.title, disp: true); sub(t.rules); clock(t.introEnd)
-        } else if t.stage == "done" {
-            let w = t.winners.first
-            eyebrow(t.title)
-            h1(TrialDone.head(v, t))
-            if w != nil && t.byLot && t.key != "tempt" { count("a tie at the top, settled by lot") }
-            ans(Words.signed(t.points) + " to the Purse")
-            meter()
-            if let g = t.gave { sub(v.name(g) + " takes the Crown.") }
-            else if t.special == "cast" { sub("Whoever won holds it. Only they know.") }
-            else if t.special == "secret" && w != nil { sub("The special prize is on their phone.") }
-            else if let s = t.sanctPublic { sub(v.name(s) + " takes Sanctuary.") }
-            else if t.prize && w != nil { sub("Did they take Sanctuary? Only they know.") }
-            if !["tempt", "likely"].contains(t.key) && !t.scores.isEmpty { TVScores(v: v, t: t, u: u) }
-        } else if let x = t.item {
-            eyebrow(t.title + " · \(x.stage == "reveal" ? t.i : t.i + 1)")
-            if x.stage == "reveal" { reveal(x) } else { item(x) }
-        }
-    }
-
-    @ViewBuilder private func item(_ x: Item) -> some View {
-        let c = x.end != nil && x.stage != "reveal"
-        let cnt = x.of > 0
-        switch x.k {
-        case "text", "number", "vote":
-            h2(x.q ?? ""); if c { clocked(x) }; if cnt { answered(x) }
-        case "hilo":
-            h2(x.q ?? ""); ans("Higher or lower than " + (x.ref ?? "") + "?"); if c { clocked(x) }; if cnt { answered(x) }
-        case "word":
-            TVLetters(letters: x.letters ?? "", u: u); if c { clocked(x) }; if cnt { answered(x) }
-        case "recall":
-            if x.stage == "study" { TVWords(words: x.words, u: u); if c { clocked(x) } }
-            else { h2("Type every word you remember"); if c { clocked(x) }; if cnt { answered(x) } }
-        case "cell":
-            if let g = x.grid { TVGrid(grid: g, hit: [], u: u); if c { clocked(x) } } else { h2("Something is changing…") }
-        case "snap":
-            TimelineView(.periodic(from: .now, by: 0.2)) { _ in
-                if let s = x.snapSymbol(x.snapIndex(at: session.gameNow())) { Icon(name: s).frame(width: u.vh * 40, height: u.vh * 40).foregroundStyle(Theme.brass2) }
-                else { h2("Get ready") }
-            }
-        case "rps":
-            h2("Rock, paper, scissors")
-            Flow(spacing: u.vw * 3.2, lineSpacing: u.vh, center: true) {
-                ForEach(Array(x.pairs.enumerated()), id: \.offset) { _, pr in
-                    (Text(v.name(pr.first)) + Text(" v ").foregroundColor(Theme.mist) + Text(v.name(pr.last))).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow)
-                }
-                if let bye = x.bye { Text("bye: " + v.name(bye)).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow) }
-            }
-            .frame(maxWidth: u.vw * 84)
-            if c { clocked(x) }
-            count("\(x.answered) of \(x.of) chosen")
-        case "survive":
-            h2("Still standing"); sub(v.alive.filter { !x.out.contains($0.id) }.map(\.name).joined(separator: ", "))
-        case "actor":
-            h2(v.name(x.actor) + " is up"); if c { clocked(x) }
-        case "truths":
-            h2(v.name(x.teller) + ": two truths and a lie")
-            if x.stage == "open" { sub("Vote on your phones: No. 1, 2 or 3?"); if cnt { answered(x) } }
-            if c { clocked(x) }
-        case "tempt":
-            h2("PURSE or SELF?"); sub("Choose on your phones, in secret."); if c { clocked(x) }; if cnt { answered(x) }
-        default: EmptyView()
-        }
-    }
-
-    @ViewBuilder private func clocked(_ x: Item) -> some View {
-        clock(x.end)
-        if let from = x.from, let end = x.end { TimeBar(from: from, end: end, height: u.vh).frame(width: u.vw * 50) }
-    }
-    private func answered(_ x: Item) -> some View { TVPeople(v: v, list: v.players, u: u, mark: { x.who.contains($0.id) }, answered: true) }
-
-    @ViewBuilder private func reveal(_ x: Item) -> some View {
-        let r = x.res
-        let names: ([String]) -> String = { ids in ids.isEmpty ? "nobody" : ids.map { v.name($0) }.joined(separator: ", ") }
-        switch x.k {
-        case "text": h2(x.q ?? ""); ans(x.a ?? ""); sub("Right: " + names(r.right))
-        case "number", "hilo": h2(x.q ?? ""); ans(x.a ?? ""); sub((x.k == "number" ? "Closest: " : "Right: ") + names(x.k == "number" ? r.closest : r.right))
-        case "vote": h2(x.q ?? ""); ans(names(r.top))
-        case "word":
-            let best = r.words.filter { $0.ok }.sorted { $0.word.count > $1.word.count }.first
-            TVLetters(letters: x.letters ?? "", u: u); ans(best?.word ?? "No real words"); sub(best.map { v.name($0.id) } ?? "")
-        case "recall": TVWords(words: x.words, u: u)
-        case "cell": TVGrid(grid: x.grid ?? [], hit: x.changed, u: u); sub("Right: " + names(r.right))
-        case "snap": h2("Snap!"); sub(names(r.hits))
-        case "rps": h2(r.bouts.map { b in b.w.map { w in v.name(w) + " beats " + v.name(w == b.a ? b.b : b.a) } ?? v.name(b.a) + " and " + v.name(b.b) + " draw" }.joined(separator: " · "))
-        case "survive": h2("Last standing: " + names(r.still))
-        case "actor": ans(r.word ?? ""); sub(r.guess != nil && r.guess != "none" ? v.name(r.guess) + " got it" : "Nobody got it")
-        case "truths": h2("The lie was No. \(r.lie ?? 0)"); sub("Right: " + names(r.right) + " · " + v.name(r.teller) + " fooled \(r.fooled)")
-        case "tempt":
-            let n = r.selfCount
-            h2(n == 1 ? "One SELF" : n > 0 ? "\(n) SELFs" : "Nobody chose SELF")
-            sub(n == 1 ? "They take Sanctuary, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held, so the Purse grows double.")
-        default: EmptyView()
-        }
-    }
-
-    @ViewBuilder private func end(_ r: GameResult) -> some View {
-        let fw = r.forsworn
-        let inner = u.vw * 86 // the screen less its sides (5vw each) and the 4vw between the columns
-        HStack(alignment: .center, spacing: u.vw * 4) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(fw ? "The Forsworn win" : "The Loyal win").font(Theme.disp(u.size.width / u.size.height < 1.5 ? u.vh * 7 : u.vh * 9, fixed: true)).foregroundStyle(fw ? Theme.blood2 : Theme.brass2)
-                VStack(alignment: .leading, spacing: u.vh * 0.6) {
-                    Text("the prize").font(Theme.sc(u.vh * 2.2, fixed: true)).tracking(u.vh * 0.3).foregroundStyle(Theme.brass2)
-                    Text(Words.prize(r)).font(Theme.book(u.vh * 5, fixed: true)).foregroundStyle(Theme.tallow)
-                    Text((r.to.isEmpty ? "Nobody takes it" : "To " + Words.andList(r.to)) + (fw ? ", with the \(r.won) the Purse fell short" : ", with the Purse of \(r.pot)"))
-                        .font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2)
-                }
-                .padding(.vertical, u.vh * 3).padding(.horizontal, u.vw * 2.4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(RoundedRectangle(cornerRadius: u.vh * 2).strokeBorder(Theme.brass, lineWidth: 1))
-                .overlay(RoundedRectangle(cornerRadius: u.vh * 1.6).strokeBorder(Theme.brass2.opacity(0.3), lineWidth: 1).padding(u.vh * 0.7))
-                .padding(.top, u.vh * 3)
-                if !r.peeked.isEmpty { count("the host opened the roles in round " + r.peeked.map(String.init).joined(separator: ", ")).padding(.top, u.vh * 2) }
-            }
-            .multilineTextAlignment(.leading)
-            .frame(width: inner / 2.1, alignment: .leading)
-            VStack(spacing: u.vh * 3) {
-                TVPeople(v: v, list: v.players, u: u, roles: true, end: true)
-                if !r.awards.isEmpty {
-                    Columns(2, spacing: u.vw * 2) {
-                        ForEach(r.awards.prefix(v.players.count > 16 ? 2 : 4), id: \.title) { a in
-                            HStack(spacing: u.vw) {
-                                Seal(v.player(a.id)).frame(width: u.vh * 5, height: u.vh * 5)
-                                VStack(alignment: .leading, spacing: 0) {
-                                    Text(a.title).font(Theme.ui(u.vh * 2.4, .bold, fixed: true)).foregroundStyle(Theme.brass2)
-                                    Text(a.name + " " + a.why).font(Theme.ui(u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow)
-                                }
-                                Spacer(minLength: 0)
-                            }
-                            .multilineTextAlignment(.leading)
-                        }
-                    }
-                }
-            }
-            .frame(width: inner * 1.1 / 2.1)
         }
     }
 
@@ -385,6 +233,198 @@ struct TVBody: View {
     }
 }
 
+// A Trial on the TV, and below it each question, its answer and the results: views of their own, which SwiftUI draws
+// one at a time. Drawn inside the TV's one body, a question went deeper than an iPhone's main thread allows in a Debug
+// build (the TV over AirPlay crashed as a Trial's first question opened).
+struct TVTrial: View, TVType {
+    let v: Snapshot
+    let t: Trial
+    let u: TVUnits
+
+    var body: some View {
+        if t.stage == "intro" {
+            eyebrow("trial" + TrialView.prizeLine(t)); h1(t.title, disp: true); sub(t.rules); if t.introEnd != nil { clock(t.introEnd) }
+        } else if t.stage == "done" {
+            let w = t.winners.first
+            eyebrow(t.title)
+            h1(TrialDone.head(v, t))
+            if w != nil && t.byLot && t.key != "tempt" { count("a tie at the top, settled by lot") }
+            ans(Words.signed(t.points) + " to the Purse")
+            meter()
+            if let g = t.gave { sub(v.name(g) + " takes the Crown.") }
+            else if t.special == "cast" { sub("Whoever won holds it. Only they know.") }
+            else if t.special == "secret" && w != nil { sub("The special prize is on their phone.") }
+            else if let s = t.sanctPublic { sub(v.name(s) + " takes Sanctuary.") }
+            else if t.prize && w != nil { sub("Did they take Sanctuary? Only they know.") }
+            if !["tempt", "likely"].contains(t.key) && !t.scores.isEmpty { TVScores(v: v, t: t, u: u) }
+        } else if let x = t.item {
+            eyebrow(t.title + " · \(x.stage == "reveal" ? t.i : t.i + 1)")
+            if x.stage == "reveal" { TVReveal(v: v, x: x, u: u) } else { TVItem(v: v, x: x, u: u) }
+        }
+    }
+}
+
+// a question, as it's asked
+struct TVItem: View, TVType {
+    let v: Snapshot
+    let x: Item
+    let u: TVUnits
+    @Environment(Session.self) private var session
+
+    var body: some View {
+        let c = x.end != nil && x.stage != "reveal"
+        let cnt = x.of > 0
+        switch x.k {
+        case "text", "number", "vote":
+            h2(x.q ?? ""); if c { clocked(x) }; if cnt { answered(x) }
+        case "hilo":
+            h2(x.q ?? ""); ans("Higher or lower than " + (x.ref ?? "") + "?"); if c { clocked(x) }; if cnt { answered(x) }
+        case "word":
+            TVLetters(letters: x.letters ?? "", u: u); if c { clocked(x) }; if cnt { answered(x) }
+        case "recall":
+            if x.stage == "study" { TVWords(words: x.words, u: u); if c { clocked(x) } }
+            else { h2("Type every word you remember"); if c { clocked(x) }; if cnt { answered(x) } }
+        case "cell":
+            if let g = x.grid { TVGrid(grid: g, hit: [], u: u); if c { clocked(x) } } else { h2("Something is changing…") }
+        case "snap":
+            TimelineView(.periodic(from: .now, by: 0.2)) { _ in
+                if let s = x.snapSymbol(x.snapIndex(at: session.gameNow())) { Icon(name: s).frame(width: u.vh * 40, height: u.vh * 40).foregroundStyle(Theme.brass2) }
+                else { h2("Get ready") }
+            }
+        case "rps":
+            h2("Rock, paper, scissors")
+            Flow(spacing: u.vw * 3.2, lineSpacing: u.vh, center: true) {
+                ForEach(Array(x.pairs.enumerated()), id: \.offset) { _, pr in
+                    (Text(v.name(pr.first)) + Text(" v ").foregroundColor(Theme.mist) + Text(v.name(pr.last))).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow)
+                }
+                if let bye = x.bye { Text("bye: " + v.name(bye)).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow) }
+            }
+            .frame(maxWidth: u.vw * 84)
+            if c { clocked(x) }
+            count("\(x.answered) of \(x.of) chosen")
+        case "survive":
+            h2("Still standing"); sub(v.alive.filter { !x.out.contains($0.id) }.map(\.name).joined(separator: ", "))
+        case "actor":
+            h2(v.name(x.actor) + " is up"); if c { clocked(x) }
+        case "truths":
+            h2(v.name(x.teller) + ": two truths and a lie")
+            if x.stage == "open" { sub("Vote on your phones: No. 1, 2 or 3?"); if cnt { answered(x) } }
+            if c { clocked(x) }
+        case "tempt":
+            h2("PURSE or SELF?"); sub("Choose on your phones, in secret."); if c { clocked(x) }; if cnt { answered(x) }
+        default: EmptyView()
+        }
+    }
+
+    @ViewBuilder private func clocked(_ x: Item) -> some View {
+        clock(x.end)
+        if let from = x.from, let end = x.end { TimeBar(from: from, end: end, height: u.vh).frame(width: u.vw * 50) }
+    }
+    private func answered(_ x: Item) -> some View { TVPeople(v: v, list: v.players, u: u, mark: { x.who.contains($0.id) }, answered: true) }
+}
+
+// a question's answer
+struct TVReveal: View, TVType {
+    let v: Snapshot
+    let x: Item
+    let u: TVUnits
+
+    var body: some View {
+        let r = x.res
+        let names: ([String]) -> String = { ids in ids.isEmpty ? "nobody" : ids.map { v.name($0) }.joined(separator: ", ") }
+        switch x.k {
+        case "text": h2(x.q ?? ""); ans(x.a ?? ""); sub("Right: " + names(r.right))
+        case "number", "hilo": h2(x.q ?? ""); ans(x.a ?? ""); sub((x.k == "number" ? "Closest: " : "Right: ") + names(x.k == "number" ? r.closest : r.right))
+        case "vote": h2(x.q ?? ""); ans(names(r.top))
+        case "word":
+            let best = r.words.filter { $0.ok }.sorted { $0.word.count > $1.word.count }.first
+            TVLetters(letters: x.letters ?? "", u: u); ans(best?.word ?? "No real words"); sub(best.map { v.name($0.id) } ?? "")
+        case "recall": TVWords(words: x.words, u: u)
+        case "cell": TVGrid(grid: x.grid ?? [], hit: x.changed, u: u); sub("Right: " + names(r.right))
+        case "snap": h2("Snap!"); sub(names(r.hits))
+        case "rps": h2(r.bouts.map { b in b.w.map { w in v.name(w) + " beats " + v.name(w == b.a ? b.b : b.a) } ?? v.name(b.a) + " and " + v.name(b.b) + " draw" }.joined(separator: " · "))
+        case "survive": h2("Last standing: " + names(r.still))
+        case "actor": ans(r.word ?? ""); sub(r.guess != nil && r.guess != "none" ? v.name(r.guess) + " got it" : "Nobody got it")
+        case "truths": h2("The lie was No. \(r.lie ?? 0)"); sub("Right: " + names(r.right) + " · " + v.name(r.teller) + " fooled \(r.fooled)")
+        case "tempt":
+            let n = r.selfCount
+            h2(n == 1 ? "One SELF" : n > 0 ? "\(n) SELFs" : "Nobody chose SELF")
+            sub(n == 1 ? "They take Sanctuary, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held, so the Purse grows double.")
+        default: EmptyView()
+        }
+    }
+}
+
+// the results
+struct TVEnd: View, TVType {
+    let v: Snapshot
+    let r: GameResult
+    let u: TVUnits
+
+    var body: some View {
+        let fw = r.forsworn
+        let inner = u.vw * 86 // the screen less its sides (5vw each) and the 4vw between the columns
+        HStack(alignment: .center, spacing: u.vw * 4) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(fw ? "The Forsworn win" : "The Loyal win").font(Theme.disp(u.size.width / u.size.height < 1.5 ? u.vh * 7 : u.vh * 9, fixed: true)).foregroundStyle(fw ? Theme.blood2 : Theme.brass2)
+                if r.early { Text("The host ended the game here.").font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2) }
+                VStack(alignment: .leading, spacing: u.vh * 0.6) {
+                    Text("the prize").font(Theme.sc(u.vh * 2.2, fixed: true)).tracking(u.vh * 0.3).foregroundStyle(Theme.brass2)
+                    Text(Words.prize(r)).font(Theme.book(u.vh * 5, fixed: true)).foregroundStyle(Theme.tallow)
+                    Text((r.to.isEmpty ? "Nobody takes it" : "To " + Words.andList(r.to)) + (fw ? ", with the \(r.won) the Purse fell short" : ", with the Purse of \(r.pot)"))
+                        .font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2)
+                }
+                .padding(.vertical, u.vh * 3).padding(.horizontal, u.vw * 2.4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: u.vh * 2).strokeBorder(Theme.brass, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: u.vh * 1.6).strokeBorder(Theme.brass2.opacity(0.3), lineWidth: 1).padding(u.vh * 0.7))
+                .padding(.top, u.vh * 3)
+                if !r.peeked.isEmpty { count("the host opened the roles in round " + r.peeked.map(String.init).joined(separator: ", ")).padding(.top, u.vh * 2) }
+            }
+            .multilineTextAlignment(.leading)
+            .frame(width: inner / 2.1, alignment: .leading)
+            VStack(spacing: u.vh * 3) {
+                TVPeople(v: v, list: v.players, u: u, roles: true, end: true)
+                if !r.awards.isEmpty {
+                    Columns(2, spacing: u.vw * 2) {
+                        ForEach(r.awards.prefix(v.players.count > 16 ? 2 : 4), id: \.title) { a in
+                            HStack(spacing: u.vw) {
+                                Seal(v.player(a.id)).frame(width: u.vh * 5, height: u.vh * 5)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text(a.title).font(Theme.ui(u.vh * 2.4, .bold, fixed: true)).foregroundStyle(Theme.brass2)
+                                    Text(a.name + " " + a.why).font(Theme.ui(u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow)
+                                }
+                                Spacer(minLength: 0)
+                            }
+                            .multilineTextAlignment(.leading)
+                        }
+                    }
+                }
+            }
+            .frame(width: inner * 1.1 / 2.1)
+        }
+    }
+}
+
+// the TV's type, in the page's sizes (.tvmain h1, h2, .sub …), for its body and the parts drawn apart from it
+private protocol TVType {
+    var v: Snapshot { get }
+    var u: TVUnits { get }
+}
+
+extension TVType {
+    func h1(_ s: String, disp: Bool = false, color: Color? = nil) -> some View {
+        Text(s).font(disp ? Theme.disp(u.vh * 11, fixed: true) : Theme.book(u.vh * 8, fixed: true)).foregroundStyle(color ?? (disp ? Theme.brass2 : Theme.tallow)).lineLimit(3).minimumScaleFactor(0.6)
+    }
+    func h2(_ s: String) -> some View { Text(s).font(Theme.book(u.vh * 5.4, fixed: true)).foregroundStyle(Theme.tallow).frame(maxWidth: u.vw * 80).lineLimit(4).minimumScaleFactor(0.6) }
+    func sub(_ s: String) -> some View { Text(s).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow2).frame(maxWidth: u.vw * 70).fixedSize(horizontal: false, vertical: true) }
+    func eyebrow(_ s: String) -> some View { Eyebrow(s, size: u.vh * 2.6, tv: true) }
+    func ans(_ s: String) -> some View { Text(s).font(Theme.book(u.vh * 7, fixed: true)).monospacedDigit().foregroundStyle(Theme.brass2).lineLimit(2).minimumScaleFactor(0.5) }
+    func count(_ s: String) -> some View { Text(s).font(Theme.sc(u.vh * 2.8, fixed: true)).tracking(u.vh * 0.28).foregroundStyle(Theme.tallow2) }
+    func clock(_ end: Double?) -> some View { Clock(end: end, size: u.vh * 5, tv: true) }
+    func meter() -> some View { Meter(pot: v.pot, cap: v.potCap, tiers: v.tiers, height: u.vh * 3.4, font: u.vh * 2).frame(width: u.vw * 40) }
+}
+
 // the players as rows of seals, each row the same length (.tvpeople)
 struct TVPeople: View {
     let v: Snapshot
@@ -408,9 +448,11 @@ struct TVPeople: View {
                 VStack(spacing: u.vh * 0.6) {
                     Seal(p).frame(width: seal, height: seal)
                         .shadow(color: ok ? Theme.verd.opacity(0.8) : roles && p.forsworn ? Theme.blood2.opacity(0.8) : .clear, radius: u.vh * (ok ? 1.2 : 1.4))
-                    Text(p.name).font(Theme.ui(many ? u.vh * 1.9 : u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow).lineLimit(2).multilineTextAlignment(.center)
+                    // a long name shrinks to fit its seal's width rather than breaking in the middle of a word
+                    Text(p.name).font(Theme.ui(many ? u.vh * 1.9 : u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow).lineLimit(1).minimumScaleFactor(0.6)
                     if roles, let role = p.role {
                         Text(role == "f" ? "forsworn" : "loyal").font(Theme.sc(end && many && narrow ? u.vh * 1.6 : u.vh * 2.1, fixed: true)).tracking(u.vh * 0.17)
+                            .lineLimit(1).minimumScaleFactor(0.5)
                             .foregroundStyle(role == "f" ? Theme.blood2 : Theme.loyalSoft)
                     }
                 }

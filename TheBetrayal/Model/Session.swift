@@ -22,6 +22,7 @@ final class Session {
     var screen: Screen
     private(set) var view: Snapshot?
     private(set) var rejoin: [Rejoin] = []
+    private(set) var hostGone = false // the host's phone has been quiet for two minutes: this phone may take over as host
     private(set) var tier = Tier.full // read from every response
     var peekList: [Peek]?
     var tools = false
@@ -32,6 +33,7 @@ final class Session {
     private(set) var classic = false
     var pass: String?           // the booking code, for the host setting the Table up
     var practice = false        // a practice game being set up: one person and the bots
+    @ObservationIgnored var useSavedName = false // join or set up with the name saved on this phone (typed on the start screen), not ask for it
     var rolePeek = false        // the role card is showing (the veil was tapped)
     var background = false      // the app is in the background: poll slowly
     private(set) var freshKey = "" // the screen's key: a new one fades the screen in
@@ -73,6 +75,11 @@ final class Session {
     func start() {
         guard !demo else { return }
         Trail.shared.open(room, tv: isTV)
+        if useSavedName, token == nil, let name = UserDefaults.standard.string(forKey: "bt-name"), !name.isEmpty {
+            useSavedName = false
+            if screen == .join { Task { await join(name: name) } }
+            else if screen == .create(test: false) { Task { await create(name: name) } }
+        }
         if loop == nil {
             loop = Task { [weak self] in
                 while !Task.isCancelled {
@@ -156,6 +163,7 @@ final class Session {
         }
         if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
         if tier.tier == "free", tier.ads?.enabled == true, !isTV, !demo { Ads.shared.prepare() }
+        hostGone = j["hostGone"].bool == true && !isTV && !demo
         if !j["rejoin"].isNull { rejoin = j["rejoin"].array.compactMap { r in r["id"].string.map { Rejoin(id: $0, name: r["name"].string ?? "?") } } }
         else if !j["view"].isNull { rejoin = [] }
         if !j["peek"].isNull { peekList = j["peek"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? false) } }
@@ -285,12 +293,12 @@ final class Session {
         adMoment(v)
     }
 
-    // a free game's natural breaks, on every player's phone, the host's included (never the TV): the Reckoning's debate
-    // from the second round (minutes when nobody needs their phone, the host's controls included; at the day, a Trial
-    // could begin under the ad), and the results once they've been seen
+    // a free game's natural breaks, on every player's phone, the host's included (never the TV): the start of each day
+    // from the second round (it waits for the host's Begin, and each Trial for the host's Start, so no clock runs under
+    // the ad; the Reckoning's talk is timed for each player), and the results once they've been seen
     private func adMoment(_ v: Snapshot) {
         guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, v.me != nil else { return }
-        let key = v.phase == "talk" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
+        let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
         guard !key.isEmpty, !adKeys.contains(key) else { return }
         adKeys.insert(key)
         let phase = v.phase

@@ -26,7 +26,7 @@ const snap = (name, pid, extra) => { if (out[name]) throw new Error("twice: " + 
 // a side trip: play something out, keep its pictures, and put the game back as it was
 const side = (fn) => { const keep = structuredClone(s), keepNow = now, keepSeed = seed; fn(); for (const k of Object.keys(s)) delete s[k]; Object.assign(s, keep); now = keepNow; seed = keepSeed; };
 const trial = (key, special) => { s.steps = [{ k: "trial", key, special: special || null }, { k: "reckon" }]; s.stepAt = 0; a(dir, { a: "next" }); };
-const toItems = () => t(12500);
+const toItems = () => { a(dir, { a: "cont" }); t(); }; // the host starts the Trial
 
 // ---- before the game
 snap("lobby-host", dir);
@@ -58,7 +58,7 @@ side(() => { a(dir, { a: "pause" }); snap("paused-host", dir); snap("paused-gues
 side(() => { a(dir, { a: "break", v: "interval" }); t(61000); snap("break-host", dir); snap("break-guest", ryan); });
 
 // every Trial, from the phones that matter
-side(() => { trial("quiz"); snap("trial-intro-forsworn", tom); snap("trial-intro-loyal", ryan); });
+side(() => { trial("quiz"); snap("trial-intro-forsworn", tom); snap("trial-intro-loyal", ryan); snap("trial-intro-host", dir); });
 side(() => {
   trial("quiz"); toItems(); snap("quiz-open", ryan);
   const q = s.trial.item; a(ryan, { a: "ans", v: q.a }); snap("quiz-sent", ryan);
@@ -106,9 +106,9 @@ side(() => {
 s.steps = [{ k: "reckon" }]; s.stepAt = 0;
 s.cast = { id: sophie, used: false, round: 1 }; s.crown = { id: marcus, used: false, round: 1 };
 a(dir, { a: "next" });
-snap("talk", ryan); snap("talk-crown", marcus);
+snap("talk", ryan); snap("talk-host", dir); snap("talk-crown", marcus);
 side(() => { a(marcus, { a: "crown" }); snap("talk-crown-laid", ryan); });
-t(240100);
+t(s.vote.talkEnd - now + 100); // (thirty seconds a player)
 snap("vote", ryan); snap("vote-ghost-less", sophie);
 a(ryan, { a: "ballot", v: oliver }); snap("vote-mine", ryan);
 side(() => { // a tie, and the revote between the tied
@@ -153,7 +153,7 @@ snap("left", nadia);
 s.round = 4; s.final = true; s.steps = [{ k: "reckon" }]; s.stepAt = 0; s.crown = null; s.cast = null;
 s.confess = { id: ryan, of: tom };
 snap("final-day", ryan);
-a(dir, { a: "next" }); t(240100);
+a(dir, { a: "next" }); t(s.vote.talkEnd - now + 100);
 snap("final-vote", ryan);
 for (const id of alive()) a(id, { a: "ballot", v: id === sophie ? dir : sophie });
 t(100);
@@ -162,8 +162,8 @@ a(dir, { a: "cont" });
 snap("trust", ryan);
 a(ryan, { a: "trust", v: "trust" }); snap("trust-mine", ryan);
 for (const id of alive()) if (id !== ryan) a(id, { a: "trust", v: "trust" });
-t(100); snap("trust-result", ryan);
-t(6100); t(3100); t(3300);
+t(100); snap("trust-result", ryan); snap("trust-result-host", dir);
+a(dir, { a: "cont" }); t(3100); t(3300); // the host moves on from the result
 snap("unmask", ryan);
 for (let i = 0; i < 6; i++) t(3300);
 snap("honour-forsworn", tom); snap("honour-loyal", ryan);

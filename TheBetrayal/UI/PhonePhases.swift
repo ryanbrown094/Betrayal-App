@@ -43,14 +43,15 @@ struct LobbyView: View {
         VStack(alignment: .leading, spacing: 0) {
             H2("You’re in")
             if v.practice { Sub("Just you and the bots tonight.") }
-            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the code on the TV.")) }
+            else if me.director { CodeCard(room: session.room) }
+            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the QR code on the host’s phone or the TV.")) }
             People(list: v.players)
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
                 LobbyOffer(v: v)
                 if v.test || v.practice {
                     Banner(.plain, v.practice ? "Practice game: the bots play every part themselves, and the clocks are short. Start when you’re ready." : "Test game: the bots play themselves, Trials score at random, and every countdown is ten seconds.")
-                    Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14)
+                    if n < (v.practice ? 16 : 24) { Button("Add a bot") { session.act("bots", String(n + 1)) }.btn(.dark, .sm, fit: true).padding(.bottom, 14) }
                 }
                 Card(.dir) {
                     H2("Before you start", sec: true, first: true)
@@ -59,7 +60,7 @@ struct LobbyView: View {
                     Small(o?.shield == "public" ? "Everyone sees who won Sanctuary." : "Only the winner knows they hold Sanctuary. (A Forsworn winner gets nothing, and learns so.)").padding(.top, 6)
                     Label2("The prize")
                     Field(placeholder: "", text: $prize, max: 80, submit: sendPrize).focused($focus, equals: "prize")
-                    if o?.coins == true { Small("Every 100 points in the Purse is one chocolate coin.").padding(.top, 6) }
+                    if o?.coins == true { Small("One chocolate coin for every 100 points the winners take from the Purse.").padding(.top, 6) }
                     More("Better prizes for a fuller Purse", open: !(o?.prizes.isEmpty ?? true)) {
                         Small("Optional. If the Forsworn win it works the other way: half empty wins them the better prize, empty the best. Nobody sees these until the end.")
                         Label2("At a half-full Purse")
@@ -74,7 +75,7 @@ struct LobbyView: View {
                     // a practice game can't be made ad-free: a pass is for a real night
                     if !v.locked.isEmpty && !v.practice {
                         Label2("Trials").padding(.top, 12)
-                        Small("A free game plays 8 of the 15 Trials, with half the questions, and shows an ad between rounds. A pass takes the ads away for everyone and adds:").padding(.top, 2)
+                        Small("A free game plays 8 of the 15 Trials, with half the questions, and shows ads. A pass takes the ads away for everyone and adds:").padding(.top, 2)
                         Flow(spacing: 6) { ForEach(v.locked, id: \.self) { LockedTrial(title: $0) } }.padding(.bottom, 10)
                         Button("Make it ad-free with a pass") { passing = true }.btn(.ghost, .sm, fit: true)
                     }
@@ -84,7 +85,7 @@ struct LobbyView: View {
                     }
                     .btn(.fill, .big).disabled(n < 8)
                     if !v.practice {
-                        Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or open the app on an iPad, type ") + b(session.room, size: 15) + Text(" and choose ") + b("Use this screen as the TV", size: 15) + Text("."), center: true).padding(.top, 12)
+                        Small(Text("For the TV, if you want one, AirPlay this phone to it: the TV shows the game, never your screen. Or use an iPad: ") + b("Set up a TV", size: 15) + Text(", on the start screen."), center: true).padding(.top, 12)
                     }
                 }
             }
@@ -111,6 +112,27 @@ struct LobbyView: View {
             Button(a.1) { session.send(["a": "opts", "opts": [k: a.0]]) }.btn(on == a.0 ? .on : .dark, .sm)
             Button(c.1) { session.send(["a": "opts", "opts": [k: c.0]]) }.btn(on == c.0 ? .on : .dark, .sm)
         }
+    }
+}
+
+// the Table's code, large, and its QR code, for the host to show the room (there may be no TV to show it)
+struct CodeCard: View {
+    let room: String
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            VStack(alignment: .leading, spacing: 2) {
+                Eyebrow("the table code")
+                Text(room).font(Theme.ui(40, .bold)).tracking(4).foregroundStyle(Theme.brass2).lineLimit(1).minimumScaleFactor(0.5)
+                    .accessibilityLabel(room.map(String.init).joined(separator: " "))
+                Text("Friends join in The Betrayal app: Join a game, then type this code or scan the QR code.").font(Theme.ui(15)).foregroundStyle(Theme.tallow2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            QRBox(text: Server.joinLink(room)).frame(width: 118, height: 118).accessibilityHidden(true)
+        }
+        .padding(14)
+        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.brass, lineWidth: 1))
+        .padding(.top, 2).padding(.bottom, 14)
     }
 }
 
@@ -533,6 +555,8 @@ struct TrustView: View {
                 if let r = t.result {
                     H1(r == "trust" ? "The table trusts" : "Doubt")
                     Sub(r == "trust" ? "Everyone chose Trust. The masks come off." : Words.plural(t.count, "player") + " doubted. Another Reckoning.")
+                    DirCard { Button("Continue") { session.act("cont") }.btn(.fill) }
+                    WaitHost(v: v)
                 } else if !me.alive {
                     Eyebrow("trust or doubt"); H1("The survivors decide"); Sub("\(t.voted) of \(t.of) have chosen.")
                 } else {
@@ -605,6 +629,7 @@ struct EndView: View {
             let fw = r.forsworn
             VStack(alignment: .leading, spacing: 0) {
                 H1(fw ? "The Forsworn win" : "The Loyal win", disp: true)
+                if r.early { Small("The host ended the game here, so it’s scored as it stood.") }
                 Sub(EndView.how(r))
                 if me.director { ResultsOffer(v: v) }
                 VStack(spacing: 0) {

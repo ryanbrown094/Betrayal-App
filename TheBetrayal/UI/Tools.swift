@@ -9,7 +9,8 @@ struct ToolsView: View {
     @State private var sound = Sound.shared.enabled && !Sound.shared.muted
 
     private struct Tool: Identifiable { let label: String; let v: String; let why: String; var id: String { v + label } }
-    private static let asks = ["endTrial": "End this Trial now?", "closeVote": "Close the vote now?", "dawnNow": "End the night now?", "deal": "Deal the roles now?", "skipStep": "Skip this step?"]
+    fileprivate static let asks = ["endTrial": "End this Trial now?", "closeVote": "Close the vote now?", "dawnNow": "End the night now?", "deal": "Deal the roles now?", "skipStep": "Skip this step?",
+                                   "end": "End the game now? Everyone’s role is shown, and it’s scored as it stands."]
 
     private var tools: [Tool] {
         var l: [Tool] = []
@@ -23,6 +24,10 @@ struct ToolsView: View {
         if v.phase == "talk" { l.append(Tool(label: "Open the vote now", v: "voteNow", why: "Cut the talking short.")) }
         if v.phase == "vote" { l.append(Tool(label: "Close the vote now", v: "closeVote", why: "Counts the votes in; nobody else can vote.")) }
         if v.phase == "night" { l.append(Tool(label: "End the night now", v: "dawnNow", why: "Anyone who hasn’t chosen is chosen for.")) }
+        let clockRuns = (it.map { ["open", "study", "prep"].contains($0.stage) && $0.end != nil && $0.k != "snap" } ?? false) || ["talk", "vote", "night", "honour"].contains(v.phase)
+            || (v.phase == "dawn" && v.dawn?.lastEnd != nil) || (v.phase == "trust" && v.trust?.result == nil)
+        if clockRuns { l.append(Tool(label: "Add a minute", v: "more", why: "A minute more on the clock that’s running.")) }
+        if !["lobby", "end"].contains(v.phase) { l.append(Tool(label: "End the game now", v: "end", why: "Everyone’s role is shown, and it’s scored as it stands: if any Forsworn are still in, they win.")) }
         return l
     }
 
@@ -47,7 +52,7 @@ struct ToolsView: View {
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule2).frame(height: 1) }
             }
             More("Take someone out of the game") {
-                Small("If someone is ill or has to go home. They leave for good, and nobody is told their role. If nobody Forsworn is left, the final begins.")
+                Small("If someone is ill or has to go home. They leave for good, and nobody is told their role.")
                 PickGrid(list: others) { p in run("remove", who: p) }
             }
             // never a bot (the server refuses): so not at a practice game
@@ -96,6 +101,38 @@ struct ToolsView: View {
                 }
             }
         }
+    }
+}
+
+// The host's moves for this moment, under their own screen; the rest wait in Tools (quick() in src/modern-ui.js)
+struct HostQuick: View {
+    let v: Snapshot
+    @Environment(Session.self) private var session
+
+    private struct Move: Identifiable { let label: String; let tool: String; let kind: Btn.Kind; var id: String { tool } }
+    private var moves: [Move] {
+        var l: [Move] = []
+        if let it = v.trial?.item, ["open", "study", "prep"].contains(it.stage), it.k != "snap" { l.append(Move(label: "Close this question", tool: "skip", kind: .dark)) }
+        if v.phase == "talk" { l += [Move(label: "Open the vote now", tool: "voteNow", kind: .fill), Move(label: "+1 minute", tool: "more", kind: .dark)] }
+        if v.phase == "vote" { l += [Move(label: "Close the vote", tool: "closeVote", kind: .dark), Move(label: "+1 minute", tool: "more", kind: .dark)] }
+        if v.phase == "night" { l.append(Move(label: "End the night", tool: "dawnNow", kind: .dark)) }
+        return l
+    }
+
+    var body: some View {
+        let l = moves
+        if v.paused == nil && !l.isEmpty {
+            DirCard {
+                HStack(spacing: 10) {
+                    ForEach(l) { m in Button(m.label) { run(m.tool) }.btn(m.kind, .sm) }
+                }
+            }
+        }
+    }
+
+    private func run(_ tool: String) {
+        let go = { session.send(["a": "tool", "v": tool]) }
+        if let q = ToolsView.asks[tool] { session.confirm(q, then: go) } else { go() }
     }
 }
 

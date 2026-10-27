@@ -416,6 +416,7 @@ struct GameResult {
     let cap: Int
     let awards: [Award]
     let peeked: [Int]
+    let early: Bool // the host ended the game, scored as it stood
     init(_ j: JSON) {
         winner = j["winner"].string ?? "loyal"
         prize = j["prize"].string ?? ""
@@ -428,6 +429,7 @@ struct GameResult {
         cap = j["cap"].int ?? 2000
         awards = j["awards"].array.map { Award(title: $0["title"].string ?? "", id: $0["id"].string ?? "", name: $0["name"].string ?? "", why: $0["why"].string ?? "") }
         peeked = j["peeked"].array.compactMap(\.int)
+        early = j["early"].bool == true
     }
     var forsworn: Bool { winner == "forsworn" }
 }

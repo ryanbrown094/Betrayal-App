@@ -68,7 +68,7 @@ final class Ads {
         }
     }
 
-    // a player's phone at a natural break (placement P2 between rounds, P3 the results): shown if the limits allow and
+    // a player's phone at a natural break (placement P2 as each day starts, from the second round, P3 the results): shown if the limits allow and
     // one is loaded
     func interstitial(room: String, limits: AdsConfig, placement: String) {
         guard limits.enabled else { return }

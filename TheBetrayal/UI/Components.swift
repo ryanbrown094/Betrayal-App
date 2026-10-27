@@ -422,7 +422,7 @@ struct LastWords: View {
     var vh: CGFloat = 8
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("“" + words + "”").font(Theme.bookItalic(tv ? 4 * vh : 20, fixed: tv)).foregroundStyle(Theme.tallow).fixedSize(horizontal: false, vertical: true)
+            Text("“" + words + "”").font(Theme.bookItalic(tv ? (words.count > 90 ? 3.2 : 4) * vh : 20, fixed: tv)).foregroundStyle(Theme.tallow).fixedSize(horizontal: false, vertical: true) // (up to 140 letters: smaller on the TV when long)
             Text(name + "’s last words").font(Theme.sc(tv ? 2.2 * vh : 14, fixed: tv)).tracking(0.4).foregroundStyle(Theme.tallow2)
         }
         .padding(.leading, tv ? 3 * vh : 18).padding(.vertical, tv ? 2 * vh : 4)

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // A player's phone at a Table (phone() in src/modern-ui.js): joining, setting up, then the game.
 struct TableView: View {
@@ -35,20 +36,74 @@ struct TableView: View {
         case .join: ScrollView { JoinCard(back: { dismiss() }) }.scrollDismissesKeyboard(.interactively)
         case .create(let test): ScrollView { CreateCard(test: test) }.scrollDismissesKeyboard(.interactively)
         case .choose: ScrollView { ChooseCard() }
-        case .wait: ScrollView { Notice(title: "Asking the host…", text: "The game has started. The host’s phone will ask them to let you back in.") }
+        case .wait: ScrollView { Notice(title: "Asking to come back in…", text: "The game has started, so someone lets you back in: the host, from their phone. If you’re the host, anyone at the Table can, once your old phone has been quiet for half a minute.") }
         case .nogame:
             ScrollView {
                 Notice(title: session.classic ? "Not a Table for the app" : "Not open yet",
                        text: session.classic ? "Table \(session.room) can’t be played in the app. Ask the host to start a new Table in the app." : "Table \(session.room) hasn’t been set up. The host opens it first, then you can join.")
             }
             .task { while session.screen == .nogame && !Task.isCancelled { try? await Task.sleep(nanoseconds: 4_000_000_000); await recheck() } }
-        case .play, .tv: PlayView()
+        case .play: PlayView().overlay { ShareGuard() }
+        case .tv: PlayView()
         }
     }
 
     // a Table that wasn't set up yet may be by now
     private func recheck() async {
         if await API.mode(of: session.room) == .modern { session.screen = session.token == nil ? .join : .play }
+    }
+}
+
+// A phone whose screen is being shown somewhere else (mirrored to a TV over AirPlay or a cable, or recorded) while the
+// app isn't drawing a TV picture of its own there: the role and the choices on it would show too, so they're covered
+// until the sharing stops, or the player says to show them anyway.
+private struct ShareGuard: View {
+    @State private var captured = false
+    @State private var shown = false
+    private let model = AppModel.shared
+    var body: some View {
+        ZStack {
+            CaptureWatch(captured: $captured).frame(width: 0, height: 0)
+            if captured && !shown && !model.externalConnected {
+                ZStack {
+                    Backdrop()
+                    Column {
+                        Brand()
+                        VStack(spacing: 0) {
+                            H2("Your screen is on show")
+                            Sub("This phone’s screen is being shared: mirrored to a TV, or recorded. Your role and your choices would show too, so they’re hidden until it stops.")
+                            Small("To stop: Control Centre, then Screen Mirroring (or the record button). For the game on a TV, use an iPad or a spare phone as the TV: Set up a TV, on the start screen.", center: true)
+                        }
+                        .multilineTextAlignment(.center).frame(maxWidth: .infinity)
+                        Button("Show my screen anyway") { shown = true }.btn(.dark, .sm)
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .onChange(of: captured) { _, c in if !c { shown = false } }
+    }
+}
+
+// whether this phone's screen is being captured (UITraitCollection.sceneCaptureState: AirPlay or cable mirroring,
+// recording, iPhone Mirroring)
+private struct CaptureWatch: UIViewRepresentable {
+    @Binding var captured: Bool
+    func makeUIView(context: Context) -> Watcher { let w = Watcher(); w.changed = { captured = $0 }; return w }
+    func updateUIView(_ w: Watcher, context: Context) { w.changed = { captured = $0 } }
+
+    final class Watcher: UIView {
+        var changed: ((Bool) -> Void)?
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            registerForTraitChanges([UITraitSceneCaptureState.self]) { (w: Watcher, _: UITraitCollection) in w.report() }
+        }
+        required init?(coder: NSCoder) { fatalError() }
+        override func didMoveToWindow() { super.didMoveToWindow(); report() }
+        func report() {
+            let c = traitCollection.sceneCaptureState == .active
+            DispatchQueue.main.async { [weak self] in self?.changed?(c) }
+        }
     }
 }
 
@@ -68,12 +123,12 @@ private struct AskButtons: View {
 
 // the brand at the top of the screens before a game (.brand)
 struct Brand: View {
-    var mark = "modern"
+    var mark: String? = nil // what kind of game, when it isn't an ordinary one (practice, a test game)
     var body: some View {
         VStack(spacing: 6) {
             Crest().frame(width: 64, height: 76).foregroundStyle(Theme.brass2)
             Text("The Betrayal").font(Theme.disp(40)).foregroundStyle(Theme.brass2)
-            Text(mark).font(Theme.sc(15)).tracking(1.8).foregroundStyle(Theme.tallow2)
+            if let mark { Text(mark).font(Theme.sc(15)).tracking(1.8).foregroundStyle(Theme.tallow2) }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 18).padding(.bottom, 22)
@@ -148,7 +203,7 @@ struct CreateCard: View {
     @State private var bots = 10
     var body: some View {
         Column {
-            Brand(mark: session.practice ? "practice" : test ? "test game" : "modern")
+            Brand(mark: session.practice ? "practice" : test ? "test game" : nil)
             Card {
                 if session.practice {
                     H2("A practice game")
@@ -251,6 +306,7 @@ struct PlayView: View {
 
     @ViewBuilder private func game(_ v: Snapshot, _ me: Me) -> some View {
         ForEach(session.rejoin) { r in RejoinCard(r: r) }
+        if session.hostGone { TakeOverCard(v: v) }
         if !me.alive && !["lobby", "oath", "roles", "end", "dawn", "reveal"].contains(v.phase) && v.trial?.key != "statue" {
             Banner(.ghost, icon: "ghost", "You’re a Ghost. You still watch, cheer and call it at the Reckoning, but you don’t vote or play.")
         }
@@ -259,6 +315,7 @@ struct PlayView: View {
         PhaseView(v: v, me: me)
             .id(session.freshKey)
             .modifier(FadeIn(rise: reduceMotion ? 0 : 6))
+        if me.director { HostQuick(v: v) }
     }
 }
 
@@ -405,6 +462,22 @@ struct RejoinCard: View {
     }
 }
 
+// the host's phone has been quiet for two minutes (flat, lost, gone home): anyone at the Table can take over, or the
+// game would wait for ever on the one phone that moves it on
+struct TakeOverCard: View {
+    let v: Snapshot
+    @Environment(Session.self) private var session
+    var body: some View {
+        let host = v.director?.name ?? "The host"
+        Card(.hot) {
+            Para(b(host) + Text("’s phone has gone quiet. If they can’t come back, someone can take over as host and move the evening on."))
+            Button("Take over as host") {
+                session.confirm("Take over as host?", yes: "Take over") { session.act("takeover") }
+            }.btn(.fill, .sm)
+        }
+    }
+}
+
 // the host stopped the clocks: everything waits, and nothing can be answered, until they carry on
 struct PauseBox: View {
     let v: Snapshot
@@ -427,7 +500,10 @@ struct PauseBox: View {
                 }
                 // requests to come back in: the host's, and, once the host's phone has gone quiet, the host's own request
                 // on everyone's (the server sends each phone only those it may answer)
-                if !tv && !session.demo { ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18) }
+                if !tv && !session.demo {
+                    ForEach(session.rejoin) { r in RejoinCard(r: r) }.multilineTextAlignment(.leading).padding(.top, 18)
+                    if session.hostGone, let v = session.view { TakeOverCard(v: v).multilineTextAlignment(.leading).padding(.top, 18) }
+                }
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: tv ? vh * 140 : 420)
