@@ -49,10 +49,11 @@ struct TVView: View {
     }
 }
 
-// the page's units: a hundredth of the screen's height and width
+// the page's units: a hundredth of the screen's height and width; on a screen taller than 4:3 (an iPad stood upright),
+// a hundredth of the height a 4:3 screen of its width would have, so the TV's landscape layout fits across it
 struct TVUnits {
     let size: CGSize
-    var vh: CGFloat { size.height / 100 }
+    var vh: CGFloat { min(size.height, size.width * 0.75) / 100 }
     var vw: CGFloat { size.width / 100 }
 }
 
@@ -408,9 +409,11 @@ struct TVPeople: View {
                 VStack(spacing: u.vh * 0.6) {
                     Seal(p).frame(width: seal, height: seal)
                         .shadow(color: ok ? Theme.verd.opacity(0.8) : roles && p.forsworn ? Theme.blood2.opacity(0.8) : .clear, radius: u.vh * (ok ? 1.2 : 1.4))
-                    Text(p.name).font(Theme.ui(many ? u.vh * 1.9 : u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow).lineLimit(2).multilineTextAlignment(.center)
+                    // a long name shrinks to fit its seal's width rather than breaking in the middle of a word
+                    Text(p.name).font(Theme.ui(many ? u.vh * 1.9 : u.vh * 2.2, fixed: true)).foregroundStyle(Theme.tallow).lineLimit(1).minimumScaleFactor(0.6)
                     if roles, let role = p.role {
                         Text(role == "f" ? "forsworn" : "loyal").font(Theme.sc(end && many && narrow ? u.vh * 1.6 : u.vh * 2.1, fixed: true)).tracking(u.vh * 0.17)
+                            .lineLimit(1).minimumScaleFactor(0.5)
                             .foregroundStyle(role == "f" ? Theme.blood2 : Theme.loyalSoft)
                     }
                 }

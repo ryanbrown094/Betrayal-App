@@ -127,7 +127,7 @@ struct HomeView: View {
                         Button("Host a game") { path.append(.host) }.btn(.ghost, .big)
                     }
                     .padding(.bottom, 26)
-                    menu
+                    menu(short: g.size.height < 700)
                     footer
                 }
                 .frame(minHeight: g.size.height)
@@ -171,18 +171,19 @@ struct HomeView: View {
         .padding(.bottom, 18)
     }
 
-    private var menu: some View {
+    // (a short phone's rows are a little lower, so the start screen still fits without scrolling)
+    private func menu(short: Bool) -> some View {
         VStack(spacing: 0) {
-            row("raven", busy ? "Opening…" : "Practice against bots") { if !busy { Task { await practise() } } }
-            row("key", "Your passes") { path.append(.passes) }
-            row("eye", "Set up a TV") { path.append(.tv) }
-            row("scroll", "How to play") { intro = Intro() }
-            row("candle", "FAQs") { page = .faq }
+            row("raven", busy ? "Opening…" : "Practice against bots", short: short) { if !busy { Task { await practise() } } }
+            row("key", "Your passes", short: short) { path.append(.passes) }
+            row("eye", "Set up a TV", short: short) { path.append(.tv) }
+            row("scroll", "How to play", short: short) { intro = Intro() }
+            row("candle", "FAQs", short: short) { page = .faq }
         }
         .overlay(alignment: .top) { Rectangle().fill(Theme.rule).frame(height: 1) }
     }
 
-    private func row(_ icon: String, _ title: String, action: @escaping () -> Void) -> some View {
+    private func row(_ icon: String, _ title: String, short: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Icon(name: icon).frame(width: 24, height: 24).foregroundStyle(Theme.brass2)
@@ -190,7 +191,7 @@ struct HomeView: View {
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.tallow2)
             }
-            .frame(minHeight: 50)
+            .frame(minHeight: short ? 42 : 50)
             .contentShape(Rectangle())
             .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule).frame(height: 1) }
         }
