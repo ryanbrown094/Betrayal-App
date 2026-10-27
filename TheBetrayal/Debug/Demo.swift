@@ -5,8 +5,9 @@ import SwiftUI
 //   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
 //                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
-//   -render-store      the App Store's moments at its sizes (iPhone 6.9", 1320 × 2868; the TV as an iPad 13", 2752 × 2064)
-//                      to Documents/store/*.png, then Documents/store/done (store/compose.py adds the captions)
+//   -render-store      the App Store's moments at its sizes (iPhone 6.9", 1320 × 2868; iPhone Duo, 2007 × 2853; the TV
+//                      as an iPad 13", 2752 × 2064) to Documents/store/*.png, then Documents/store/done (store/compose.py
+//                      adds the captions, and makes the 6.3" set from the 6.9")
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
 //   -watch ROOM        a Table as its TV (with -server URL)
@@ -143,6 +144,15 @@ private struct RenderStore: View {
                 .frame(width: 440, height: 956, alignment: .top).clipped().background(Backdrop()))
             r.scale = 3
             if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("phone-\(i + 1)-" + name + ".png")) }
+            await Task.yield()
+        }
+        // the iPhone Duo, open: 669 × 951 points (the phone's column, centred, as it draws there)
+        for (i, name) in RenderStore.phone.enumerated() {
+            guard let s = Demo.session(name, tv: false) else { continue }
+            let r = ImageRenderer(content: PlayView().environment(s).environment(\.rendering, true)
+                .frame(width: 669, height: 951, alignment: .top).clipped().background(Backdrop()))
+            r.scale = 3
+            if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("duo-\(i + 1)-" + name + ".png")) }
             await Task.yield()
         }
         for (i, name) in RenderStore.tv.enumerated() {
