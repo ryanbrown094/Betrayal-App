@@ -2,7 +2,7 @@ import SwiftUI
 
 // Offers to the host of a free game to make the night ad-free, all decided here so their limits live in one place:
 //   U1  the host's lobby, once three have joined, until waved away (it takes the lobby banner's place)
-//   U2  a strip on the host's phone at the Reckoning's debate (when players see the ad) in two rounds, never
+//   U2  a strip on the host's phone at the Reckoning's debate in two rounds, never
 //       consecutive (the second and the fourth)
 //   U3  the same two debates, in a corner of the TV, with nothing to tap: buying is only ever on the host's phone
 //   U4  the host's results: the Host Pass, for next time, until waved away
