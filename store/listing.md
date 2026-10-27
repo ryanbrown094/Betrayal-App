@@ -49,7 +49,7 @@ PRACTISE ON YOUR OWN
 Practice against bots: they fill the Table and play every part, so you can learn the game before the party.
 
 FREE, OR AD-FREE
-Free games show a short ad as each Reckoning opens and at the end, never during a Trial or a vote, and use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host.
+Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host.
 
 You'll need 8 to 24 players in one room, and a phone each. The game is made for adults.
 

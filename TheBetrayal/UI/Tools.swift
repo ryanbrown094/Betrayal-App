@@ -52,7 +52,7 @@ struct ToolsView: View {
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule2).frame(height: 1) }
             }
             More("Take someone out of the game") {
-                Small("If someone is ill or has to go home. They leave for good, and nobody is told their role. If nobody Forsworn is left, the final begins.")
+                Small("If someone is ill or has to go home. They leave for good, and nobody is told their role.")
                 PickGrid(list: others) { p in run("remove", who: p) }
             }
             // never a bot (the server refuses): so not at a practice game

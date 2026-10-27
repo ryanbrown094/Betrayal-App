@@ -49,7 +49,7 @@ enum Page: String, Identifiable {
             "Nobody is told how many Forsworn there are. Players only find out as Forsworn are exiled and revealed.",
         ]),
         ("A round", [
-            "The game is played in rounds, planned from the size of the table so that the final starts with five or fewer (sooner, if every Forsworn has been exiled). Each round goes like this:",
+            "The game is played in rounds, planned from the size of the table so that the final starts with five or fewer. Each round goes like this:",
             "• **A Trial.** A party game played on the phones: a quiz, a guessing game, charades and so on (all of them are listed below). Each question closes by itself when everyone has answered or the clock runs out. Trials add to the Purse, and most give Sanctuary to the winner. Most tables open the evening with Most Likely To, as the icebreaker.",
             "• **The Reckoning.** Thirty seconds of open debate for each player still in, on a timer, then everyone votes on their phone, in secret. The vote closes when everyone’s in. The player with the most votes is exiled. A tie goes to a revote between the tied players; a second tie is settled by lot. At a table bigger than sixteen, there are two exiles.",
             "• **The reveal.** The exiled player’s role is shown: Forsworn or Loyal. They can type one last line for the TV on the way out.",
@@ -75,7 +75,7 @@ enum Page: String, Identifiable {
             "There is also **a prize**, chosen by the host: something worth lying to your friends for. If they don’t choose one, it’s chocolate coins, one for every 100 points the winners take from the Purse. The host can set better prizes for a fuller Purse, or, if the Forsworn win, an emptier one; the table knows the Purse decides the prize, but not what it is.",
         ]),
         ("The end game", [
-            "The last round is **the final**, with five or fewer at the table, or sooner if every Forsworn has been exiled.",
+            "The last round is **the final**, with five or fewer at the table.",
             "• **A last Trial**, for the Purse and perhaps something more. There’s no Sanctuary in the final, because there is no night left to survive.",
             "• **The Reckoning, without reveals.** The table votes a player out, but this time their role is not shown.",
             "• **Trust or Doubt.** With four or fewer left, each survivor chooses on their phone, in secret: TRUST if they believe every Forsworn is gone, DOUBT if not. Only a unanimous TRUST ends the game. Otherwise, it’s back to the Reckoning for another exile, and another vote.",
@@ -116,7 +116,7 @@ enum Page: String, Identifiable {
         ("Does everyone need the app?", ["Yes: everyone plays on their own phone with The Betrayal app, the host included. There’s no account to make, and joining a game is always free."]),
         ("How long does a game take?", ["About an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24. A Table stays open for 48 hours, so you can set it up in the afternoon."]),
         ("What does it cost?", [
-            "Hosting is free. A free game shows a short ad on each phone as each Reckoning opens (from round 2) and at the end, never during a Trial or a vote, and a banner in the lobby; it plays 8 of the 15 Trials with half the questions.",
+            "Hosting is free. A free game shows a short ad on each phone as each day starts (from round 2) and at the end, never during a Trial or a vote, and a banner in the lobby; it plays 8 of the 15 Trials with half the questions.",
             "• A **Night Pass** makes one night ad-free, with every Trial and the full question banks: every game you start in the 24 hours after you first use it.",
             "• The **Host Pass**, a yearly subscription, makes every game you host ad-free, with every Trial.",
             "A pass is the host’s, and takes the ads away for everyone at the Table: guests never need one. The prices are under **Your passes**.",
@@ -137,7 +137,7 @@ enum Page: String, Identifiable {
         ("1. Who we are", ["The Betrayal is an independent business based in England. You can contact us at info@thebetrayal.co.uk."]),
         ("2. What you’re buying", [
             "Every game is played at a **Table**, an online game room. A Table can be played for **48 hours** from when it opens, then becomes read-only, and is deleted, with everything in it, 7 days after that. You can have one game open at a time with a pass: starting a new game closes the one that was open.",
-            "• **A free game** costs nothing. It shows advertisements (a short one on each phone as each Reckoning opens, from round 2, and at the end, and a banner in the lobby), never during a Trial or a vote, and uses the base set of Trials and questions. A practice game is a free game.",
+            "• **A free game** costs nothing. It shows advertisements (a short one on each phone as each day starts, from round 2, and at the end, and a banner in the lobby), never during a Trial or a vote, and uses the base set of Trials and questions. A practice game is a free game.",
             "• **A Night Pass** is one night without advertisements and with every Trial and the full question banks. Its **24 hours** start the first time you use it, to start a game or on a free game from its lobby, and every game you start in them is ad-free. If no game in those 24 hours gets past the Oath, the night comes back for another time.",
             "• **The Host Pass** (a yearly subscription) makes every game you host ad-free, with every Trial and the full question banks, for as long as the subscription is paid.",
             "A pass is for you and your own parties of 8 to 24 players in one place; you may not resell or share it with other hosts. A pass works only for Tables you host in this app. It is digital content: nothing is posted to you.",

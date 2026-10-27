@@ -258,7 +258,7 @@ struct HomeView: View {
             Spacer().frame(height: 10)
             Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big)
                 .disabled(busy || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
-            Small("Free games show a short ad as each Reckoning opens and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
+            Small("Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
             Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { path.append(.passes) }.btn(.ghost)
         }

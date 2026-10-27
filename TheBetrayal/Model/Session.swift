@@ -293,12 +293,12 @@ final class Session {
         adMoment(v)
     }
 
-    // a free game's natural breaks, on every player's phone, the host's included (never the TV): the Reckoning's debate
-    // from the second round (minutes when nobody needs their phone, the host's controls included; at the day, a Trial
-    // could begin under the ad), and the results once they've been seen
+    // a free game's natural breaks, on every player's phone, the host's included (never the TV): the start of each day
+    // from the second round (it waits for the host's Begin, and each Trial for the host's Start, so no clock runs under
+    // the ad; the Reckoning's talk is timed for each player), and the results once they've been seen
     private func adMoment(_ v: Snapshot) {
         guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, v.me != nil else { return }
-        let key = v.phase == "talk" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
+        let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
         guard !key.isEmpty, !adKeys.contains(key) else { return }
         adKeys.insert(key)
         let phase = v.phase
