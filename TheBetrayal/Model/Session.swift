@@ -26,6 +26,7 @@ final class Session {
     private(set) var tier = Tier.full // read from every response
     var peekList: [Peek]?
     var tools = false
+    var myRole = 0 // Your role: 0 shut, 1 its veil, 2 open
     var ask: Ask?
     var toast: Toast?
     private(set) var online = true

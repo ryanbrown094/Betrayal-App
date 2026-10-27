@@ -2,7 +2,8 @@
 # CI in refs/screens/ios-native as store/*.png) with a caption above each, in the app's type and colours.
 #   git fetch origin refs/screens/ios-native && git archive FETCH_HEAD store | tar -x -C /tmp/raw
 #   python3 store/compose.py /tmp/raw/store
-# writes store/screenshots/iphone-6.9/*.jpg (1320 × 2868) and store/screenshots/ipad-13/*.jpg (2752 × 2064).
+# writes store/screenshots/: iphone-6.9 (1320 × 2868), iphone-6.3 (1206 × 2622, the 6.1" and 6.3" Dynamic Island
+# slot), iphone-duo (2007 × 2853) and ipad-13 (2752 × 2064), six each, as App Store Connect takes them.
 import os, sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
@@ -79,5 +80,7 @@ def find(prefix, name):
 
 for i, (name, title, sub) in enumerate(PHONE, 1):
     compose(find("phone-", name), title, sub, (1320, 2868), 1110, 150, os.path.join(OUT, "iphone-6.9", f"{i:02d}-{name}.jpg"))
+    compose(find("phone-", name), title, sub, (1206, 2622), 1014, 137, os.path.join(OUT, "iphone-6.3", f"{i:02d}-{name}.jpg"))
+    compose(find("duo-", name), title, sub, (2007, 2853), 1600, 130, os.path.join(OUT, "iphone-duo", f"{i:02d}-{name}.jpg"))
 for i, (name, title, sub) in enumerate(TV, 1):
     compose(find("tv-", name), title, sub, (2752, 2064), 2160, 110, os.path.join(OUT, "ipad-13", f"{i:02d}-{name}.jpg"))

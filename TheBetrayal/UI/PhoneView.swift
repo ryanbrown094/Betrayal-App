@@ -299,6 +299,7 @@ struct PlayView: View {
                 TopBar(v: v, me: me)
                 if let peek = session.peekList { PeekView(list: peek) }
                 else if session.tools && me.director { ToolsView(v: v, me: me) }
+                else if session.myRole > 0 && !["lobby", "oath", "roles"].contains(v.phase) { RoleView(v: v, me: me) }
                 else { game(v, me) }
             }
         }
@@ -311,6 +312,9 @@ struct PlayView: View {
             Banner(.ghost, icon: "ghost", "You’re a Ghost. You still watch, cheer and call it at the Reckoning, but you don’t vote or play.")
         }
         Holdings(v: v, me: me)
+        if !["lobby", "oath", "roles", "end"].contains(v.phase) {
+            HStack { Spacer(); Button("Your role") { session.myRole = 1 }.btn(.ghost, .sm, fit: true) }.padding(.bottom, 10)
+        }
         if let t = session.toast { Banner(.plain, t.text) }
         PhaseView(v: v, me: me)
             .id(session.freshKey)
