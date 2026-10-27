@@ -10,6 +10,10 @@ import SwiftUI
 //   -art               every drawing, for comparing with the website's
 //   -play ROOM TOKEN   a Table as the player that token belongs to (with -server URL, the CI's local Worker)
 //   -watch ROOM        a Table as its TV (with -server URL)
+//   -twin              with -play, the phone as if AirPlayed to a TV: the TV's session for its Table, with its sound,
+//                      drawn at 1920 × 1080 in a corner (for a simulator without a second display)
+//   -heartbeat         with -play, Documents/heartbeat touched from the main thread twice a second (the CI's watchdog
+//                      samples the main thread when it goes stale)
 //   -shop [-nosaved]   the start screen with the passes priced as in Store.storekit, and two saved codes (or none:
 //                      App Review's screenshot of the passes)
 //   -screen NAME       the start screen's own screens (join, host, passes, tv), with or without -shop
@@ -50,7 +54,11 @@ enum Demo {
         if let i = args.firstIndex(of: "-play"), i + 2 < args.count {
             let room = args[i + 1]
             UserDefaults.standard.set(args[i + 2], forKey: Session.tokKey(room))
-            return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: room))) })
+            if args.contains("-heartbeat") { heartbeat() }
+            let twin = args.contains("-twin")
+            if twin { Task { @MainActor in AppModel.shared.externalConnected = true } }
+            return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: room))) }
+                .overlay(alignment: .bottomTrailing) { if twin { Twin() } })
         }
         if let i = args.firstIndex(of: "-watch"), i + 1 < args.count {
             return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: args[i + 1], start: .tv))) })
@@ -60,6 +68,12 @@ enum Demo {
         }
         return nil
     }()
+
+    private static func heartbeat() {
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("heartbeat")
+        let t = Timer(timeInterval: 0.5, repeats: true) { _ in try? Data().write(to: url) }
+        RunLoop.main.add(t, forMode: .common)
+    }
 
     @MainActor static func session(_ name: String, tv: Bool) -> Session? {
         let free = name.hasSuffix("+free"), key = free ? String(name.dropLast(5)) : name
@@ -177,6 +191,18 @@ private struct ArtSheet: View {
                 Text("ALEGREYA SANS SC · Alegreya Sans").font(Theme.ui(18)).foregroundStyle(Theme.tallow2)
             }
             .padding(16)
+        }
+    }
+}
+
+// -twin's TV: what a second display would show, laid out at 1080p and shrunk into the corner
+private struct Twin: View {
+    private let model = AppModel.shared
+    var body: some View {
+        if let tv = model.externalTV {
+            TVView(external: true).environment(tv).id(tv.room)
+                .frame(width: 1920, height: 1080).scaleEffect(0.18, anchor: .bottomTrailing)
+                .allowsHitTesting(false)
         }
     }
 }
