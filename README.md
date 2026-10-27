@@ -58,18 +58,18 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
 - **Ads in free games** (`Media/Ads.swift`), with Google's AdMob SDK (`GoogleMobileAds` through Swift Package Manager,
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
   consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
-  on a player's phone at the Reckoning's debate from the second round (minutes when nobody needs their phone), and on
-  the results, on the host's phone too but never the TV, once a break, with no gap or cap beyond that (the
-  server sends these limits, and
-  `ADS_ENABLED=0` on the server turns ads off). An ad that hasn't loaded by its moment is skipped. After a round, a
+  on a player's phone as each day starts from the second round (the day waits for the host's Begin, so no clock runs
+  under it), and on the results, on the host's phone too but never the TV, once a break, with no gap or cap beyond that
+  (the server sends these limits, and `ADS_ENABLED=0` on the server turns ads off). Each is loaded during the
+  Reckoning's talk before it, when nobody is tapping (a load keeps the phone busy for a few seconds); an ad that hasn't
+  loaded by its moment is skipped. After a round, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
   Google's form where the law asks for it.
   - **AdMob's IDs** are in `Info.plist`: the app ID (`GADApplicationIdentifier`) and the units (`BTAdBanner`,
     `BTAdInterstitial`). Only Release builds
     (TestFlight, the App Store) use the real units: a Debug build always shows Google's test ads, as AdMob's rules
-    require while developing. Before release: publish a GDPR message (and an IDFA explainer if wanted) in AdMob's
-    Privacy & messaging, and add Google's full list of SKAdNetwork identifiers to `SKAdNetworkItems` (only Google's
-    own is there now).
+    require while developing. Google's consent form is the GDPR message in AdMob's Privacy & messaging (none shows
+    until one is published there), and `SKAdNetworkItems` holds Google's list of SKAdNetwork identifiers.
 - **Offers to the host** (`UI/Offers.swift`, all their limits in one place): in a free game's lobby once three have
   joined (instead of the host's banner, until waved away); a strip at the Reckoning's debate in rounds 2 and 4 on the host's phone,
   with a matching corner card on the TV that has nothing to tap; and the Host Pass on the host's results. Players are
@@ -95,7 +95,8 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   - **On a TV:** AirPlay the phone to a TV (or use a cable). The app gives the second display a scene of its own
     (`ExternalDisplay` in `App/TheBetrayalApp.swift`) showing the TV of the Table the phone is at, with the music. It
     never mirrors the phone, so a player's role can't reach the TV.
-  - **On an iPad or a spare phone:** under **Join a game**, type the Table code and choose **Use this screen as the TV**.
+  - **On an iPad or a spare phone:** under **Set up a TV** on the start screen, type the Table code and choose **Use
+    this screen as the TV**.
     The narrator and sound buttons are in its bottom-left corner, as on the website.
 - **Device logs and crashes** (`Model/Trail.swift`): each phone and TV sends what happened on it to its Table's log on
   the server (`POST /api/g/CODE/events`, as the website's browsers do): what it is (model, iOS, app version, host,
@@ -133,14 +134,17 @@ warn when the server's rules engine no longer plays the recorded game.
 ## Checks
 
 `.github/workflows/ios.yml` runs on one of GitHub's Macs on every push that changes more than Markdown (or by hand,
-with options to play the whole game and to choose the server repo's branch):
+with options to play the whole game, to choose the server repo's branch, and to run instead the QA games, `qa`: a
+whole game hosted on a small iPhone, one as a guest on a large one with bigger text, and a stress game on an iPad TV;
+or `airplay`: a practice game with the TV on a second display, watched for a hang):
 
 1. `ci/main.swift` builds the model with `swiftc` and reads every moment of `Debug/Fixtures.json` (a whole game
    recorded from the real rules engine by `tools/fixtures.mjs`), and every drawing.
 2. It builds the app (Debug and Release) and runs it in the iPhone simulator: the start screen, the art (`-art`), the
    start screen's join, host and passes screens with made-up prices and saved codes (`-shop -screen passes`), the sheet
    after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
-   phone and TV drawn offscreen (`-render-all`, which can't draw text fields). `ci/main.swift` also checks which
+   phone and TV drawn offscreen (`-render-all`, which can't draw text fields), and the App Store's pictures
+   (`-render-store`, captioned by `store/compose.py`: see `store/listing.md`). `ci/main.swift` also checks which
    Table a scanned code or link opens.
 3. It checks out the server repo, starts its Worker (`wrangler dev`, with a test master passcode), and `ci/drive.py`
    plays a game against
@@ -158,16 +162,17 @@ with options to play the whole game and to choose the server repo's branch):
 Without it, the run builds and photographs the app but skips the game against bots.
 
 The pictures are the run's `ios-native-screens` artifact and, as one commit, the ref `refs/screens/ios-native` (not a
-branch, so nothing deploys it): `git fetch origin refs/screens/ios-native && git show FETCH_HEAD --stat`. Mac minutes
-count ten times against the account's Actions allowance; a run takes about ten minutes.
+branch, so nothing deploys it): `git fetch origin refs/screens/ios-native && git show FETCH_HEAD --stat`. A run takes
+about ten minutes. This repo is public, so its runs cost nothing; while it was private, Mac minutes counted ten times
+against the account's Actions allowance, and the month's ran out.
 
 The Debug build's launch arguments (`Debug/Demo.swift`) are compiled out of Release, and `Fixtures.json` is left out of
 the Release bundle.
 
 ## Not checked yet
 
-- A real iPhone, a real AirPlay TV, and the sound through a speaker: the simulator can't show a second display from the
-  CI, and nobody has heard the rendered music on a device. Try both before a party.
+- The TV over AirPlay: the CI's simulator can't show a second display, so it has only been tried by hand, on the
+  owner's iPhone (builds 2 to 4).
 - Buying: the StoreKit code has only been built, never run against the App Store. The server's half is tested with
   Apple stubbed (`node qa/appstore.mjs`) and with an Xcode-style purchase on `wrangler dev`. Before release: a sandbox
   purchase of each product through TestFlight, a restore on a second device, and a sandbox refund.

@@ -13,7 +13,8 @@ follow the server repo's `media/copy/glossary.md` (no TV-programme words, the Co
 | Primary category | Games: Board |
 | Secondary category | Games: Trivia |
 | Content rights | Contains no third-party content (all art, music and questions are our own; fonts under the SIL Open Font License) |
-| Age rating | Apple's ratings are now 4+, 9+, 13+, 16+ and 18+. Answer the questionnaire honestly: alcohol references *infrequent/mild* (drinks at the party), cartoon or fantasy violence *infrequent/mild* (make-believe poisoning), no gambling or unrestricted web access; it also asks about **advertising** (yes: free games) and **user-generated content** (yes: players type their names, the prize and last words, which the table and the TV see). The game is made for adults, so choose 16+ or 18+ even if the questionnaire comes out lower. |
+| Age rating | Apple's ratings are now 4+, 9+, 13+, 16+ and 18+. Answer the questionnaire honestly: alcohol references *infrequent/mild* (drinks at the party), cartoon or fantasy violence *infrequent/mild* (make-believe poisoning), no gambling or unrestricted web access; it also asks about **advertising** (yes: free games) and **user-generated content** (yes: players type their names, the prize and last words, which the table and the TV see,
+and the Forsworn type messages to each other in their chat); if it asks about **messaging or chat**, yes too. The game is made for adults, so choose 16+ or 18+ even if the questionnaire comes out lower. |
 | Privacy Policy URL | https://thebetrayal.co.uk/app-privacy |
 | Copyright | 2026 The Betrayal |
 
@@ -81,6 +82,8 @@ In-app purchases: tap Host a game, type a name and tap Start a free game; in the
 
 Guests join with the six-character Table code shown on the host's phone, or by scanning its QR code (on the host's phone, or the TV). An iPad can be the TV: tap Set up a TV on the start screen, type the code and tap Use this screen as the TV.
 
+Everyone at a Table is in the same room and joins with a code the host gives them: there's no matchmaking, public profile or chat with strangers. The Forsworn's chat is only between the players on that side in that one game, and is deleted with the Table; the host can take anyone out of the game from Tools.
+
 No account or sign-in is needed.
 ```
 
@@ -98,7 +101,7 @@ page for AdMob on iOS, which Google keeps up to date (I couldn't reach it from h
 | Location › Coarse Location | Google AdMob (from the IP address) | Third-party advertising | no | yes |
 | Diagnostics › Crash Data, Performance Data, Other Diagnostic Data | Google AdMob; the server's record of each game; each device's log at a Table (errors, connection trouble, crashes from iOS's MetricKit) | App Functionality, Analytics | no | no |
 | Purchases › Purchase History | the server (Apple's record of each purchase) | App Functionality | no | no |
-| User Content › Other User Content | the server (names, the prize, last words) | App Functionality | no | no |
+| User Content › Other User Content | the server (names, the prize, last words, the Forsworn's messages to each other) | App Functionality | no | no |
 
 The app's own privacy manifest (`TheBetrayal/PrivacyInfo.xcprivacy`) declares what it collects itself and its use of UserDefaults;
 Google's SDK ships its own.
@@ -132,7 +135,9 @@ Each needs a review screenshot: `review/passes-6.9.png` (the **Your passes** scr
 
 | set | size | files |
 |---|---|---|
-| iPhone 6.9" | 1320 × 2868 | `screenshots/iphone-6.9/` (the 6.9" set covers every smaller iPhone) |
+| iPhone 6.9" | 1320 × 2868 | `screenshots/iphone-6.9/` |
+| iPhone 6.3" | 1206 × 2622 | `screenshots/iphone-6.3/` (App Store Connect's 6.1"/6.3" Dynamic Island slot) |
+| iPhone Duo | 2007 × 2853 | `screenshots/iphone-duo/` (the phone's column, as the Duo shows it open) |
 | iPad 13" | 2752 × 2064 | `screenshots/ipad-13/` (the TV, as an iPad shows it with **Use this screen as the TV**) |
 
 To make them again after the screens change: the CI keeps the raw screens (`-render-store`) in `refs/screens/ios-native`,
