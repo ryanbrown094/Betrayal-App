@@ -299,6 +299,8 @@ final class Session {
     // the ad; the Reckoning's talk is timed for each player), and the results once they've been seen
     private func adMoment(_ v: Snapshot) {
         guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, v.me != nil else { return }
+        if v.phase == "lobby" { adKeys.removeAll() } // a new game at the same Table has its own breaks
+        if v.phase == "talk", Ads.shared.ready, adKeys.insert("load \(v.round)").inserted { Ads.shared.preload() }
         let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
         guard !key.isEmpty, !adKeys.contains(key) else { return }
         adKeys.insert(key)
