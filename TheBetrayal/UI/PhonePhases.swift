@@ -437,8 +437,9 @@ struct NightView: View {
     @ViewBuilder private func forsworn(_ n: Night?) -> some View {
         let kills = n?.kills ?? 1
         let votes = tally
+        if me.split { Banner(.plain, "You don’t agree yet. The night waits until every Forsworn chooses the same.") }
         Card(.hot) {
-            Para(Text(kills > 1 ? "Choose \(kills). The \(kills) chosen most by the Forsworn are poisoned." : "Choose who is poisoned tonight. The one chosen most goes.")
+            Para(Text(kills > 1 ? "Choose \(kills). Every Forsworn must choose the same \(kills)." : "Choose who is poisoned tonight. Every Forsworn must choose the same one.")
                  + (me.sanct.isEmpty ? Text("") : Text(" ") + b(Words.andList(me.sanct)) + Text(me.sanct.count > 1 ? " hold Sanctuary." : " holds Sanctuary.")))
             ForEach(me.picks.filter { $0.name != me.name }, id: \.name) { p in
                 Small(p.name + ": " + (p.picks.isEmpty ? "not yet" : Words.andList(p.picks)))
@@ -451,26 +452,9 @@ struct NightView: View {
                 if me.sanct.contains(p.name) { Text("Sanctuary").font(Theme.ui(14, .medium)).foregroundStyle(Theme.loyalSoft) }
             })
         }) { p in session.act("pick", p.id) }
-        if me.mine.count >= kills { Small("Chosen. You can change it until everyone’s done.", center: true).padding(.top, 10) }
-        if let w = me.whispers {
-            More("Whisper to the Forsworn" + (w.isEmpty ? "" : " · \(w.count)"), open: !w.isEmpty) {
-                if w.isEmpty { Small("Only the Forsworn see these.") }
-                else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(w.enumerated()), id: \.offset) { _, x in
-                            (Text(x.name + "  ").font(Theme.ui(16, .bold)).foregroundColor(Theme.blood2) + Text(x.text).font(Theme.ui(16)).foregroundColor(Theme.tallow))
-                                .padding(.vertical, 4).frame(maxWidth: .infinity, alignment: .leading)
-                                .overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.06)).frame(height: 1) }
-                        }
-                    }
-                    .padding(.top, 8).padding(.bottom, 12)
-                }
-                Columns(2, spacing: 8) {
-                    ForEach(Array(me.whisperSay.enumerated()), id: \.offset) { i, m in
-                        Button(m) { session.act("whisper", i) }.btn(.dark, .sm)
-                    }
-                }
-            }
+        if me.mine.count >= kills { Small(me.split ? "Change it to match, or persuade them to." : "Chosen. You can change it until everyone’s done.", center: true).padding(.top, 10) }
+        if let c = me.chat {
+            More("Talk to the Forsworn" + (c.isEmpty ? "" : " · \(c.count)"), open: !c.isEmpty) { ForswornChat(me: me) }
         }
     }
 }
@@ -703,4 +687,92 @@ extension EndView {
 // .card.prize's border: 3px double, in brass
 struct DoubleRule: View {
     var body: some View { VStack(spacing: 1) { Rectangle().fill(Theme.brass).frame(height: 1); Rectangle().fill(Theme.brass).frame(height: 1) } }
+}
+
+// The Forsworn's conversation: what's been said, the set phrases, and a line to type (the night's panel, and Your role)
+struct ForswornChat: View {
+    let me: Me
+    @Environment(Session.self) private var session
+    @State private var typed = ""
+    var body: some View {
+        let c = me.chat ?? []
+        VStack(alignment: .leading, spacing: 0) {
+            if c.isEmpty { Small("Only the living Forsworn see these.") }
+            else {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(c.suffix(20).enumerated()), id: \.offset) { _, x in
+                        (Text(x.name + "  ").font(Theme.ui(16, .bold)).foregroundColor(Theme.blood2) + Text(x.text).font(Theme.ui(16)).foregroundColor(Theme.tallow))
+                            .padding(.vertical, 4).frame(maxWidth: .infinity, alignment: .leading)
+                            .overlay(alignment: .bottom) { Rectangle().fill(.white.opacity(0.06)).frame(height: 1) }
+                    }
+                }
+                .padding(.top, 8).padding(.bottom, 12)
+            }
+            Columns(2, spacing: 8) {
+                ForEach(Array(me.whisperSay.enumerated()), id: \.offset) { i, m in
+                    Button(m) { session.act("whisper", i) }.btn(.dark, .sm)
+                }
+            }
+            HStack(spacing: 8) {
+                Field(placeholder: "A message to the Forsworn", text: $typed, max: 140, submit: send)
+                Button("Send", action: send).btn(.fill, .sm, fit: true)
+                    .disabled(typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(.top, 10)
+        }
+    }
+    private func send() {
+        let t = typed.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        typed = ""
+        session.act("chat", t)
+    }
+}
+
+// Your role, the same button on every phone: inside, the role, and for the Forsworn their allies and their chat, so a
+// glance at a phone gives nothing away
+struct RoleView: View {
+    let v: Snapshot
+    let me: Me
+    @Environment(Session.self) private var session
+    var body: some View {
+        if session.myRole == 1 {
+            VStack(spacing: 12) {
+                Button { session.myRole = 2 } label: {
+                    VStack(spacing: 0) {
+                        Eyebrow("your role")
+                        H2("Hold your phone close")
+                        Sub("Tap here when nobody can see your screen.")
+                    }
+                    .multilineTextAlignment(.center)
+                    .padding(20)
+                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .background(Stripes())
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.edge2, lineWidth: 1))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                Button("Back to the game") { session.myRole = 0 }.btn(.ghost, .sm)
+            }
+        } else {
+            let f = me.forsworn
+            VStack(alignment: .leading, spacing: 0) {
+                Card(.role, center: true) {
+                    BigSeal(kind: f ? .forsworn : .loyal, icon: f ? "blade" : "candle").frame(width: 120, height: 120).padding(.bottom, 12)
+                    H1(f ? "Forsworn" : "Loyal", color: f ? Theme.blood2 : Theme.loyal)
+                    if f {
+                        if let allies = me.allies, !allies.isEmpty { Para(Text("Your fellow Forsworn: ") + b(allies.map { $0.name + ($0.alive ? "" : " (out)") }.joined(separator: ", "))) }
+                        else { Para("You are the only Forsworn. Trust nobody.") }
+                    } else { Sub("You are true to the table. Find the Forsworn.") }
+                }
+                .padding(.horizontal, 18)
+                if me.chat != nil {
+                    H2("Talk to the Forsworn").padding(.top, 18)
+                    ForswornChat(me: me)
+                }
+                Button("Hide my role") { session.myRole = 0 }.btn(.fill, .big).padding(.top, 18)
+            }
+        }
+    }
 }

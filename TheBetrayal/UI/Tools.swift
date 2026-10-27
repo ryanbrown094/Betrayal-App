@@ -20,7 +20,7 @@ struct ToolsView: View {
         if v.phase == "day" && me.canSkip { l.append(Tool(label: "Skip “" + (v.next ?? "") + "”", v: "skipStep", why: "Leave it out and go to the next step.")) }
         if t?.stage == "intro" { l.append(Tool(label: "Start the Trial now", v: "skip", why: "Skip the rest of the introduction.")) }
         if let it, it.isOpenish { l.append(Tool(label: "Close this question now", v: "skip", why: "Whatever has been answered counts.")) }
-        if let t, t.stage != "done" { l.append(Tool(label: "End this Trial now", v: "endTrial", why: "It’s scored as it stands.")) }
+        if let t, t.stage != "done" { l.append(Tool(label: "End this Trial now", v: "endTrial", why: "The questions that finished count; the one still open doesn’t.")) }
         if v.phase == "talk" { l.append(Tool(label: "Open the vote now", v: "voteNow", why: "Cut the talking short.")) }
         if v.phase == "vote" { l.append(Tool(label: "Close the vote now", v: "closeVote", why: "Counts the votes in; nobody else can vote.")) }
         if v.phase == "night" { l.append(Tool(label: "End the night now", v: "dawnNow", why: "Anyone who hasn’t chosen is chosen for.")) }

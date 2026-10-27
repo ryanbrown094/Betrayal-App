@@ -52,6 +52,9 @@ t();
 snap("day-host", dir);
 snap("day-guest", ryan);
 snap("day-host-tools", dir, { tools: true });
+// Your role, on every phone: a Forsworn's has their allies and their chat
+side(() => { a(tom, { a: "chat", v: "Vote Sophie today. I’ll back you." }); now += 1000; a(priya, { a: "whisper", v: 0 }); snap("role-forsworn", tom, { myRole: 2 }); });
+snap("role-loyal", ryan, { myRole: 2 }); snap("role-veil", ryan, { myRole: 1 });
 side(() => { s.rejoin = []; snap("day-host-rejoin", dir, { rejoin: [{ id: "r1", name: "Oliver" }] }); });
 snap("peek", dir, { tools: true, peekList: s.players.filter((p) => !p.left).map((p) => ({ name: p.name, role: p.role, alive: p.alive })) });
 side(() => { a(dir, { a: "pause" }); snap("paused-host", dir); snap("paused-guest", ryan); });
@@ -95,8 +98,8 @@ side(() => {
   a(te, { a: "told" }); snap("truths-open", other); snap("truths-open-teller", te);
   alive().forEach((id, i) => { if (id !== te) a(id, { a: "ans", v: 1 + (i % 3) }); }); t(100); snap("truths-reveal", other);
 });
-side(() => { trial("quiz", "cast"); snap("cast-intro", ryan); toItems(); a(sophie, { a: "ans", v: s.trial.item.a }); a(dir, { a: "tool", v: "endTrial" }); const w = s.trial.winners[0]; snap("cast-done-winner", w); snap("cast-done", w === ryan ? sophie : ryan); });
-side(() => { trial("quiz", "crown"); toItems(); a(sophie, { a: "ans", v: s.trial.item.a }); a(dir, { a: "tool", v: "endTrial" }); const w = s.trial.winners[0]; snap("crown-done-winner", w); snap("crown-done", w === ryan ? sophie : ryan); });
+side(() => { trial("quiz", "cast"); snap("cast-intro", ryan); toItems(); a(sophie, { a: "ans", v: s.trial.item.a }); a(dir, { a: "tool", v: "skip" }); t(100); a(dir, { a: "tool", v: "endTrial" }); const w = s.trial.winners[0]; snap("cast-done-winner", w); snap("cast-done", w === ryan ? sophie : ryan); });
+side(() => { trial("quiz", "crown"); toItems(); a(sophie, { a: "ans", v: s.trial.item.a }); a(dir, { a: "tool", v: "skip" }); t(100); a(dir, { a: "tool", v: "endTrial" }); const w = s.trial.winners[0]; snap("crown-done-winner", w); snap("crown-done", w === ryan ? sophie : ryan); });
 side(() => {
   s.steps = [{ k: "tempt" }, { k: "reckon" }]; s.stepAt = 0; a(dir, { a: "next" }); toItems(); snap("tempt-open", ryan); a(ryan, { a: "ans", v: "self" }); snap("tempt-sent", ryan);
   alive().forEach((id) => { if (id !== ryan) a(id, { a: "ans", v: "purse" }); }); t(100); snap("tempt-reveal", ryan); t(5100); snap("tempt-done", ryan);
@@ -133,6 +136,7 @@ snap("night-forsworn", tom);
 snap("night-ghost", oliver);
 a(tom, { a: "pick", v: jess }); a(tom, { a: "whisper", v: 0 }); a(priya, { a: "whisper", v: 3 });
 snap("night-forsworn-picked", priya);
+side(() => { a(priya, { a: "pick", v: sophie }); snap("night-forsworn-split", priya); }); // they don't agree yet
 a(ryan, { a: "sleep" }); snap("night-slept", ryan);
 for (const id of alive()) { const p = P(id); if (p.role === "f") a(id, { a: "pick", v: jess }); else if (id !== ryan) a(id, { a: "sleep" }); }
 t(100);

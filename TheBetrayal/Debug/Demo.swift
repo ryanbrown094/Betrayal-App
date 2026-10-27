@@ -88,6 +88,7 @@ enum Demo {
         let peek = f["peekList"].isNull ? nil : f["peekList"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? true) }
         let rejoin = f["rejoin"].array.map { Rejoin(id: $0["id"].string ?? "", name: $0["name"].string ?? "?") }
         s.show(v, rejoin: rejoin, peek: peek, tools: f["tools"].bool ?? false, rolePeek: f["peek"].bool ?? false)
+        s.myRole = f["myRole"].int ?? 0
         return s
     }
 }

@@ -457,6 +457,8 @@ struct Me {
     let words: String?
     let whispers: [(name: String, text: String)]?
     let whisperSay: [String]
+    let chat: [(name: String, text: String)]? // the Forsworn's chat (only a living Forsworn's phone is sent it)
+    let split: Bool                           // tonight's Forsworn haven't chosen the same yet
     let wonSanct: String?
     let won: Bool
     let cast: Bool
@@ -484,6 +486,8 @@ struct Me {
         words = j["words"].string
         whispers = j["whispers"].isNull ? nil : j["whispers"].array.map { (name: $0[0].string ?? "", text: $0[1].string ?? "") }
         whisperSay = j["whisperSay"].strings
+        chat = j["chat"].isNull ? nil : j["chat"].array.map { (name: $0[0].string ?? "", text: $0[1].string ?? "") }
+        split = j["split"].bool == true
         wonSanct = j["wonSanct"].string
         won = j["won"].bool ?? false
         cast = j["cast"].bool ?? false
