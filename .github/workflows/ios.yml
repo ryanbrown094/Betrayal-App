@@ -212,10 +212,11 @@ jobs:
           for d, c in devs.items(): print("  ", d, dict(c))' ../shots/qa-$name/events.json "$name $room"
           done
 
-      # AirPlay (by hand, with "airplay"): the phone hosts a practice game with the TV on a second display, as an AirPlayed
-      # phone does: the simulator's own second display (its menu, clicked by ci/external.applescript), or else the TV
-      # drawn in the phone's corner (-twin). The app touches a file from its main thread twice a second (-heartbeat);
-      # when that stops for five seconds, the app is sampled (every thread's stack), and both screens photographed.
+      # AirPlay (by hand, with "airplay"): first the simulator's own second display (its menu, clicked by
+      # ci/external.applescript), and what the app makes of it; then the phone hosts a practice game with the TV's
+      # session in its process, its sound on, drawn at 1080p in the phone's corner (-twin), as an AirPlayed phone runs
+      # it. The app touches a file from its main thread twice a second (-heartbeat); when that stops for five seconds,
+      # the app is sampled (every thread's stack) and photographed.
       - name: AirPlay, a practice game with the TV on a second display, watched for a hang
         if: env.SERVER_TOKEN != '' && inputs.airplay
         run: |
@@ -229,12 +230,17 @@ jobs:
           sleep 15
           osascript ../ci/external.applescript 2>&1 | tee "$OUT/menu.txt" || true
           sleep 5
+          # what the app makes of the second display: its [TV] notes, and the Mac's screen with the Simulator's windows
+          xcrun simctl launch --stdout="$OUT/probe-out.log" --stderr="$OUT/probe-err.log" "$UDID" "$APP" > /dev/null
+          sleep 10
+          screencapture -x "$OUT/00-mac.png" 2>&1 || echo "no screencapture"
+          xcrun simctl io "$UDID" screenshot --display=external "$OUT/00-external.png" > /dev/null 2>&1 || echo "no external display to photograph"
+          xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
+          echo "== the app's [TV] notes:"; cat "$OUT/probe-out.log"
+          # the game: the TV's session in the phone's process with its sound, drawn at 1080p in the phone's corner (-twin),
+          # as an AirPlayed phone runs it
           TWIN=-twin
           shot="xcrun simctl io $UDID screenshot $OUT/{name}.png > /dev/null"
-          if xcrun simctl io "$UDID" screenshot --display=external "$OUT/00-external.png" > /dev/null 2>&1; then
-            TWIN=""; shot="$shot; xcrun simctl io $UDID screenshot --display=external $OUT/{name}-tv.png > /dev/null 2>&1"
-            echo "the simulator has a second display: the TV goes on it"
-          else echo "::warning::the simulator has no second display: the TV is drawn in the phone's corner (-twin)"; fi
           DATA=$(xcrun simctl get_app_container "$UDID" "$APP" data)
           rm -f "$DATA/Documents/heartbeat"
           python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --practice --prefix "" --rounds 1 --limit 900 \
@@ -253,7 +259,6 @@ jobs:
             tail -n 2 "$OUT/drive.log"
             ps -o pid,%cpu,rss,etime -p "$PID" | tee "$OUT/hang-$hangs-ps.txt"
             xcrun simctl io "$UDID" screenshot "$OUT/hang-$hangs.png" > /dev/null 2>&1 || true
-            [ -z "$TWIN" ] && { xcrun simctl io "$UDID" screenshot --display=external "$OUT/hang-$hangs-tv.png" > /dev/null 2>&1 || true; }
             sample "$PID" 5 -file "$OUT/hang-$hangs-sample.txt" > /dev/null 2>&1 || sudo -n sample "$PID" 5 -file "$OUT/hang-$hangs-sample.txt" > /dev/null 2>&1 || echo "couldn't sample the app"
             awk '/com.apple.main-thread/{p=1; print; next} p && /Thread_[0-9]/{exit} p' "$OUT/hang-$hangs-sample.txt" 2>/dev/null | cut -c1-240 | head -150
             ps -o pid,%cpu,rss,etime -p "$PID" | tail -n 1
@@ -263,7 +268,8 @@ jobs:
           wait $DRIVE || true
           cat "$OUT/drive.log"
           [ $hangs -eq 0 ] && echo "no hang: the main thread kept ticking all game"
-          tail -n 40 "$OUT/app-out.log" "$OUT/app-err.log" 2>/dev/null || true
+          grep "^\[TV\]" "$OUT/app-out.log" || echo "no [TV] notes in the game"
+          tail -n 20 "$OUT/app-err.log" 2>/dev/null || true
           xcrun simctl spawn "$UDID" log show --last 20m --style compact --predicate 'process == "TheBetrayal"' > "$OUT/device.log" 2>&1 || true
           grep -i "hang\|AVAudio\|fault" "$OUT/device.log" | tail -n 40 || true
 

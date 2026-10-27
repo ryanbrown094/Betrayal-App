@@ -6,7 +6,12 @@ import MetricKit
 struct TheBetrayalApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var delegate
 
-    init() { Theme.registerFonts() }
+    init() {
+        #if DEBUG
+        setvbuf(stdout, nil, _IOLBF, 0) // each [TV] note reaches a file at once, as the CI's AirPlay run logs them
+        #endif
+        Theme.registerFonts()
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -72,6 +77,9 @@ final class AppModel {
         if let old = externalTV { old.stop(); Sound.shared.release(old) }
         externalTV = room.map { Session(room: $0, screen: .tv) }
         if let tv = externalTV { tv.start(); Sound.shared.enable(for: tv) }
+        #if DEBUG
+        print("[TV] " + (room.map { "the second display shows Table \($0)" } ?? "no TV for the second display"))
+        #endif
     }
 }
 
@@ -86,6 +94,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        #if DEBUG
+        print("[TV] a scene for " + connectingSceneSession.role.rawValue)
+        #endif
         if connectingSceneSession.role == .windowExternalDisplayNonInteractive {
             let c = UISceneConfiguration(name: "TV", sessionRole: connectingSceneSession.role)
             c.delegateClass = ExternalDisplay.self
