@@ -437,7 +437,7 @@ struct NightView: View {
     @ViewBuilder private func forsworn(_ n: Night?) -> some View {
         let kills = n?.kills ?? 1
         let votes = tally
-        if me.split { Banner(.plain, "You don’t agree yet. The night waits until every Forsworn chooses the same.") }
+        if me.split { Banner(.plain, "You don’t agree yet. The night waits until you choose the same; if its clock runs out first, the most chosen goes.") }
         Card(.hot) {
             Para(Text(kills > 1 ? "Choose \(kills). Every Forsworn must choose the same \(kills)." : "Choose who is poisoned tonight. Every Forsworn must choose the same one.")
                  + (me.sanct.isEmpty ? Text("") : Text(" ") + b(Words.andList(me.sanct)) + Text(me.sanct.count > 1 ? " hold Sanctuary." : " holds Sanctuary.")))

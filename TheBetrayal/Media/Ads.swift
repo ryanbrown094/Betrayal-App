@@ -53,12 +53,12 @@ final class Ads {
             guard consent.canRequestAds else { return }
             _ = await MobileAds.shared.start()
             ready = true
-            preload()
         }
     }
 
-    // loaded ahead of its moment, so showing one never waits
-    private func preload() {
+    // loaded ahead of its moment, so showing one never waits, and while the table talks at the Reckoning (Session.adMoment):
+    // a load keeps the phone busy for a few seconds, so it never runs while anyone is tapping
+    func preload() {
         guard ready, interstitial == nil, !loading else { return }
         loading = true
         Task {
@@ -76,7 +76,7 @@ final class Ads {
         if n >= limits.maxPerRoom { return }
         if let last = lastShown, Date().timeIntervalSince(last) < limits.minGap { return }
         Events.send("ad_requested", placement: placement)
-        guard let ad = interstitial, let vc = Ads.top() else { Events.send("ad_failed", placement: placement, product: "notloaded"); preload(); return }
+        guard let ad = interstitial, let vc = Ads.top() else { Events.send("ad_failed", placement: placement, product: "notloaded"); return }
         interstitial = nil
         shown[room] = n + 1
         lastShown = Date()
@@ -90,7 +90,7 @@ final class Ads {
         #endif
     }
 
-    fileprivate func closed() { Trail.shared.here("ad", "ad_closed"); preload() }
+    fileprivate func closed() { Trail.shared.here("ad", "ad_closed") }
 
     // at launch, whether the law asks for a way to change ad choices, so the start screen offers it before any game
     // (Google's consent information only: the ads themselves still wait for a free game)
