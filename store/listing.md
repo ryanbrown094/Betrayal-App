@@ -75,7 +75,7 @@ social deduction,hidden roles,mystery,bluff,deception,liar,group,friends,quiz,tr
 Sign-in required: **no**. Notes:
 
 ```
-The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every part. (Before a phone's first game, five short screens explain the game; Skip passes them.) The first time you enter a free or practice game, Google's consent form (where the law requires it) and then Apple's tracking question appear; the game is the same whatever you answer.
+The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every other part. You're the host, so your phone moves the game on: tap the button on each screen (Begin, Start the Trial, Continue). (Before a phone's first game, five short screens explain the game; Skip passes them.) The first time you enter a free or practice game, Google's consent form (where the law requires it) and then Apple's tracking question appear; the game is the same whatever you answer.
 
 In-app purchases: tap Host a game, type a name and tap Start a free game; in the lobby, under Trials, tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). At once the list of locked Trials goes and the game is ad-free for everyone at the Table (a real game needs 8 players' phones to start). The same passes are under Your passes on the start screen, with Restore purchases and Manage subscription. A practice game can't use a pass: it's for trying the game alone.
 
