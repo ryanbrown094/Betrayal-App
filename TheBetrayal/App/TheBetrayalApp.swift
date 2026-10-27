@@ -90,6 +90,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     // crashes, reported by iOS on the next launch, go to the log of the Table they happened at (Model/Trail.swift)
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         MXMetricManager.shared.add(Crashes.shared)
+        // before iOS 27 a second display's scene can come without this app being asked how to fill it (ExternalDisplay.adopt)
+        NotificationCenter.default.addObserver(forName: UIScene.willConnectNotification, object: nil, queue: .main) { n in
+            guard let ws = n.object as? UIWindowScene else { return }
+            Task { @MainActor in ExternalDisplay.adopt(ws) } // after the scene's own delegate has had it
+        }
+        NotificationCenter.default.addObserver(forName: UIScene.didDisconnectNotification, object: nil, queue: .main) { n in
+            guard let s = n.object as? UIScene else { return }
+            MainActor.assumeIsolated { ExternalDisplay.drop(s) }
+        }
         return true
     }
 
@@ -109,22 +118,40 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 @MainActor
 final class ExternalDisplay: NSObject, UIWindowSceneDelegate {
     var window: UIWindow?
+    private static var adopted: [ObjectIdentifier: UIWindow] = [:]
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let ws = scene as? UIWindowScene else { return }
+        window = ExternalDisplay.tv(on: ws)
+    }
+
+    func sceneDidDisconnect(_ scene: UIScene) {
+        window = nil
+        AppModel.shared.externalConnected = false
+    }
+
+    // a second display's scene that came with another delegate: before iOS 27, a SwiftUI app with multiple scenes isn't
+    // asked how to fill one (application(_:configurationForConnecting:) is only asked for the phone's own), and the TV
+    // stayed black. The TV goes on it all the same.
+    static func adopt(_ ws: UIWindowScene) {
+        guard ws.session.role == .windowExternalDisplayNonInteractive, !(ws.delegate is ExternalDisplay), adopted[ObjectIdentifier(ws)] == nil else { return }
+        adopted[ObjectIdentifier(ws)] = tv(on: ws)
+    }
+
+    static func drop(_ scene: UIScene) {
+        guard adopted.removeValue(forKey: ObjectIdentifier(scene)) != nil else { return }
+        AppModel.shared.externalConnected = false
+    }
+
+    private static func tv(on ws: UIWindowScene) -> UIWindow {
         #if DEBUG
         print("[TV] second display connected: drawing the TV on it")
         #endif
         let w = UIWindow(windowScene: ws)
         w.rootViewController = UIHostingController(rootView: ExternalTV().preferredColorScheme(.dark))
         w.isHidden = false
-        window = w
         AppModel.shared.externalConnected = true
-    }
-
-    func sceneDidDisconnect(_ scene: UIScene) {
-        window = nil
-        AppModel.shared.externalConnected = false
+        return w
     }
 }
 
