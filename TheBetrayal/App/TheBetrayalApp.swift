@@ -101,6 +101,9 @@ final class ExternalDisplay: NSObject, UIWindowSceneDelegate {
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let ws = scene as? UIWindowScene else { return }
+        #if DEBUG
+        print("[TV] second display connected: drawing the TV on it")
+        #endif
         let w = UIWindow(windowScene: ws)
         w.rootViewController = UIHostingController(rootView: ExternalTV().preferredColorScheme(.dark))
         w.isHidden = false
@@ -126,11 +129,20 @@ private struct TVAccessory: UIViewControllerRepresentable {
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             let make = NSSelectorFromString("externalNonInteractiveSceneAccessoryWithConfiguration:"), register = NSSelectorFromString("registerSceneAccessory:")
-            guard registration == nil, let kind = NSClassFromString("UISceneAccessory") as AnyObject?, kind.responds(to: make), responds(to: register) else { return }
+            guard registration == nil else { return }
+            guard let kind = NSClassFromString("UISceneAccessory") as AnyObject?, kind.responds(to: make), responds(to: register) else {
+                return note("no scene accessories here (before iOS 27): the system offers the second display by itself")
+            }
             let tv = UISceneConfiguration(name: "TV", sessionRole: .windowExternalDisplayNonInteractive)
             tv.delegateClass = ExternalDisplay.self
-            guard let accessory = kind.perform(make, with: tv)?.takeUnretainedValue() else { return }
+            guard let accessory = kind.perform(make, with: tv)?.takeUnretainedValue() else { return note("couldn't make the scene accessory") }
             registration = perform(register, with: accessory)?.takeUnretainedValue()
+            note(registration == nil ? "registering the scene accessory gave nothing back" : "scene accessory registered: a second display gets the TV")
+        }
+        private func note(_ s: String) {
+            #if DEBUG
+            print("[TV] " + s) // (in Xcode's console, running from Xcode)
+            #endif
         }
     }
 }
