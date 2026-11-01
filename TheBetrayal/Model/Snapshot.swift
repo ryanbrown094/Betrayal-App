@@ -466,6 +466,7 @@ struct Me {
     let confess: String?
     let gave: String?
     let canSkip: Bool
+    let rated: Int // the end: this player's rating of the game, 1 to 5, or 0 before they've given one
 
     init(_ j: JSON) {
         id = j["id"].string ?? ""
@@ -495,6 +496,7 @@ struct Me {
         confess = j["confess"].string
         gave = j["gave"].string
         canSkip = j["canSkip"].bool ?? false
+        rated = j["rated"].int ?? 0
     }
     var forsworn: Bool { role == "f" }
 }

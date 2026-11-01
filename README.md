@@ -86,7 +86,10 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   (`site/pages/rules.html`, `terms.html`, `privacy.html` in the server repo).
 - **The game** (`UI/PhoneView.swift`, `PhonePhases.swift`, `PhoneTrial.swift`, `Tools.swift`): every phase, every
   Trial, the host's tools (with the three checks before **Show me the roles**), pause, rejoin requests and last words,
-  in the page's words. `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
+  in the page's words. As on the website: the lobby's code, QR code and **Share the code** on every phone; the host told
+  whose phone has been quiet a minute (the reply's `away`), with **Take out**; a phone that lost its place in the lobby
+  offered its own name back (`reclaim`); a one-tap rating at the end; and **Report a problem** (the host's Tools, the
+  foot of the lobby and the end), sent to `/api/report` with this device's recent log. `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
   `GET /api/g/CODE/m` about once a second (faster during Snap, slower in the background), sends taps to `m/act`, and
   keeps the phone's token under the page's own storage name (`bt-m-CODE`).
 - **The TV** (`UI/TVView.swift`): the TV page's every screen, sized to the screen as the page sizes it in `vh` and `vw`.
@@ -105,8 +108,9 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   the next launch, to the Table the device was last at). Each device is a random number at each Table. `/admin` → a
   room → **What the devices saw** lists every device and shows one device's log or all; errors and crashes also reach
   the **Errors** tab with the Table's code.
-- **What the website can't do on an iPhone, the app does:** it taps the phone when something needs its player, and
-  hard ten seconds before a clock closes on an unanswered question (the page's `navigator.vibrate`, which iPhones
+- **What the website can't do on an iPhone, the app does:** it taps the phone when something needs its player, taps
+  the host's when a step only they can move on comes up by itself and again a minute later (`hostWait` in
+  `Model/Logic.swift`), and hard ten seconds before a clock closes on an unanswered question (the page's `navigator.vibrate`, which iPhones
   ignore); it keeps the screen awake at a Table.
 - **The model** (`Model/`) reads the server's views leniently: a field that's missing, or of another type, reads as
   nothing rather than failing the screen, so the server can add fields without breaking the app.
