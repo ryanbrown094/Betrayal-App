@@ -176,7 +176,9 @@ snap("honour-forsworn", tom); snap("honour-loyal", ryan);
 a(tom, { a: "honour", v: "betray" }); snap("honour-sent", tom);
 a(priya, { a: "honour", v: "honour" }); t(100);
 snap("end-host", dir); snap("end-winner", tom); snap("end-loser", ryan);
-a(ryan, { a: "rate", v: 4 }); snap("end-rated", ryan);
+// the end's rating: a server from before it refuses the tap, and the recording leaves the moment out (so CI's check of
+// the recording against such a server warns rather than fails)
+if (!(act(s, ryan, { a: "rate", v: 4 }, now, ctx) || {}).error) snap("end-rated", ryan);
 
 process.stdout.write(JSON.stringify(out));
 process.stderr.write(Object.keys(out).length + " moments\n");
