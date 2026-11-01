@@ -23,6 +23,9 @@ final class Session {
     private(set) var view: Snapshot?
     private(set) var rejoin: [Rejoin] = []
     private(set) var hostGone = false // the host's phone has been quiet for two minutes: this phone may take over as host
+    private(set) var away: [String] = [] // the host's phone only: players whose phone has been quiet a minute (they'd hold every clock)
+    private(set) var reclaim: String?    // joining in the lobby: this name is taken by a phone gone quiet, which may be this person's own
+    var reporting = false                // Report a problem is open
     private(set) var tier = Tier.full // read from every response
     var peekList: [Peek]?
     var tools = false
@@ -51,6 +54,11 @@ final class Session {
     @ObservationIgnored private var adKeys: Set<String> = [] // the breaks this phone has had its chance of an ad at
     @ObservationIgnored var demo = false // a Debug build showing a recorded moment: no polling, no sound
     @ObservationIgnored private var whoKey = "" // who this device is at the Table, as last logged (Trail)
+    // the host's nudges (nudgeHost in modern-ui.js): what waits on their tap, since when, and when this phone last sent one
+    @ObservationIgnored private var hostKey = ""
+    @ObservationIgnored private var hostAt: Double = 0
+    @ObservationIgnored private var nudged = false
+    @ObservationIgnored private var tapAt: Double = 0
 
     var isTV: Bool { screen == .tv }
 
@@ -110,12 +118,13 @@ final class Session {
     }
 
     // a Debug build's recorded moment (tools/fixtures.mjs), shown without a server
-    func show(_ v: Snapshot, rejoin: [Rejoin] = [], peek: [Peek]? = nil, tools: Bool = false, rolePeek: Bool = false) {
+    func show(_ v: Snapshot, rejoin: [Rejoin] = [], away: [String] = [], peek: [Peek]? = nil, tools: Bool = false, rolePeek: Bool = false) {
         demo = true
         view = v
         off = v.now - Date().timeIntervalSince1970 * 1000
         freshKey = v.screenKey
         self.rejoin = rejoin
+        self.away = away
         peekList = peek
         self.tools = tools
         self.rolePeek = rolePeek
@@ -165,6 +174,7 @@ final class Session {
         if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
         if tier.tier == "free", tier.ads?.enabled == true, !isTV, !demo { Ads.shared.prepare() }
         hostGone = j["hostGone"].bool == true && !isTV && !demo
+        if !isTV && !demo { away = j["away"].strings } // with every reply, "nothing new" included
         if !j["rejoin"].isNull { rejoin = j["rejoin"].array.compactMap { r in r["id"].string.map { Rejoin(id: $0, name: r["name"].string ?? "?") } } }
         else if !j["view"].isNull { rejoin = [] }
         if !j["peek"].isNull { peekList = j["peek"].array.map { Peek(name: $0["name"].string ?? "?", role: $0["role"].string, alive: $0["alive"].bool ?? false) } }
@@ -173,6 +183,7 @@ final class Session {
     func send(_ a: [String: Any]) {
         guard !busy, !demo else { return }
         busy = true
+        tapAt = now()
         Trail.shared.log(room, "act", a["a"] as? String ?? "?") // the action's name, never what was typed
         Task {
             defer { busy = false }
@@ -213,11 +224,15 @@ final class Session {
         ask = Ask(title: title, yes: yes) { _ in then() }
     }
 
-    func join(name: String) async {
+    // mine: this is the person whose name it is, on another phone (the lobby only: the server offers it as reclaim)
+    func join(name: String, mine: Bool = false) async {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return say("Type your name.", error: true) }
         say("Joining…")
         do {
-            let r = try await API.room(room, "m/join", body: ["name": name])
+            var body: [String: Any] = ["name": name]
+            if mine { body["reclaim"] = true }
+            let r = try await API.room(room, "m/join", body: body)
+            reclaim = r.error != nil ? r.json["reclaim"].string : nil
             if r.json["none"].bool == true {
                 if r.json["classic"].bool == true { classic = true; return say("This Table can’t be played in the app. Ask the host to start a new Table in the app.", error: true) }
                 return say("This Table hasn’t been set up yet. The host opens it first.", error: true)
@@ -311,8 +326,41 @@ final class Session {
         }
     }
 
+    // Report a problem: what went wrong, with this device's recent log; the server keeps the Table for its replay.
+    // Returns the report's reference, or why it didn't send.
+    func report(what: String, expected: String, email: String) async -> (id: String?, error: String?) {
+        let w = what.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !w.isEmpty else { return (nil, "Tell us what went wrong first.") }
+        Trail.shared.log(room, "report", "sent a report")
+        Trail.shared.flush(room)
+        var body: [String: Any] = ["room": room, "what": w, "snap": ""]
+        body["device"] = Trail.device(room)
+        body["host"] = view?.me?.director == true
+        body["build"] = Trail.build + " app"
+        body["ua"] = "TheBetrayal/" + Trail.build + " · " + Trail.model
+        body["url"] = isTV ? "app TV" : "app"
+        body["expected"] = expected.trimmingCharacters(in: .whitespacesAndNewlines)
+        body["email"] = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let v = view { body["phase"] = v.phase + " · round \(v.round)"; body["ver"] = v.ver }
+        body["crumbs"] = Trail.shared.recent(room)
+        do {
+            let r = try await API.call("/api/report", body: body)
+            guard r.ok, let id = r.json["id"].string else { return (nil, (r.error ?? "It didn’t send") + ". Check the connection and try again.") }
+            return (id, nil)
+        } catch { return (nil, "It didn’t send. Check the connection and try again.") }
+    }
+
+    // the host's phone is tapped when a step only they can move on comes up by itself (not straight after their own tap),
+    // and once more if it's still waiting a minute later
+    private func nudgeHost(_ v: Snapshot) {
+        let k = v.hostWait(at: gameNow()), t = now()
+        if k != hostKey { hostKey = k; hostAt = t; nudged = false; if !k.isEmpty && t - tapAt > 3000 { Feedback.buzz() }; return }
+        if !k.isEmpty && !nudged && t - hostAt > 60000 { nudged = true; Feedback.buzz() }
+    }
+
     private func heartbeat() {
         guard let v = view else { return }
+        if !isTV && !demo { nudgeHost(v) }
         if !isTV, let e = v.owedEnd {
             let r = Int(ceil((e - now()) / 1000))
             if r > 0 && r <= 10 && buzzEnd != e { buzzEnd = e; Feedback.late() }

@@ -20,9 +20,9 @@ struct TrialView: View {
             Para(t.rules)
             if me.forsworn && t.key != "tempt" && t.key != "likely" {
                 // a Forsworn's wrong answer only costs the Purse where answers are right or wrong (modern.js score: wrongF)
-                Banner(.plain, ["quiz", "change", "snap"].contains(t.key)
-                       ? "Forsworn: every wrong answer here costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
-                       : "Forsworn: if you win, you take every point the Purse falls short, so sabotage quietly.")
+                let costs: String = t.key == "quiz" ? "Forsworn: every wrong answer here before the brutal questions costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
+                    : "Forsworn: every wrong answer here costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
+                Banner(.plain, ["quiz", "change", "snap"].contains(t.key) ? costs : "Forsworn: if you win, you take every point the Purse falls short, so sabotage quietly.")
             }
             if t.introEnd != nil {
                 HStack(spacing: 6) { Text("Starts in").font(Theme.ui(18)).foregroundStyle(Theme.tallow2); Clock(end: t.introEnd) }

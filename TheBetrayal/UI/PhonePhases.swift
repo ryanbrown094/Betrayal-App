@@ -42,9 +42,8 @@ struct LobbyView: View {
         let o = v.opts
         VStack(alignment: .leading, spacing: 0) {
             H2("You’re in")
-            if v.practice { Sub("Just you and the bots tonight.") }
-            else if me.director { CodeCard(room: session.room) }
-            else { Sub(Text("Friends join in The Betrayal app with the code ") + b(session.room) + Text(", or by scanning the QR code on the host’s phone or the TV.")) }
+            // the code, its QR code and Share on every phone, so anyone can bring in a late guest
+            if v.practice { Sub("Just you and the bots tonight.") } else { CodeCard(room: session.room) }
             People(list: v.players)
             Small(Words.plural(n, "player") + " · 8 to 24 can play").padding(.top, 10)
             if !me.director { WaitHost(v: v) } else {
@@ -89,6 +88,7 @@ struct LobbyView: View {
                     }
                 }
             }
+            if !v.practice { ReportLink() }
         }
         .onAppear(perform: load)
         .sheet(isPresented: $passing) { UsePassSheet(use: session.upgrade) }
@@ -115,7 +115,7 @@ struct LobbyView: View {
     }
 }
 
-// the Table's code, large, and its QR code, for the host to show the room (there may be no TV to show it)
+// the Table's code, large, and its QR code, for the room to show each other (there may be no TV to show it), and Share
 struct CodeCard: View {
     let room: String
     var body: some View {
@@ -132,7 +132,13 @@ struct CodeCard: View {
         }
         .padding(14)
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.brass, lineWidth: 1))
-        .padding(.top, 2).padding(.bottom, 14)
+        .padding(.top, 2).padding(.bottom, 10)
+        // for anyone still on their way
+        ShareLink(item: "Join our game of The Betrayal: in The Betrayal app, tap Join a game and type " + room + ", or open " + Server.joinLink(room)) {
+            Text("Share the code")
+        }
+        .btn(.dark, .sm, fit: true)
+        .padding(.bottom, 14)
     }
 }
 
@@ -659,8 +665,30 @@ struct EndView: View {
                         }
                     }
                 }
+                RateCard(me: me)
                 DirCard { Button("Play again with the same people") { session.confirm("Start a new game with the same players?", yes: "Play again") { session.act("again") } }.btn(.dark) }
+                ReportLink()
             }
+        }
+    }
+}
+
+// one tap: how the game was (the server keeps it in the game's log, for /admin)
+struct RateCard: View {
+    let me: Me
+    @Environment(Session.self) private var session
+    var body: some View {
+        if me.rated > 0 {
+            Small("Thanks for rating it \(me.rated) out of 5.", center: true).padding(.top, 14)
+        } else {
+            Card {
+                Para("How was the game? One tap helps us make it better.")
+                HStack(spacing: 8) {
+                    ForEach(1...5, id: \.self) { n in Button(String(n)) { session.act("rate", n) }.btn(.dark) }
+                }
+                Small("1 is poor, 5 is brilliant.").padding(.top, 8)
+            }
+            .padding(.top, 14)
         }
     }
 }

@@ -19,6 +19,20 @@ extension Snapshot {
         return ""
     }
 
+    // what waits on the host's tap alone (hostWait in modern-ui.js): Begin, Start the Trial, and Continue after a result,
+    // an exile, the dawn or Trust or Doubt. The host's phone is tapped when one comes up by itself, and again a minute
+    // later if it's still waiting, a Ghost host's too. t: the game's clock (the dawn waits out its last words first)
+    func hostWait(at t: Double) -> String {
+        guard let me, me.director, !me.left, paused == nil else { return "" }
+        if phase == "day" { return "day\(round).\(roundTrials)" }
+        if let tr = trial, tr.stage == "intro" { return "intro\(round)" + tr.key }
+        if let tr = trial, tr.stage == "done" { return "done\(round)" + tr.key }
+        if phase == "reveal", let r = reveal, r.role != nil || r.secret { return "exile" + r.id }
+        if phase == "dawn", let d = dawn, !d.revealed || d.lastEnd == nil || t >= (d.lastEnd ?? 0) { return "dawn\(round)" + (d.revealed ? "b" : "a") }
+        if phase == "trust", trust?.result != nil { return "trust\(round)" }
+        return ""
+    }
+
     // the clock this phone still owes an answer against, or nil (owedEnd)
     var owedEnd: Double? {
         guard let me, me.alive, paused == nil else { return nil }

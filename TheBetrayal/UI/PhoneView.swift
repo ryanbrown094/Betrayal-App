@@ -24,6 +24,7 @@ struct TableView: View {
             if p == .active { Task { await session.poll() } }
             if !session.demo { Trail.shared.log(session.room, "vis", p == .active ? "foreground" : p == .background ? "background" : "inactive"); if p == .background { Trail.shared.flush(session.room) } }
         }
+        .sheet(isPresented: $session.reporting) { ReportSheet(send: session.report) }
         .alert(session.ask?.title ?? "", isPresented: Binding(get: { session.ask != nil }, set: { if !$0 { session.ask = nil } }), presenting: session.ask) { a in
             AskButtons(ask: a)
         } message: { a in
@@ -185,6 +186,11 @@ struct JoinCard: View {
                     Label2("Your name")
                     Field(placeholder: "As the table knows you", text: $name, max: 14, submit: go)
                     Button("Join", action: go).btn(.fill, .big)
+                    // the name is taken by a phone that has gone quiet: it may be this person's own (the lobby only)
+                    if let r = session.reclaim {
+                        Small("If \(r) is you, on another phone, you can carry on as them.")
+                        Button("It’s me: carry on as " + r) { Task { await session.join(name: name, mine: true) } }.btn(.dark)
+                    }
                 }
                 Msg()
             }
@@ -308,6 +314,7 @@ struct PlayView: View {
     @ViewBuilder private func game(_ v: Snapshot, _ me: Me) -> some View {
         ForEach(session.rejoin) { r in RejoinCard(r: r) }
         if session.hostGone { TakeOverCard(v: v) }
+        if me.director && ["lobby", "oath", "roles", "day"].contains(v.phase) { AwayCard(v: v) }
         if !me.alive && !["lobby", "oath", "roles", "end", "dawn", "reveal"].contains(v.phase) && v.trial?.key != "statue" {
             Banner(.ghost, icon: "ghost", "You’re a Ghost. You still watch, cheer and call it at the Reckoning, but you don’t vote or play.")
         }
@@ -478,6 +485,109 @@ struct TakeOverCard: View {
             Button("Take over as host") {
                 session.confirm("Take over as host?", yes: "Take over") { session.act("takeover") }
             }.btn(.fill, .sm)
+        }
+    }
+}
+
+// the host's phone names anyone at the table whose phone has been quiet a minute (the server's away), before the game
+// deals them in or waits on them: once it's going, every vote, night and question would wait for them to its clock
+struct AwayCard: View {
+    let v: Snapshot
+    @Environment(Session.self) private var session
+    var body: some View {
+        let gone = v.players.filter { session.away.contains($0.id) && $0.alive }
+        let lobby = v.phase == "lobby"
+        let seen: String = gone.count > 1 ? ": these phones haven’t been seen for a minute. " : ": this phone hasn’t been seen for a minute. "
+        let advice: String = lobby ? "If they’ve gone, take them off the list. They can join again." : "If they’ve gone, take them out, or every vote and night will wait for them."
+        if !gone.isEmpty {
+            Card(.hot) {
+                Para(b(Words.andList(gone.map(\.name))) + Text(seen + advice))
+                Flow(spacing: 10) {
+                    ForEach(gone) { p in
+                        let label: String = (lobby ? "Take off " : "Take out ") + p.name
+                        let ask: String = lobby ? "Take \(p.name) off the list? They can join again." : "Take \(p.name) out of the game? They can’t come back."
+                        Button(label) { session.confirm(ask) { session.send(["a": "tool", "v": "remove", "who": p.id]) } }
+                            .btn(.ghost, .sm, fit: true)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Report a problem: in the host's Tools, and at the foot of the lobby and the end (reportLink)
+struct ReportLink: View {
+    @Environment(Session.self) private var session
+    var body: some View {
+        Button("Report a problem") { session.reporting = true }.btn(.ghost, .sm, fit: true)
+            .frame(maxWidth: .infinity).padding(.top, 18)
+    }
+}
+
+// what went wrong, with what this phone did lately (the server keeps the Table for its replay)
+struct ReportSheet: View {
+    let send: (String, String, String) async -> (id: String?, error: String?)
+    @Environment(\.dismiss) private var dismiss
+    @State private var what = ""
+    @State private var expected = ""
+    @State private var email = ""
+    @State private var busy = false
+    @State private var problem: String?
+    @State private var sent: String?
+
+    var body: some View {
+        ScrollView {
+            Column {
+                HStack { Spacer(); Button(sent == nil ? "Cancel" : "Close") { dismiss() }.btn(.dark, .sm, fit: true) }
+                if let id = sent {
+                    H2("Thank you")
+                    Sub(Text("Your report is in. Its reference is ") + b(id) + Text(", in case you write to us about it. If you left your email, we’ll reply within 24 hours."))
+                    Button("Back to the game") { dismiss() }.btn(.fill, .big)
+                } else {
+                    H2("Report a problem")
+                    Sub("Tell us what went wrong. We’ll get a record of what happened on this phone and in this game, so you don’t need to describe everything.")
+                    Label2("What happened?")
+                    Box(text: $what, lines: 4)
+                    Label2("What did you expect to happen? (optional)").padding(.top, 12)
+                    Box(text: $expected, lines: 2)
+                    Label2("Your email, if you’d like a reply (optional)").padding(.top, 12)
+                    TextField("", text: $email)
+                        .font(Theme.ui(20)).foregroundStyle(Theme.tallow).tint(Theme.brass2)
+                        .keyboardType(.emailAddress).textContentType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .padding(.horizontal, 14).frame(minHeight: 54)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Theme.field))
+                        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.edge, lineWidth: 1))
+                    Button(busy ? "Sending…" : "Send report", action: go).btn(.fill).disabled(busy).padding(.top, 16)
+                    if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
+                }
+            }
+        }
+        .scrollDismissesKeyboard(.interactively)
+    }
+
+    private func go() {
+        guard !busy else { return }
+        busy = true
+        problem = nil
+        Task {
+            let r = await send(what, expected, email)
+            busy = false
+            if let id = r.id { sent = id } else { problem = r.error }
+        }
+    }
+
+    // a few lines of typing, drawn as the page's textarea.f
+    private struct Box: View {
+        @Binding var text: String
+        let lines: Int
+        var body: some View {
+            TextField("", text: $text, axis: .vertical)
+                .lineLimit(lines...max(lines, 8))
+                .font(Theme.ui(18)).foregroundStyle(Theme.tallow).tint(Theme.brass2)
+                .padding(12)
+                .frame(maxWidth: .infinity, minHeight: 54, alignment: .topLeading)
+                .background(RoundedRectangle(cornerRadius: 4).fill(Theme.field))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.edge, lineWidth: 1))
         }
     }
 }

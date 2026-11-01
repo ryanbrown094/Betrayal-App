@@ -12,6 +12,7 @@ final class Trail {
     static let shared = Trail()
 
     private var queues: [String: [[String: Any]]] = [:] // a Table's events waiting to be sent
+    private var kept: [String: [[String: Any]]] = [:]   // a Table's last 200 events, sent or not, for a problem report
     private var timers: [String: Task<Void, Never>] = [:]
     private var roles: [String: String] = [:]           // host, player or tv
     private var opened: Set<String> = []
@@ -56,6 +57,10 @@ final class Trail {
         q.append(e)
         if q.count > 500 { q.removeFirst(q.count - 500) }
         queues[room] = q
+        var r = kept[room] ?? []
+        r.append(e)
+        if r.count > 200 { r.removeFirst(r.count - 200) }
+        kept[room] = r
         if k == "error" || k == "crash" { flush(room) }
         else if timers[room] == nil { timers[room] = Task { [weak self] in try? await Task.sleep(nanoseconds: 30_000_000_000); self?.flush(room) } }
     }
@@ -76,6 +81,9 @@ final class Trail {
     }
 
     func flushAll() { for room in queues.keys { flush(room) } }
+
+    // what happened on this device at a Table lately, for Report a problem
+    func recent(_ room: String) -> [[String: Any]] { kept[room] ?? [] }
 }
 
 // Crashes, as iOS reports them on the next launch (MetricKit), to the log of the Table the device was last at

@@ -63,6 +63,10 @@ struct ToolsView: View {
                     PickGrid(list: people) { p in run("host", who: p) }
                 }
             }
+            More("Report a problem") {
+                Small("Tell us what went wrong. We get a record of what happened on this phone and in this game.")
+                Button("Report a problem") { session.reporting = true }.btn(.dark, .sm, fit: true)
+            }
             More("Music on this phone") {
                 Small("If there’s no TV, this phone can play the music and sounds.")
                 Button(!Sound.shared.enabled || !Sound.shared.follows(session) ? "Play music here" : Sound.shared.muted ? "Sound on" : "Sound off") {
@@ -88,8 +92,9 @@ struct ToolsView: View {
             if let who { req["who"] = who.id }
             session.send(req)
         }
-        let q = tool == "remove" ? "Take " + (who?.name ?? "") + " out of the game? They can’t come back."
-            : tool == "host" ? "Make " + (who?.name ?? "") + " the host? Your phone loses these controls." : ToolsView.asks[tool]
+        let name = who?.name ?? ""
+        let removeAsk: String = v.phase == "lobby" ? "Take \(name) off the list? They can join again." : "Take \(name) out of the game? They can’t come back."
+        let q: String? = tool == "remove" ? removeAsk : tool == "host" ? "Make \(name) the host? Your phone loses these controls." : ToolsView.asks[tool]
         if let q { session.confirm(q, then: go) } else { go() }
     }
 
