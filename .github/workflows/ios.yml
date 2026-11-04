@@ -109,6 +109,11 @@ jobs:
             xcrun simctl launch "$UDID" "$APP" "$@" > /dev/null
             sleep "$wait"
             xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
+            # still the launch screen's flat colour (under a few hundred kilobytes): slow, or stuck? once more, later
+            if [ "$(stat -f%z "shots/$name.png")" -lt 400000 ]; then
+              sleep 12; xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
+              if [ "$(stat -f%z "shots/$name.png")" -lt 400000 ]; then echo "::warning::$name: still blank after $((wait + 12)) seconds"; else echo "$name: slow (drawn by $((wait + 12)) seconds)"; fi
+            fi
           }
           shot 00-home 6
           shot 01-art 4 -art
@@ -145,17 +150,18 @@ jobs:
           mkdir -p shots/store && cp "$DATA"/Documents/store/*.png shots/store/
           ls shots/store
 
-      # The iPhone Duo (two screens): closed as it boots, its cover (466 × 678 points), then opened from Simulator's own
-      # menu (ci/fold.applescript), the inner screen (669 × 951, the sidebar); and an iPad Pro, for the sidebars. The
-      # App Store's phone and Duo pictures are the app's own screens, glass and all, replacing the offscreen ones.
-      - name: The iPhone Duo, closed and open, an iPad, and the App Store's phone pictures
+      # The iPhone Duo closed, as it boots: its cover (466 × 678 points). Its inner screen can't be had here (opening it
+      # takes Simulator's menu, and this image has no Simulator app), so the Duo's store pictures stay the ones drawn
+      # offscreen at its size, sidebar and all. An iPad Pro, for the sidebars. The App Store's phone pictures are the
+      # app's own screens, glass and all, replacing the offscreen ones.
+      - name: The iPhone Duo closed, an iPad, and the App Store's phone pictures
         if: ${{ !inputs.qa && !inputs.airplay }}
         run: |
           RT=$(xcrun simctl list runtimes -j | python3 -c '
           import json, sys
           r = [x for x in json.load(sys.stdin)["runtimes"] if x["platform"] == "iOS" and x["isAvailable"]]
           print(sorted(r, key=lambda x: [int(n) for n in x["version"].split(".")])[-1]["identifier"])')
-          mkdir -p shots/duo-closed shots/duo-open shots/ipad shots/store
+          mkdir -p shots/duo-closed shots/ipad shots/store
           moments="lobby-host oath roles-forsworn day-guest day-host trial-intro-host quiz-open likely-open word-open talk-host vote-mine reveal-exiled night-forsworn night-forsworn-split role-forsworn dawn-revealed trust end-winner end-host paused-host day-host-tools"
           store="oath roles-forsworn likely-open vote-mine night-forsworn-picked end-winner"
           shot() { # device, display (or none), folder, name, seconds to wait, then the app's arguments
@@ -163,8 +169,17 @@ jobs:
             xcrun simctl terminate "$dev" "$APP" 2>/dev/null || true
             xcrun simctl launch "$dev" "$APP" -noatt "$@" > /dev/null || { echo "::warning::couldn't open the app for $dir/$name"; return 0; }
             sleep "$wait"
-            if [ -n "$disp" ]; then xcrun simctl io "$dev" screenshot --display="$disp" "shots/$dir/$name.png" > /dev/null || echo "no picture of $dir/$name"
-            else xcrun simctl io "$dev" screenshot "shots/$dir/$name.png" > /dev/null || echo "no picture of $dir/$name"; fi
+            picture "$dev" "$disp" "shots/$dir/$name.png"
+            # still the launch screen's flat colour (a few hundred kilobytes at most): slow, or stuck? once more, later
+            f="shots/$dir/$name.png"
+            if [ -f "$f" ] && [ "$(stat -f%z "$f")" -lt 400000 ] && [ "$name" != paused-host ]; then
+              sleep 12; picture "$dev" "$disp" "$f"
+              if [ "$(stat -f%z "$f")" -lt 400000 ]; then echo "::warning::$dir/$name: still blank after $((wait + 12)) seconds"; else echo "$dir/$name: slow (drawn by $((wait + 12)) seconds)"; fi
+            fi
+          }
+          picture() { # device, display (or none), file
+            if [ -n "$2" ]; then xcrun simctl io "$1" screenshot --display="$2" "$3" > /dev/null || echo "no picture: $3"
+            else xcrun simctl io "$1" screenshot "$3" > /dev/null || echo "no picture: $3"; fi
           }
           everything() { # device, display, folder
             shot "$1" "$2" "$3" home 8
@@ -178,19 +193,6 @@ jobs:
             xcrun simctl status_bar "$DUO" override --time 9:41 --batteryState charged --batteryLevel 100 || true
             xcrun simctl install "$DUO" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
             everything "$DUO" 1 duo-closed
-            # (Simulator found where it is: this image doesn't know it by name, nor keep it inside Xcode)
-            SIMAPP=$(mdfind "kMDItemCFBundleIdentifier == 'com.apple.iphonesimulator'" 2>/dev/null | head -1)
-            [ -n "$SIMAPP" ] || SIMAPP=$(find /Applications /Library/Developer "$(xcode-select -p)/.." -maxdepth 6 -name Simulator.app -type d 2>/dev/null | head -1)
-            echo "Simulator: ${SIMAPP:-none}"
-            open "$SIMAPP" --args -CurrentDeviceUDID "$DUO" || echo "::warning::couldn't open Simulator"
-            sleep 10
-            osascript ci/fold.applescript || echo "::warning::couldn't open the Duo from Simulator's menu"
-            sleep 8
-            everything "$DUO" 3 duo-open
-            # the store's Duo pictures from the inner screen only if it opened (a blank picture is a few kilobytes): else
-            # the ones drawn offscreen at its size stay
-            i=0; for m in $store; do i=$((i+1)); shot "$DUO" 3 store "duo-open-$i-$m" 4 -demo "$m"
-              f="shots/store/duo-open-$i-$m.png"; if [ -f "$f" ] && [ "$(stat -f%z "$f")" -gt 200000 ]; then mv "$f" "shots/store/duo-$i-$m.png"; else rm -f "$f"; fi; done
             xcrun simctl shutdown "$DUO" || true
           else echo "::warning::no iPhone Duo simulator"; fi
           # an iPad Pro 13-inch on whichever runtime will make one, newest first (as the big iPhone)
@@ -213,8 +215,8 @@ jobs:
             everything "$PAD" "" ipad
             xcrun simctl shutdown "$PAD" || true
           fi
-          i=0; for m in $store; do i=$((i+1)); shot "$UDID" "" store "phone-$i-$m" 4 -demo "$m"; done
-          for d in duo-closed duo-open ipad; do for f in shots/$d/*.png; do [ -f "$f" ] && sips -s format jpeg -s formatOptions 70 "$f" --out "${f%.png}.jpg" > /dev/null && rm "$f"; done; done
+          i=0; for m in $store; do i=$((i+1)); shot "$UDID" "" store "phone-$i-$m" 8 -demo "$m"; done
+          for d in duo-closed ipad; do for f in shots/$d/*.png; do [ -f "$f" ] && sips -s format jpeg -s formatOptions 70 "$f" --out "${f%.png}.jpg" > /dev/null && rm "$f"; done; done
           ls shots/store
 
       - name: A game against bots on a local Worker

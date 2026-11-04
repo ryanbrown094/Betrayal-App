@@ -1,5 +1,5 @@
-# The App Store's screenshots: the app's own screens (the phone's and the iPhone Duo's photographed in the simulator,
-# the TV's drawn offscreen by the Debug build's -render-store; the CI keeps them in refs/screens/ios-native as
+# The App Store's screenshots: the app's own screens (the phone's photographed in the simulator, the iPhone Duo's open
+# and the TV's drawn offscreen by the Debug build's -render-store; the CI keeps them in refs/screens/ios-native as
 # store/*.png) with a caption above each, in the app's type and colours.
 #   git fetch origin refs/screens/ios-native && git archive FETCH_HEAD store | tar -x -C /tmp/raw
 #   python3 store/compose.py /tmp/raw/store

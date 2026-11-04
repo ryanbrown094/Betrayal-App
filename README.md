@@ -154,12 +154,13 @@ or `airplay`: a practice game with the TV on a second display, watched for a han
 2. It builds the app (Debug and Release) and runs it in the iPhone simulator: the start screen, the art (`-art`), the
    start screen's join, host and passes screens with made-up prices and saved codes (`-shop -screen passes`), the sheet
    after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
-   phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Then the iPhone Duo: closed as
-   it boots (the cover, 466 × 678 points, its status bar down one side) and opened from Simulator's menu
-   (`ci/fold.applescript`; the inner screen, 669 × 951), the start screen's screens and two dozen moments on each; the
-   same on an iPad Pro, for the sidebars. The App Store's pictures: the phone's and the Duo's are the app's own screens
-   on the big iPhone and the open Duo (`-demo NAME`), the TV's drawn offscreen (`-render-store`); `store/compose.py`
-   captions them (see `store/listing.md`). `ci/main.swift` also checks which Table a scanned code or link opens.
+   phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Then the iPhone Duo closed, as
+   it boots (the cover, 466 × 678 points, its status bar down one side), the start screen's screens and two dozen
+   moments; the same on an iPad Pro, for the sidebars (a shot still on the launch screen is taken again 12 seconds later,
+   and a warning says if it's still blank). The Duo's inner screen can't be had on the CI's image (opening it takes
+   Simulator's menu, and the image has no Simulator app). The App Store's pictures: the phone's are the app's own screens
+   on the big iPhone (`-demo NAME`); the Duo's (669 × 951 points, with the sidebar) and the TV's are drawn offscreen
+   (`-render-store`); `store/compose.py` captions them (see `store/listing.md`). `ci/main.swift` also checks which Table a scanned code or link opens.
 3. It checks out the server repo, starts its Worker (`wrangler dev`, with a test master passcode), and `ci/drive.py`
    plays a game against
    bots as the host while the app shows the host's phone (`-server URL -play ROOM TOKEN`), photographing each new screen.
