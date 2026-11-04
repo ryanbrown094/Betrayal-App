@@ -182,11 +182,14 @@ jobs:
             i=0; for m in $store; do i=$((i+1)); shot "$DUO" 3 store "duo-$i-$m" 4 -demo "$m"; done
             xcrun simctl shutdown "$DUO" || true
           else echo "::warning::no iPhone Duo simulator"; fi
-          IPAD=$(xcrun simctl list devicetypes -j | python3 -c '
+          PAD=""
+          for IPAD in $(xcrun simctl list devicetypes -j | python3 -c '
           import json, sys
-          t = [x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPad-Pro-13" in x["identifier"]]
-          print(t[0] if t else "")')
-          if [ -n "$IPAD" ] && PAD=$(xcrun simctl create pad "$IPAD" "$RT" 2>/dev/null); then
+          print(" ".join(x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPad-Pro-13" in x["identifier"]))'); do
+            PAD=$(xcrun simctl create pad "$IPAD" "$RT" 2>/dev/null) && break
+          done
+          if [ -n "$PAD" ]; then
+            echo "the iPad: $IPAD"
             xcrun simctl boot "$PAD"; xcrun simctl bootstatus "$PAD" -b
             xcrun simctl status_bar "$PAD" override --time 9:41 --batteryState charged --batteryLevel 100 || true
             xcrun simctl install "$PAD" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
