@@ -91,8 +91,8 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   offered its own name back (`reclaim`); a one-tap rating at the end; and **Report a problem** (the host's Tools, the
   foot of the lobby and the end), sent to `/api/report` with this device's recent log. The top bar floats over the
   screen as it scrolls and the host's moves at its foot, in Liquid Glass from iOS 26 (`UI/Glass.swift`; the system's
-  thin material before, a flat fill drawn offscreen); Your role is in the top bar, the same on every phone. From 600
-  points wide (an iPad, the iPhone Duo open) the start screen's menu is a sidebar, and in a game the Table's sidebar
+  thin material before, a flat fill drawn offscreen); Your role is in the top bar, the same on every phone. From 540
+  points wide (an iPad, the iPhone Duo open; not its 466-point cover) the start screen's menu is a sidebar, and in a game the Table's sidebar
   (`TableSidebar`: the Purse, who's still in, this player's holdings, the host's moves) sits beside the screen.
   `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
   `GET /api/g/CODE/m` about once a second (faster during Snap, slower in the background), sends taps to `m/act`, and

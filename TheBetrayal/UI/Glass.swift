@@ -76,8 +76,9 @@ struct WidthReader: ViewModifier {
     }
 }
 
-// an iPad, or the iPhone Duo open: wide enough for a sidebar beside the phone's column
+// an iPad, or the iPhone Duo open (669 points, less any side the status bar takes): wide enough for a sidebar beside
+// the phone's column; never a phone, nor the Duo's cover (466 points)
 enum Wide {
-    static let from: CGFloat = 600
+    static let from: CGFloat = 540
     static func sidebar(_ width: CGFloat) -> CGFloat { min(300, max(230, width * 0.32)) }
 }
