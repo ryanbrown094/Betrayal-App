@@ -77,18 +77,21 @@ jobs:
       - name: Boot the simulator
         run: |
           set -eo pipefail
-          # a Pro Max on the newest iOS runtime (the App Store's 6.9" pictures), made here: that runtime may come with no
-          # devices of its own; never the Duo (two screens: each photo would have to name one)
-          RT=$(xcrun simctl list runtimes -j | python3 -c '
-          import json, sys
-          r = [x for x in json.load(sys.stdin)["runtimes"] if ".iOS-" in x["identifier"] and x["isAvailable"]]
-          print(sorted(r, key=lambda x: [int(n) for n in x["version"].split(".")])[-1]["identifier"])')
-          # (the newest Pro Max that runtime takes: Xcode lists some it can't make there)
+          # the biggest one-screen iPhone a runtime will make (a Pro Max: the App Store's 6.9" pictures), newest runtime
+          # first: Xcode 27's come with no devices, and list some types they won't make; never the Duo (two screens)
           UDID=""
-          for TYPE in iPhone-18-Pro-Max iPhone-17-Pro-Max iPhone-16-Pro-Max; do
-            UDID=$(xcrun simctl create "big iPhone" "com.apple.CoreSimulator.SimDeviceType.$TYPE" "$RT" 2>/dev/null) && break
-          done
-          [ -n "$UDID" ] || { echo "::error::no Pro Max simulator on $RT"; exit 1; }
+          while read -r TYPE RT; do
+            OUT=$(xcrun simctl create "big iPhone" "$TYPE" "$RT" 2>&1) && { UDID=$OUT; break; }
+            echo "not $TYPE on $RT: $OUT"
+          done < <(python3 -c '
+          import json, re, subprocess
+          j = lambda what: json.loads(subprocess.check_output(["xcrun", "simctl", "list", what, "-j"]))
+          rts = sorted((r for r in j("runtimes")["runtimes"] if ".iOS-" in r["identifier"] and r["isAvailable"]), key=lambda r: [int(n) for n in r["version"].split(".")], reverse=True)
+          num = lambda n: int((re.search(r"iPhone (\d+)", n) or [0, 0])[1])
+          ts = sorted((t for t in j("devicetypes")["devicetypes"] if t["name"].startswith("iPhone") and "Duo" not in t["name"]), key=lambda t: ("Pro Max" in t["name"], num(t["name"])), reverse=True)
+          for r in rts:
+              for t in ts: print(t["identifier"], r["identifier"])')
+          [ -n "$UDID" ] || { echo "::error::no iPhone simulator could be made"; exit 1; }
           echo "the big iPhone: $TYPE on $RT"
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
@@ -186,7 +189,8 @@ jobs:
           for IPAD in $(xcrun simctl list devicetypes -j | python3 -c '
           import json, sys
           print(" ".join(x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPad-Pro-13" in x["identifier"]))'); do
-            PAD=$(xcrun simctl create pad "$IPAD" "$RT" 2>/dev/null) && break
+            PAD=$(xcrun simctl create pad "$IPAD" "$RT" 2>&1) && break
+            PAD="" # (simctl says why it can't on its standard output)
           done
           if [ -n "$PAD" ]; then
             echo "the iPad: $IPAD"
