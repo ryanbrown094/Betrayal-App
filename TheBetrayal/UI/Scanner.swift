@@ -38,7 +38,7 @@ struct ScanSheet: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            Button("Close") { dismiss() }.btn(.dark, .sm, fit: true).padding(16)
+            Button("Close") { dismiss() }.glassButton().padding(16)
         }
     }
 

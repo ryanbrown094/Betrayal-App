@@ -139,7 +139,7 @@ struct HostPassSheet: View {
     var body: some View {
         ScrollView {
             Column {
-                HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
+                HStack { Spacer(); Button("Close") { dismiss() }.glassButton() }
                 H1("The Host Pass")
                 Sub("Every game you host ad-free, for everyone at the Table, with every Trial and the full question banks.")
                 if done != nil {

@@ -112,6 +112,8 @@ struct ToolsView: View {
 // The host's moves for this moment, under their own screen; the rest wait in Tools (quick() in src/modern-ui.js)
 struct HostQuick: View {
     let v: Snapshot
+    var bar = false    // floating on glass at the foot of the host's screen
+    var column = false // in the Table's sidebar (wide), one under another
     @Environment(Session.self) private var session
 
     private struct Move: Identifiable { let label: String; let tool: String; let kind: Btn.Kind; var id: String { tool } }
@@ -127,12 +129,32 @@ struct HostQuick: View {
     var body: some View {
         let l = moves
         if v.paused == nil && !l.isEmpty {
-            DirCard {
-                HStack(spacing: 10) {
+            if bar {
+                // side by side if they fit, else one under another (larger text), never off the screen
+                GlassGroup {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 10) { glassMoves(l) }
+                        VStack(spacing: 8) { glassMoves(l) }
+                    }
+                }
+                .padding(.horizontal, 12).padding(.top, 4).padding(.bottom, 2)
+            } else if column {
+                Eyebrow("your moves").padding(.top, 4)
+                VStack(spacing: 8) {
                     ForEach(l) { m in Button(m.label) { run(m.tool) }.btn(m.kind, .sm) }
+                }
+            } else {
+                DirCard {
+                    HStack(spacing: 10) {
+                        ForEach(l) { m in Button(m.label) { run(m.tool) }.btn(m.kind, .sm) }
+                    }
                 }
             }
         }
+    }
+
+    private func glassMoves(_ l: [Move]) -> some View {
+        ForEach(l) { m in Button(m.label) { run(m.tool) }.glassButton(prominent: m.kind == .fill).controlSize(.large) }
     }
 
     private func run(_ tool: String) {

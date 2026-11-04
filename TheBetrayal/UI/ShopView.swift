@@ -184,7 +184,7 @@ struct UsePassSheet: View {
     var body: some View {
         ScrollView {
             Column {
-                HStack { Spacer(); Button("Close") { dismiss() }.btn(.dark, .sm, fit: true) }
+                HStack { Spacer(); Button("Close") { dismiss() }.glassButton() }
                 H1("Make tonight ad-free")
                 Sub("A pass takes the ads away for everyone at this Table, and adds every Trial and the full question banks from the next Trial on. A Night Pass’s 24 hours start the first time it’s used.")
                 if !usable.isEmpty {

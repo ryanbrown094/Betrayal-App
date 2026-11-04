@@ -222,7 +222,7 @@ struct PageView: View {
             Column {
                 HStack {
                     Spacer()
-                    if let close { Button("Close", action: close).btn(.dark, .sm, fit: true) }
+                    if let close { Button("Close", action: close).glassButton() }
                 }
                 H1(page.title)
                 if let u = page.updated { Small(u) }
