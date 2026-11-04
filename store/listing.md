@@ -140,6 +140,7 @@ Each needs a review screenshot: `review/passes-6.9.png` (the **Your passes** scr
 | iPhone Duo | 2007 × 2853 | `screenshots/iphone-duo/` (the phone's column, as the Duo shows it open) |
 | iPad 13" | 2752 × 2064 | `screenshots/ipad-13/` (the TV, as an iPad shows it with **Use this screen as the TV**) |
 
-To make them again after the screens change: the CI keeps the raw screens (`-render-store`) in `refs/screens/ios-native`,
+To make them again after the screens change: the CI keeps the raw screens (the phone's and the Duo's photographed in the
+simulator, the TV's drawn by `-render-store`) in `refs/screens/ios-native`,
 then `git fetch origin refs/screens/ios-native && mkdir -p /tmp/raw && git archive FETCH_HEAD store | tar -x -C /tmp/raw`
 and `python3 store/compose.py /tmp/raw/store` (Pillow).
