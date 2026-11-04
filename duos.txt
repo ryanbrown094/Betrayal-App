@@ -1,0 +1,1 @@
+com.apple.CoreSimulator.SimDeviceType.iPhone-Duo	iPhone Duo
