@@ -2,7 +2,7 @@
 -- logs every menu and submenu item it finds, then clicks the first whose name says it opens or unfolds the device.
 --   osascript ci/fold.applescript
 set AppleScript's text item delimiters to ", "
-tell application "Simulator" to activate
+tell application id "com.apple.iphonesimulator" to activate -- (by its id: the CI's image doesn't know it by name)
 delay 3
 tell application "System Events"
 	tell process "Simulator"

@@ -178,8 +178,10 @@ jobs:
             xcrun simctl status_bar "$DUO" override --time 9:41 --batteryState charged --batteryLevel 100 || true
             xcrun simctl install "$DUO" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
             everything "$DUO" 1 duo-closed
-            open -a Simulator --args -CurrentDeviceUDID "$DUO"; sleep 10
-            osascript ci/fold.applescript || true
+            # (Simulator by its path in Xcode: this image doesn't know it by name)
+            open "$(xcode-select -p)/Applications/Simulator.app" --args -CurrentDeviceUDID "$DUO" || echo "::warning::couldn't open Simulator"
+            sleep 10
+            osascript ci/fold.applescript || echo "::warning::couldn't open the Duo from Simulator's menu"
             sleep 8
             everything "$DUO" 3 duo-open
             i=0; for m in $store; do i=$((i+1)); shot "$DUO" 3 store "duo-$i-$m" 4 -demo "$m"; done
