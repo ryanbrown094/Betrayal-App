@@ -48,14 +48,24 @@ jobs:
             xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
             xcrun simctl io "$UDID" enumerate 2>&1 | head -40 || true
             xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
+            xcrun simctl help ui 2>&1 | head -40 || true
+            xcrun simctl ui "$UDID" 2>&1 | head -20 || true
             shot() {
               name=$1; wait=$2; shift 2
               xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
               xcrun simctl launch "$UDID" "$APP" -noatt "$@" > /dev/null
               sleep "$wait"
-              xcrun simctl io "$UDID" screenshot "shots/$tag-$name.png" > /dev/null || true
-              for d in cover external internal; do xcrun simctl io "$UDID" screenshot --display="$d" "shots/$tag-$name-$d.png" > /dev/null 2>&1 || true; done
+              for d in 1 3; do xcrun simctl io "$UDID" screenshot --display="$d" "shots/$POSE-$name-d$d.png" > /dev/null 2>&1 || echo "no shot of display $d"; done
             }
+            POSE=start
+            shot home 8
+            shot demo-day-guest 5 -demo day-guest
+            # closed: the inner display off, the cover on
+            xcrun simctl io "$UDID" screenConfig --display=3 power off || true
+            xcrun simctl io "$UDID" screenConfig --display=1 power on || true
+            sleep 4
+            xcrun simctl io "$UDID" enumerate 2>&1 | grep -E "Power state|Default width|Default height" || true
+            POSE=closed
             shot home 8
             shot host 6 -screen host
             shot join 6 -screen join
@@ -63,6 +73,14 @@ jobs:
             shot intro 4 -intro 0
             shot page 4 -page rules
             for m in lobby-host day-guest day-host night-forsworn role-forsworn vote quiz-open end-winner paused-host trial-intro-host; do shot "demo-$m" 5 -demo "$m"; done
+            # open: the inner display on, the cover off
+            xcrun simctl io "$UDID" screenConfig --display=3 power on || true
+            xcrun simctl io "$UDID" screenConfig --display=1 power off || true
+            sleep 4
+            POSE=open
+            shot home 8
+            shot demo-day-host 5 -demo day-host
+            shot demo-lobby-host 5 -demo lobby-host
             xcrun simctl shutdown "$UDID" || true
           done < duos.txt
           ls shots
