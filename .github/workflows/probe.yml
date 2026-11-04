@@ -1,0 +1,78 @@
+name: Probe (Xcode 27, iPhone Duo)
+
+# Temporary: what GitHub's xcode-27 image offers (Xcode, iOS 27 simulators, an iPhone Duo?), and the app on a Duo
+# simulator. Its pictures go to refs/screens/duo-probe.
+on:
+  push:
+    paths:
+      - .github/workflows/probe.yml
+
+jobs:
+  probe:
+    runs-on: xcode-27
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    env:
+      APP: uk.co.thebetrayal.app
+    steps:
+      - uses: actions/checkout@v4
+      - name: Xcode and simulators
+        run: |
+          xcodebuild -version; ls /Applications | grep -i xcode
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep -i -E "iphone|ipad"
+          xcrun simctl help 2>&1 | head -60
+          xcrun simctl io help 2>&1 | head -60
+      - name: Build (Debug)
+        run: >
+          xcodebuild -quiet -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Debug
+          -destination "generic/platform=iOS Simulator" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+      - name: The app on each Duo
+        run: |
+          set -x
+          mkdir -p shots
+          RT=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          r = [x for x in json.load(sys.stdin)["runtimes"] if x["platform"] == "iOS" and x["isAvailable"]]
+          print(sorted(r, key=lambda x: [int(n) for n in x["version"].split(".")])[-1]["identifier"])')
+          xcrun simctl list devicetypes -j | python3 -c '
+          import json, sys
+          for t in json.load(sys.stdin)["devicetypes"]:
+              if "duo" in t["name"].lower() or "fold" in t["name"].lower(): print(t["identifier"] + "\t" + t["name"])' > duos.txt
+          cat duos.txt
+          while IFS=$'\t' read -r TYPE NAME; do
+            tag=$(echo "$NAME" | tr ' ' '-' | tr -cd 'A-Za-z0-9-')
+            UDID=$(xcrun simctl create "probe-$tag" "$TYPE" "$RT")
+            xcrun simctl boot "$UDID"; xcrun simctl bootstatus "$UDID" -b
+            xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
+            xcrun simctl io "$UDID" enumerate 2>&1 | head -40 || true
+            xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
+            shot() {
+              name=$1; wait=$2; shift 2
+              xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
+              xcrun simctl launch "$UDID" "$APP" -noatt "$@" > /dev/null
+              sleep "$wait"
+              xcrun simctl io "$UDID" screenshot "shots/$tag-$name.png" > /dev/null || true
+              for d in cover external internal; do xcrun simctl io "$UDID" screenshot --display="$d" "shots/$tag-$name-$d.png" > /dev/null 2>&1 || true; done
+            }
+            shot home 8
+            shot host 6 -screen host
+            shot join 6 -screen join
+            shot passes 6 -shop -screen passes
+            shot intro 4 -intro 0
+            shot page 4 -page rules
+            for m in lobby-host day-guest day-host night-forsworn role-forsworn vote quiz-open end-winner paused-host trial-intro-host; do shot "demo-$m" 5 -demo "$m"; done
+            xcrun simctl shutdown "$UDID" || true
+          done < duos.txt
+          ls shots
+      - name: The pictures as a git ref
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d shots ] || exit 0
+          cp duos.txt shots/ 2>/dev/null || true
+          cd shots && git init -q && git add -A
+          git -c user.name="iOS CI" -c user.email="ci@users.noreply.github.com" commit -qm "Duo probe for $GITHUB_SHA (run $GITHUB_RUN_ID)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:refs/screens/duo-probe
