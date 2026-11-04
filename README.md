@@ -93,7 +93,8 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   screen as it scrolls and the host's moves at its foot, in Liquid Glass from iOS 26 (`UI/Glass.swift`; the system's
   thin material before, a flat fill drawn offscreen); Your role is in the top bar, the same on every phone. From 540
   points wide (an iPad, the iPhone Duo open; not its 466-point cover) the start screen's menu is a sidebar, and in a game the Table's sidebar
-  (`TableSidebar`: the Purse, who's still in, this player's holdings, the host's moves) sits beside the screen.
+  (`TableSidebar`) sits beside the screen, holding what the top bar holds on a phone (back, the player, the Table and
+  Purse, Your role, the host's Pause and Tools) and who's still in, this player's holdings and the host's moves.
   `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
   `GET /api/g/CODE/m` about once a second (faster during Snap, slower in the background), sends taps to `m/act`, and
   keeps the phone's token under the page's own storage name (`bt-m-CODE`).

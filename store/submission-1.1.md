@@ -21,7 +21,7 @@ LIQUID GLASS
 The bar at the top of the game floats over the screen as you scroll, and Your role is always in it: the same button on every phone, so a glance gives nothing away. The host's moves float at the foot of the screen.
 
 A SIDEBAR ON iPAD AND iPHONE DUO
-On a wide screen, the start screen's menu sits beside whatever it opens. In a game, the Table sits beside your screen: the Purse, who's still in, what you hold, and the host's moves.
+On a wide screen, the start screen's menu sits beside whatever it opens. In a game, the Table sits beside your screen, with everything the top bar holds on a phone: the Purse, Your role, who's still in, what you hold, and the host's Pause, Tools and moves.
 
 iPHONE DUO, CLOSED
 The game fits the cover screen, the pause included.
@@ -62,7 +62,7 @@ The 1.0 description is still accurate. To mention the new layouts, add this para
 
 ```
 ON iPAD AND iPHONE DUO
-A sidebar keeps the Table beside your screen: who's still in, the Purse, and the host's moves.
+A sidebar keeps the Table beside your screen: the Purse, Your role, who's still in, and the host's controls.
 ```
 
 Keywords, support and marketing URLs: unchanged.
