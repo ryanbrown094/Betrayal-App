@@ -178,22 +178,33 @@ jobs:
             xcrun simctl status_bar "$DUO" override --time 9:41 --batteryState charged --batteryLevel 100 || true
             xcrun simctl install "$DUO" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
             everything "$DUO" 1 duo-closed
-            # (Simulator by its path in Xcode: this image doesn't know it by name)
-            open "$(xcode-select -p)/Applications/Simulator.app" --args -CurrentDeviceUDID "$DUO" || echo "::warning::couldn't open Simulator"
+            # (Simulator found where it is: this image doesn't know it by name, nor keep it inside Xcode)
+            SIMAPP=$(mdfind "kMDItemCFBundleIdentifier == 'com.apple.iphonesimulator'" 2>/dev/null | head -1)
+            [ -n "$SIMAPP" ] || SIMAPP=$(find /Applications /Library/Developer "$(xcode-select -p)/.." -maxdepth 6 -name Simulator.app -type d 2>/dev/null | head -1)
+            echo "Simulator: ${SIMAPP:-none}"
+            open "$SIMAPP" --args -CurrentDeviceUDID "$DUO" || echo "::warning::couldn't open Simulator"
             sleep 10
             osascript ci/fold.applescript || echo "::warning::couldn't open the Duo from Simulator's menu"
             sleep 8
             everything "$DUO" 3 duo-open
-            i=0; for m in $store; do i=$((i+1)); shot "$DUO" 3 store "duo-$i-$m" 4 -demo "$m"; done
+            # the store's Duo pictures from the inner screen only if it opened (a blank picture is a few kilobytes): else
+            # the ones drawn offscreen at its size stay
+            i=0; for m in $store; do i=$((i+1)); shot "$DUO" 3 store "duo-open-$i-$m" 4 -demo "$m"
+              f="shots/store/duo-open-$i-$m.png"; if [ -f "$f" ] && [ "$(stat -f%z "$f")" -gt 200000 ]; then mv "$f" "shots/store/duo-$i-$m.png"; else rm -f "$f"; fi; done
             xcrun simctl shutdown "$DUO" || true
           else echo "::warning::no iPhone Duo simulator"; fi
+          # an iPad Pro 13-inch on whichever runtime will make one, newest first (as the big iPhone)
           PAD=""
-          for IPAD in $(xcrun simctl list devicetypes -j | python3 -c '
-          import json, sys
-          print(" ".join(x["identifier"] for x in json.load(sys.stdin)["devicetypes"] if "iPad-Pro-13" in x["identifier"]))'); do
-            PAD=$(xcrun simctl create pad "$IPAD" "$RT" 2>&1) && break
+          while read -r IPAD PRT; do
+            PAD=$(xcrun simctl create pad "$IPAD" "$PRT" 2>&1) && break
             PAD="" # (simctl says why it can't on its standard output)
-          done
+          done < <(python3 -c '
+          import json, subprocess
+          j = lambda what: json.loads(subprocess.check_output(["xcrun", "simctl", "list", what, "-j"]))
+          rts = sorted((r for r in j("runtimes")["runtimes"] if ".iOS-" in r["identifier"] and r["isAvailable"]), key=lambda r: [int(n) for n in r["version"].split(".")], reverse=True)
+          for r in rts:
+              for t in j("devicetypes")["devicetypes"]:
+                  if "iPad-Pro-13" in t["identifier"]: print(t["identifier"], r["identifier"])')
           if [ -n "$PAD" ]; then
             echo "the iPad: $IPAD"
             xcrun simctl boot "$PAD"; xcrun simctl bootstatus "$PAD" -b

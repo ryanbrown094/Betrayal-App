@@ -146,10 +146,10 @@ private struct RenderStore: View {
             if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("phone-\(i + 1)-" + name + ".png")) }
             await Task.yield()
         }
-        // the iPhone Duo, open: 669 × 951 points (the phone's column, centred, as it draws there)
+        // the iPhone Duo, open: 669 × 951 points, the Table's sidebar beside the screen, as it draws there
         for (i, name) in RenderStore.phone.enumerated() {
             guard let s = Demo.session(name, tv: false) else { continue }
-            let r = ImageRenderer(content: PlayView().environment(s).environment(\.rendering, true)
+            let r = ImageRenderer(content: PlayView().environment(s).environment(\.rendering, true).environment(\.renderWidth, 669)
                 .frame(width: 669, height: 951, alignment: .top).clipped().background(Backdrop()))
             r.scale = 3
             if let png = r.uiImage?.pngData() { try? png.write(to: dir.appendingPathComponent("duo-\(i + 1)-" + name + ".png")) }

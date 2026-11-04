@@ -269,15 +269,23 @@ struct PlayView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Environment(\.rendering) private var rendering
+    @Environment(\.renderWidth) private var renderWidth
     @State private var width: CGFloat = 0
 
     // the top bar floats over the screen as it scrolls, and the host's moves at its foot (on glass, from iOS 26); wide
     // (an iPad, the iPhone Duo open), the Table's sidebar sits beside it and holds them both
     var body: some View {
         if let v = session.view, let me = v.me {
-            let wide = !rendering && !me.left && width >= Wide.from
+            let w = rendering ? renderWidth : width
+            let wide = !me.left && w >= Wide.from
             ZStack {
-                if rendering { page(v, me, wide: false) } else {
+                if rendering {
+                    // drawn offscreen at a width (the App Store's iPhone Duo pictures): the sidebar too, if it's wide
+                    HStack(alignment: .top, spacing: 0) {
+                        if wide { TableSidebar(v: v, me: me).frame(width: Wide.sidebar(w)) }
+                        page(v, me, wide: wide)
+                    }
+                } else {
                     HStack(alignment: .top, spacing: 0) {
                         if wide { TableSidebar(v: v, me: me).frame(width: Wide.sidebar(width)) }
                         ScrollView { page(v, me, wide: wide) }
@@ -322,8 +330,8 @@ struct PlayView: View {
                     .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                 if !rendering { Button("Back to the start") { dismiss() }.btn(.ghost) }
             } else {
-                // drawn offscreen there's no scrolling for the bar to float over: it heads the page
-                if rendering { TopBar(v: v, me: me).padding(.bottom, 18) }
+                // drawn offscreen there's no scrolling for the bar to float over: it heads the page (wide, the sidebar has it)
+                if rendering && !wide { TopBar(v: v, me: me).padding(.bottom, 18) }
                 if let peek = session.peekList { PeekView(list: peek) }
                 else if session.tools && me.director { ToolsView(v: v, me: me) }
                 else if session.myRole > 0 && !["lobby", "oath", "roles"].contains(v.phase) { RoleView(v: v, me: me) }
@@ -344,7 +352,7 @@ struct PlayView: View {
         PhaseView(v: v, me: me)
             .id(session.freshKey)
             .modifier(FadeIn(rise: reduceMotion ? 0 : 6))
-        if me.director && rendering { HostQuick(v: v) }
+        if me.director && rendering && !wide { HostQuick(v: v) }
     }
 }
 
@@ -356,10 +364,18 @@ struct TableSidebar: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
+    @Environment(\.rendering) private var rendering
     var body: some View {
+        Group {
+            if rendering { contents.frame(maxHeight: .infinity, alignment: .top) } else { ScrollView { contents }.scrollIndicators(.hidden) }
+        }
+        .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .padding(.leading, 10).padding(.vertical, 10)
+    }
+
+    private var contents: some View {
         let early = ["lobby", "oath", "roles"].contains(v.phase)
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        return VStack(alignment: .leading, spacing: 0) {
                 GlassGroup {
                     HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 0) }
                 }
@@ -395,10 +411,6 @@ struct TableSidebar: View {
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 16)
-        }
-        .scrollIndicators(.hidden)
-        .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.leading, 10).padding(.vertical, 10)
     }
 
     // a sidebar row, as the system draws them: an icon and a name, the one open lit
@@ -786,9 +798,15 @@ struct Tally: View {
 
 // drawn to a picture (a Debug build's -render-all): no scrolling, the whole page at once
 private struct RenderingKey: EnvironmentKey { static let defaultValue = false }
+private struct RenderWidthKey: EnvironmentKey { static let defaultValue: CGFloat = 0 }
 extension EnvironmentValues {
     var rendering: Bool {
         get { self[RenderingKey.self] }
         set { self[RenderingKey.self] = newValue }
+    }
+    // the width a picture drawn offscreen is drawn at, for the layouts that change with it (the sidebar)
+    var renderWidth: CGFloat {
+        get { self[RenderWidthKey.self] }
+        set { self[RenderWidthKey.self] = newValue }
     }
 }
