@@ -480,10 +480,19 @@ struct IntroView: View {
                 Spacer()
                 Button(ready == "Done" ? "Close" : "Skip", action: done).glassButton()
             }
-            TabView(selection: $at) {
-                ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).tag(i) }
+            // (not a paged TabView: on an iPad it left the page blank)
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 0) {
+                        ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).containerRelativeFrame([.horizontal, .vertical]).id(i) }
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollTargetBehavior(.paging)
+                .scrollIndicators(.hidden)
+                .scrollPosition(id: Binding(get: { at }, set: { if let i = $0 { at = i } }))
+                .onAppear { if at > 0 { proxy.scrollTo(at) } }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
             HStack(spacing: 8) {
                 ForEach(IntroView.steps.indices, id: \.self) { i in Circle().fill(i == at ? Theme.brass2 : Theme.edge).frame(width: 8, height: 8) }
             }

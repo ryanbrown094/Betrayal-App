@@ -440,7 +440,24 @@ struct Field: View {
     var code = false
     var max = 80
     var submit: () -> Void = {}
+    @Environment(\.rendering) private var rendering
     var body: some View {
+        if rendering { picture } else { field }
+    }
+
+    // drawn offscreen (-render-store), which can't draw a text field: the same box with its words
+    private var picture: some View {
+        Text(text.isEmpty ? placeholder : text).foregroundStyle(text.isEmpty ? Theme.tallow2.opacity(0.45) : Theme.tallow)
+            .font(code ? Theme.ui(28, .bold) : Theme.ui(20))
+            .tracking(code ? 8 : 0)
+            .frame(maxWidth: .infinity, alignment: code ? .center : .leading)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 54)
+            .background(RoundedRectangle(cornerRadius: 4).fill(Theme.field))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Theme.edge, lineWidth: 1))
+    }
+
+    private var field: some View {
         TextField("", text: $text, prompt: Text(placeholder).foregroundColor(Theme.tallow2.opacity(0.45)))
             .font(code ? Theme.ui(28, .bold) : Theme.ui(20))
             .tracking(code ? 8 : 0)
