@@ -80,5 +80,5 @@ struct WidthReader: ViewModifier {
 // the phone's column; never a phone, nor the Duo's cover (466 points)
 enum Wide {
     static let from: CGFloat = 540
-    static func sidebar(_ width: CGFloat) -> CGFloat { min(300, max(230, width * 0.32)) }
+    static func sidebar(_ width: CGFloat) -> CGFloat { min(300, max(250, width * 0.32)) }
 }

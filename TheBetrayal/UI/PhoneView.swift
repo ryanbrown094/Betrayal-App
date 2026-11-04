@@ -272,7 +272,7 @@ struct PlayView: View {
     @State private var width: CGFloat = 0
 
     // the top bar floats over the screen as it scrolls, and the host's moves at its foot (on glass, from iOS 26); wide
-    // (an iPad, the iPhone Duo open), the Table's sidebar sits beside it and holds the host's moves
+    // (an iPad, the iPhone Duo open), the Table's sidebar sits beside it and holds them both
     var body: some View {
         if let v = session.view, let me = v.me {
             let wide = !rendering && !me.left && width >= Wide.from
@@ -283,7 +283,7 @@ struct PlayView: View {
                         ScrollView { page(v, me, wide: wide) }
                             .scrollDismissesKeyboard(.interactively)
                             .safeAreaInset(edge: .top, spacing: 0) {
-                                if !me.left { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
+                                if !me.left && !wide { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
                             }
                             .safeAreaInset(edge: .bottom, spacing: 0) {
                                 VStack(spacing: 8) {
@@ -348,9 +348,10 @@ struct PlayView: View {
     }
 }
 
-// Wide (an iPad, the iPhone Duo open): the Table beside the screen, on glass. Only what every phone may show: the
-// Purse, who's still in, this player's own holdings, and for the host their moves. Your role stays behind its button
-// in the top bar, the same on every phone.
+// Wide (an iPad, the iPhone Duo open): the Table beside the screen, on glass, and in it what the top bar holds on a
+// phone (back, the player, the Purse, Your role, the host's Pause and Tools), as an iPad's sidebar holds its app's
+// controls. Only what every phone may show: who's still in, this player's own holdings, and for the host their moves;
+// Your role opens beside it, behind its veil, the same row on every phone.
 struct TableSidebar: View {
     let v: Snapshot
     let me: Me
@@ -359,10 +360,20 @@ struct TableSidebar: View {
         let early = ["lobby", "oath", "roles"].contains(v.phase)
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                GlassGroup {
+                    HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 0) }
+                }
+                .padding(.bottom, 18)
                 Eyebrow(early ? "the table" : v.final ? "the final" : "round \(v.round)")
                 Text(verbatim: "Table \(session.room)").font(Theme.book(26)).foregroundStyle(Theme.tallow).padding(.bottom, 4)
                 if !early { Meter(pot: v.pot, cap: v.potCap, tiers: v.tiers, height: 20, font: 13) }
-                Eyebrow("at the table · \(v.players.filter(\.alive).count) in").padding(.top, 14)
+                VStack(spacing: 4) {
+                    if Controls.role(v) { row("person.text.rectangle", "Your role", on: session.myRole > 0) { session.toggleRole() } }
+                    if Controls.pause(v, me) { row("pause.fill", "Pause the game") { session.askPause() } }
+                    if me.director { row("slider.horizontal.3", "Host tools", on: session.tools) { session.toggleTools() } }
+                }
+                .padding(.top, early ? 12 : 2).padding(.bottom, 12)
+                Eyebrow("at the table · \(v.players.filter(\.alive).count) in").padding(.top, 4)
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(v.players) { p in
                         HStack(spacing: 10) {
@@ -383,11 +394,27 @@ struct TableSidebar: View {
                     HostQuick(v: v, column: true)
                 }
             }
-            .padding(.horizontal, 18).padding(.vertical, 20)
+            .padding(.horizontal, 14).padding(.vertical, 16)
         }
         .scrollIndicators(.hidden)
         .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
         .padding(.leading, 10).padding(.vertical, 10)
+    }
+
+    // a sidebar row, as the system draws them: an icon and a name, the one open lit
+    private func row(_ icon: String, _ title: String, on: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon).font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.brass2).frame(width: 24)
+                Text(title).font(Theme.ui(17, .bold)).foregroundStyle(Theme.tallow).lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).frame(minHeight: 46)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Theme.brass.opacity(0.28) : .clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
@@ -395,40 +422,19 @@ struct TopBar: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.rendering) private var rendering
     // on one line if it all fits, then with shorter labels, then on two lines (a small phone, larger text): each piece on
     // glass of its own, floating over the screen
     var body: some View {
         GlassGroup {
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) { back; who; Spacer(minLength: 8); right(short: false) }
-                HStack(spacing: 8) { back; who; Spacer(minLength: 8); right(short: true) }
+                HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: false) }
+                HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: true) }
                 VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) { back; who; Spacer(minLength: 0) }
+                    HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 0) }
                     HStack { Spacer(minLength: 0); right(short: true) }
                 }
             }
         }
-    }
-
-    @ViewBuilder private var back: some View {
-        let b = Button(action: leave) {
-            Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
-                .frame(width: 26, height: 30).contentShape(Rectangle())
-        }
-        .accessibilityLabel("Back to the start")
-        if Glassy.on && !rendering { b.glassButton(top: true) } else { b.buttonStyle(.plain).frame(width: 40, height: 40).glass(in: Circle()) }
-    }
-
-    private var who: some View {
-        HStack(spacing: 8) {
-            Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
-            Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
-            if me.director { Text("host").font(Theme.sc(15, bold: true)).foregroundStyle(Theme.brass2).fixedSize() }
-        }
-        .padding(.leading, 6).padding(.trailing, 12).frame(minHeight: 40)
-        .glass(in: Capsule())
     }
 
     // the Table's code (before the game) or the Purse, Your role (the same on every phone, from the first day), and the
@@ -441,32 +447,68 @@ struct TopBar: View {
                 .padding(.horizontal, 12).frame(minHeight: 40)
                 .glass(in: Capsule())
             HStack(spacing: 8) {
-                if !early && v.phase != "end" {
-                    Button(short ? "Role" : "Your role") {
-                        if session.myRole > 0 { session.myRole = 0 } else { session.myRole = 1; session.tools = false; session.peekList = nil }
-                    }
-                        .glassButton(top: true).accessibilityLabel("Your role")
+                if Controls.role(v) {
+                    Button(short ? "Role" : "Your role") { session.toggleRole() }.glassButton(top: true).accessibilityLabel("Your role")
                 }
-                if me.director && v.paused == nil && !["lobby", "end"].contains(v.phase) {
-                    Button { session.confirm("Pause the game? Every clock stops until you carry on.", yes: "Pause") { session.act("pause") } } label: {
-                        if short { PauseBars() } else { Text("Pause") }
-                    }
-                    .glassButton(top: true).accessibilityLabel("Pause the game")
+                if Controls.pause(v, me) {
+                    Button { session.askPause() } label: { if short { PauseBars() } else { Text("Pause") } }
+                        .glassButton(top: true).accessibilityLabel("Pause the game")
                 }
                 if me.director {
-                    Button(session.tools ? "Close" : "Tools") { session.tools.toggle(); session.peekList = nil }
-                        .glassButton(top: true).accessibilityLabel("Host tools")
+                    Button(session.tools ? "Close" : "Tools") { session.toggleTools() }.glassButton(top: true).accessibilityLabel("Host tools")
                 }
             }
         }
         .fixedSize()
     }
+}
 
-    // to the start screen, which offers the way back to this Table; mid-game, asked first
+// what the top bar and the sidebar offer, and when
+enum Controls {
+    static func role(_ v: Snapshot) -> Bool { !["lobby", "oath", "roles", "end"].contains(v.phase) }
+    static func pause(_ v: Snapshot, _ me: Me) -> Bool { me.director && v.paused == nil && !["lobby", "end"].contains(v.phase) }
+}
+
+extension Session {
+    func toggleRole() { if myRole > 0 { myRole = 0 } else { myRole = 1; tools = false; peekList = nil } }
+    func askPause() { confirm("Pause the game? Every clock stops until you carry on.", yes: "Pause") { [weak self] in self?.act("pause") } }
+    func toggleTools() { tools.toggle(); peekList = nil }
+}
+
+// back to the start screen, which offers the way back to this Table; mid-game, asked first
+struct LeaveButton: View {
+    let v: Snapshot
+    let me: Me
+    @Environment(Session.self) private var session
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.rendering) private var rendering
+    var body: some View {
+        let b = Button(action: leave) {
+            Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
+                .frame(width: 26, height: 30).contentShape(Rectangle())
+        }
+        .accessibilityLabel("Back to the start")
+        if Glassy.on && !rendering { b.glassButton(top: true) } else { b.buttonStyle(.plain).frame(width: 40, height: 40).glass(in: Circle()) }
+    }
     private func leave() {
         if ["lobby", "end"].contains(v.phase) || (!me.alive && !me.director) { dismiss(); return }
         session.confirm(me.director ? "Leave the game for now? It waits for you to move it on: come back to it from the start screen."
                                     : "Leave the game for now? It carries on, and you can come back to it from the start screen.", yes: "Leave") { dismiss() }
+    }
+}
+
+// this phone's player: their seal, name, and "host"
+struct WhoChip: View {
+    let v: Snapshot
+    let me: Me
+    var body: some View {
+        HStack(spacing: 8) {
+            Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
+            Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
+            if me.director { Text("host").font(Theme.sc(15, bold: true)).foregroundStyle(Theme.brass2).fixedSize() }
+        }
+        .padding(.leading, 6).padding(.trailing, 12).frame(minHeight: 40)
+        .glass(in: Capsule())
     }
 }
 
