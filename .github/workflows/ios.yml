@@ -83,11 +83,12 @@ jobs:
           import json, sys
           r = [x for x in json.load(sys.stdin)["runtimes"] if ".iOS-" in x["identifier"] and x["isAvailable"]]
           print(sorted(r, key=lambda x: [int(n) for n in x["version"].split(".")])[-1]["identifier"])')
-          TYPE=$(xcrun simctl list devicetypes -j | python3 -c '
-          import json, sys
-          t = [x["identifier"] for x in json.load(sys.stdin)["devicetypes"]]
-          print(next((p for n in ("iPhone-18-Pro-Max", "iPhone-17-Pro-Max", "iPhone-16-Pro-Max") for p in t if p.endswith("." + n)), ""))')
-          UDID=$(xcrun simctl create "big iPhone" "$TYPE" "$RT")
+          # (the newest Pro Max that runtime takes: Xcode lists some it can't make there)
+          UDID=""
+          for TYPE in iPhone-18-Pro-Max iPhone-17-Pro-Max iPhone-16-Pro-Max; do
+            UDID=$(xcrun simctl create "big iPhone" "com.apple.CoreSimulator.SimDeviceType.$TYPE" "$RT" 2>/dev/null) && break
+          done
+          [ -n "$UDID" ] || { echo "::error::no Pro Max simulator on $RT"; exit 1; }
           echo "the big iPhone: $TYPE on $RT"
           echo "UDID=$UDID" >> "$GITHUB_ENV"
           xcrun simctl boot "$UDID"
