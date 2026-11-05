@@ -481,17 +481,21 @@ struct IntroView: View {
                 Button(ready == "Done" ? "Close" : "Skip", action: done).glassButton()
             }
             // (not a paged TabView: on an iPad it left the page blank)
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal) {
-                    HStack(spacing: 0) {
-                        ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).containerRelativeFrame([.horizontal, .vertical]).id(i) }
+            // each page the size of the space left between Skip and the dots (not the scroll view's, which takes its
+            // height from them: the column would outgrow the screen)
+            GeometryReader { g in
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 0) {
+                            ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).frame(width: g.size.width, height: g.size.height).id(i) }
+                        }
+                        .scrollTargetLayout()
                     }
-                    .scrollTargetLayout()
+                    .scrollTargetBehavior(.paging)
+                    .scrollIndicators(.hidden)
+                    .scrollPosition(id: Binding(get: { at }, set: { if let i = $0 { at = i } }))
+                    .onAppear { if at > 0 { proxy.scrollTo(at) } }
                 }
-                .scrollTargetBehavior(.paging)
-                .scrollIndicators(.hidden)
-                .scrollPosition(id: Binding(get: { at }, set: { if let i = $0 { at = i } }))
-                .onAppear { if at > 0 { proxy.scrollTo(at) } }
             }
             HStack(spacing: 8) {
                 ForEach(IntroView.steps.indices, id: \.self) { i in Circle().fill(i == at ? Theme.brass2 : Theme.edge).frame(width: 8, height: 8) }
