@@ -298,11 +298,17 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Join a game")
             Sub("Type the Table code from the host’s phone or the TV, or scan its QR code.")
-            VStack(alignment: .leading, spacing: 10) {
-                Field(placeholder: "ABC123", text: $tableCode, code: true, submit: joinTable)
-                Label2("Your name")
-                Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: joinTable)
-                Button("Join", action: joinTable).btn(.fill, .big)
+            // each label just above its own field
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Label2("Table code")
+                    Field(placeholder: "ABC123", text: $tableCode, code: true, submit: joinTable)
+                }
+                VStack(alignment: .leading, spacing: 0) {
+                    Label2("Your name")
+                    Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: joinTable)
+                }
+                Button("Join", action: joinTable).btn(.fill, .big).padding(.top, 4)
                     .disabled(!Codes.isRoom(tableCode) || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
                 Button("Scan a QR code") { scanning = true }.btn(.ghost)
             }
@@ -479,6 +485,7 @@ struct IntroView: View {
             HStack {
                 Spacer()
                 Button(ready == "Done" ? "Close" : "Skip", action: done).glassButton()
+                    .opacity(ready != "Done" && at == last ? 0 : 1).disabled(ready != "Done" && at == last) // (the last page has Let’s play)
             }
             // (not a paged TabView: on an iPad it left the page blank)
             // each page the size of the space left between Skip and the dots (not the scroll view's, which takes its
@@ -527,7 +534,9 @@ struct IntroView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, minHeight: g.size.height)
+                // the seals and heading at the same height on every page, so they don't jump as you swipe
+                .padding(.top, max(12, g.size.height * 0.1))
+                .frame(maxWidth: .infinity, minHeight: g.size.height, alignment: .top)
             }
         }
     }

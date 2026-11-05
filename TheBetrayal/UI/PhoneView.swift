@@ -153,6 +153,7 @@ struct Column<Content: View>: View {
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { content }
+            .frame(maxWidth: .infinity, alignment: .leading) // (a screen of short lines starts at the edge too, not centred)
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 24)
             .frame(maxWidth: 520)
             .frame(maxWidth: .infinity)
@@ -293,7 +294,7 @@ struct PlayView: View {
                         ScrollView { page(v, me, wide: wide) }
                             .scrollDismissesKeyboard(.interactively)
                             .safeAreaInset(edge: .top, spacing: 0) {
-                                if !me.left && !wide && rail == nil { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
+                                if !me.left && !wide && rail == nil { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
                             }
                             .safeAreaInset(edge: .bottom, spacing: 0) {
                                 VStack(spacing: 8) {
@@ -381,7 +382,7 @@ struct TableSidebar: View {
             if rendering { contents.frame(maxHeight: .infinity, alignment: .top) } else { ScrollView { contents }.scrollIndicators(.hidden) }
         }
         .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.leading, 10).padding(.vertical, 10)
+        .padding(10) // (as the start screen's sidebar, so it doesn't change width when a game starts)
     }
 
     private var contents: some View {
@@ -445,13 +446,14 @@ struct TopBar: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
-    // on one line if it all fits, then with shorter labels, then on two lines (a small phone, larger text): each piece on
-    // glass of its own, floating over the screen
+    // on one line if it all fits, then with shorter labels, then with the player as their seal alone (the host's bar
+    // holds the most), then on two lines (larger text): each piece on glass of its own, floating over the screen
     var body: some View {
         GlassGroup {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: false) }
                 HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: true) }
+                HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me, seal: true); Spacer(minLength: 8); right(short: true) }
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 0) }
                     HStack { Spacer(minLength: 0); right(short: true) }
@@ -461,7 +463,7 @@ struct TopBar: View {
     }
 
     // the Table's code (before the game) or the Purse, Your role (the same on every phone, from the first day), and the
-    // host's Pause and Tools; short: the code alone, Role, Pause as bars
+    // host's Pause and Tools; short: the code alone, Role, Pause as bars, Tools as its icon
     private func right(short: Bool) -> some View {
         HStack(spacing: 10) {
             let early = ["lobby", "oath", "roles"].contains(v.phase)
@@ -478,7 +480,11 @@ struct TopBar: View {
                         .buttonStyle(GlassPill()).accessibilityLabel("Pause the game")
                 }
                 if me.director {
-                    Button(session.tools ? "Close" : "Tools") { session.toggleTools() }.buttonStyle(GlassPill(on: session.tools)).accessibilityLabel("Host tools")
+                    Button { session.toggleTools() } label: {
+                        if short { Image(systemName: session.tools ? "xmark" : "slider.horizontal.3").font(.system(size: 15, weight: .semibold)) }
+                        else { Text(session.tools ? "Close" : "Tools") }
+                    }
+                    .buttonStyle(GlassPill(on: session.tools)).accessibilityLabel("Host tools")
                 }
             }
         }
@@ -530,7 +536,17 @@ struct LeaveButton: View {
 struct WhoChip: View {
     let v: Snapshot
     let me: Me
+    var seal = false // the seal alone, in a 40-point circle
     var body: some View {
+        if seal {
+            Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
+                .frame(width: 40, height: 40).glass(in: Circle())
+                .accessibilityElement().accessibilityLabel(me.name + (me.director ? ", host" : ""))
+        } else {
+            chip
+        }
+    }
+    private var chip: some View {
         HStack(spacing: 8) {
             Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
             Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)

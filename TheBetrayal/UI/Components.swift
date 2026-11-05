@@ -281,10 +281,10 @@ struct Meter: View {
     var body: some View {
         GeometryReader { g in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0x1B111D))
+                RoundedRectangle(cornerRadius: 2).fill(Color(hex: 0x2A1A2C))
                 Rectangle().fill(Theme.brass).frame(width: g.size.width * min(1, CGFloat(pot) / CGFloat(max(1, cap)))).animation(.easeOut(duration: 0.8), value: pot)
                 if tiers { Rectangle().fill(.white.opacity(0.4)).frame(width: 2).offset(x: g.size.width / 2) }
-                Text(verbatim: "\(pot) / \(cap)").font(Theme.ui(font, .bold, fixed: true)).foregroundStyle(.white).shadow(color: .black, radius: 1, y: 1)
+                Text(verbatim: "Purse \(pot) of \(cap)").font(Theme.ui(font, .bold, fixed: true)).foregroundStyle(.white).shadow(color: .black, radius: 1, y: 1)
                     .frame(maxWidth: .infinity)
             }
             .clipShape(RoundedRectangle(cornerRadius: 2))

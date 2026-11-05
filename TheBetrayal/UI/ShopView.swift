@@ -35,9 +35,9 @@ struct BookCard: View {
             Flow(spacing: 8) {
                 Button("Restore purchases") { Task { await shop.restore() } }.btn(.dark, .sm, fit: true)
                 Button("Manage subscription") { managing = true }.btn(.dark, .sm, fit: true)
-                Button("Terms of Use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
+                Button("Terms of use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
                 Button("Terms of sale") { show(.terms) }.btn(.dark, .sm, fit: true)
-                Button("Privacy Policy") { show(.privacy) }.btn(.dark, .sm, fit: true)
+                Button("Privacy policy") { show(.privacy) }.btn(.dark, .sm, fit: true)
             }
             .padding(.bottom, 8)
         }
@@ -144,9 +144,9 @@ struct SubscriptionTerms: View {
         VStack(alignment: .leading, spacing: 0) {
             Small(SubscriptionTerms.words(plan))
             Flow(spacing: 8) {
-                Button("Terms of Use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
+                Button("Terms of use (EULA)") { openURL(Page.eula) }.btn(.dark, .sm, fit: true)
                 Button("Terms of sale") { page = .terms }.btn(.dark, .sm, fit: true)
-                Button("Privacy Policy") { page = .privacy }.btn(.dark, .sm, fit: true)
+                Button("Privacy policy") { page = .privacy }.btn(.dark, .sm, fit: true)
             }
             .padding(.bottom, 8)
         }

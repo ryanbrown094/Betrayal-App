@@ -70,7 +70,7 @@ extension Color {
 // .btn and its kinds, from modern.css
 struct Btn: ButtonStyle {
     enum Kind { case fill, ghost, dark, on, blood, verd }
-    enum Size { case normal, big, sm }
+    enum Size { case normal, big, sm } // big is normal now: one size for every full-width button
     var kind: Kind = .fill
     var size: Size = .normal
     var fit = false // as wide as its words (in a row of tools, the top bar), not the whole line
@@ -87,21 +87,23 @@ struct Btn: ButtonStyle {
         var body: some View {
             let radius: CGFloat = size == .sm ? 5 : 6
             configuration.label
-                .font(Theme.ui(size == .big ? 22 : size == .sm ? 15 : 18, .bold))
+                .font(Theme.ui(size == .sm ? 15 : 18, .bold))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(text)
                 .padding(.horizontal, size == .sm ? 12 : 18)
                 .padding(.vertical, size == .sm ? 8 : 12)
-                .frame(maxWidth: fit ? nil : .infinity, minHeight: size == .big ? 72 : size == .sm ? 44 : 54)
+                .frame(maxWidth: fit ? nil : .infinity, minHeight: size == .sm ? 44 : 54)
                 .background(RoundedRectangle(cornerRadius: radius).fill(fill))
                 .overlay(RoundedRectangle(cornerRadius: radius).strokeBorder(border, lineWidth: 1))
                 .scaleEffect(configuration.isPressed ? 0.98 : 1)
                 .brightness(configuration.isPressed && kind == .blood ? 0.15 : 0)
-                .opacity(isEnabled ? 1 : 0.45)
+                .opacity(isEnabled || kind == .ghost ? 1 : 0.9)
                 .contentShape(Rectangle())
                 .animation(.easeOut(duration: 0.08), value: configuration.isPressed)
         }
+        // not yet usable: a quiet plum button with its words still legible, not a faded copper one
         private var fill: Color {
+            if !isEnabled { return kind == .ghost ? .clear : Color(hex: 0x1F1321) }
             switch kind {
             case .fill: return Color(hex: 0xC0715A)
             case .ghost: return .clear
@@ -112,6 +114,7 @@ struct Btn: ButtonStyle {
             }
         }
         private var text: Color {
+            if !isEnabled { return Theme.tallow2.opacity(0.7) }
             switch kind {
             case .fill, .on: return Theme.ink
             case .ghost, .dark: return Theme.tallow
@@ -120,6 +123,7 @@ struct Btn: ButtonStyle {
             }
         }
         private var border: Color {
+            if !isEnabled { return Theme.edge }
             switch kind {
             case .ghost: return Theme.edge
             case .dark: return Theme.edge2

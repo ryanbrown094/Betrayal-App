@@ -160,7 +160,7 @@ struct OathView: View {
                 Sub("The Forsworn lie all evening, choose who to poison each night and try to steal the prize. Nobody sees your answer. The game uses it when it deals the roles, but it can’t always give everyone what they asked for.")
                 VStack(spacing: 10) {
                     Button("Yes, make me Forsworn") { session.act("optin", "yes") }.btn(.fill)
-                    Button("I’d rather be Loyal") { session.act("optin", "no") }.btn(.ghost)
+                    Button("I’d rather be Loyal") { session.act("optin", "no") }.btn(.dark)
                     Button("Either way") { session.act("optin", "any") }.btn(.dark)
                 }
             }
@@ -198,6 +198,7 @@ struct RoleCard: View {
             .buttonStyle(.plain)
         } else {
             let f = me.forsworn
+            VStack(spacing: 18) {
             Card(.role, center: true) {
                 BigSeal(kind: f ? .forsworn : .loyal, icon: f ? "blade" : "candle").frame(width: 150, height: 150).padding(.bottom, 14)
                 H1(f ? "Forsworn" : "Loyal", color: f ? Theme.blood2 : Theme.loyal)
@@ -207,9 +208,11 @@ struct RoleCard: View {
                     if let allies = me.allies, !allies.isEmpty { Para(Text("Your fellow Forsworn: ") + b(allies.map(\.name).joined(separator: ", "))) }
                     else { Para("You are the only Forsworn. Trust nobody.") }
                 }
-                Button("Got it. Hide my role") { session.rolePeek = false; session.act("ack") }.btn(.fill)
             }
             .padding(.horizontal, 18)
+            // under the card, as wide as every other button (as on Your role)
+            Button("Got it. Hide my role") { session.rolePeek = false; session.act("ack") }.btn(.fill)
+            }
         }
     }
 }
@@ -365,7 +368,7 @@ struct RevealView: View {
                     Banner(.ghost, icon: "ghost", "You’re a Ghost now. Stay at the table.")
                     if me.words == "" {
                         Card {
-                            Label2("Your last words, for the whole table (optional, 140 characters)")
+                            Label2("Last words for the table (optional)")
                             Field(placeholder: "One line for the table", text: $words, max: 140, submit: say)
                             Spacer().frame(height: 10)
                             Button("Say it", action: say).btn(.dark)
@@ -454,11 +457,16 @@ struct NightView: View {
         }
         PickGrid(list: me.targets.map { v.player($0) }, on: { me.mine.contains($0.id) }, badge: { p in
             AnyView(HStack(spacing: 6) {
-                if let c = votes[p.name] { Text("\(c)").font(Theme.ui(14, .bold)).foregroundStyle(Color(hex: 0xF3B7C4)) }
+                // how many of the Forsworn chose them, as a small badge
+                if let c = votes[p.name] {
+                    Text("\(c)").font(Theme.ui(13, .bold, fixed: true)).foregroundStyle(Theme.ink).monospacedDigit()
+                        .padding(.horizontal, 7).padding(.vertical, 2).background(Capsule().fill(Color(hex: 0xF3B7C4)))
+                        .accessibilityLabel("chosen by \(c)")
+                }
                 if me.sanct.contains(p.name) { Text("Sanctuary").font(Theme.ui(14, .medium)).foregroundStyle(Theme.loyalSoft) }
             })
         }) { p in session.act("pick", p.id) }
-        if me.mine.count >= kills { Small(me.split ? "Change it to match, or persuade them to." : "Chosen. You can change it until everyone’s done.", center: true).padding(.top, 10) }
+        if me.mine.count >= kills { Small(me.split ? "Change it to match, or persuade them to." : "Chosen. You can change it until everyone’s done.").padding(.top, 10) }
         if let c = me.chat {
             More("Talk to the Forsworn" + (c.isEmpty ? "" : " · \(c.count)"), open: !c.isEmpty) { ForswornChat(me: me) }
         }
@@ -743,7 +751,7 @@ struct ForswornChat: View {
             }
             HStack(spacing: 8) {
                 Field(placeholder: "A message to the Forsworn", text: $typed, max: 140, submit: send)
-                Button("Send", action: send).btn(.fill, .sm, fit: true)
+                Button("Send", action: send).btn(.fill, fit: true) // (as high as the field beside it)
                     .disabled(typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding(.top, 10)

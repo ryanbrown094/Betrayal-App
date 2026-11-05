@@ -6,10 +6,10 @@ spelled out here; every other field stays as it is (`listing.md` has them all, r
 ## 1. The build
 
 1. Pull `main` and open `TheBetrayal.xcodeproj` in Xcode 27.1. The target's **General** tab should say **Version 1.1,
-   Build 5**.
+   Build 6**.
 2. **Product → Archive**, then **Distribute App → App Store Connect → Upload**.
 3. App Store Connect → **The Betrayal** → the **+** beside **iOS App** → version **1.1**.
-4. Once the upload has processed (it emails you), pick **1.1 (5)** under **Build**. There's no encryption question:
+4. Once the upload has processed (it emails you), pick **1.1 (6)** under **Build**. There's no encryption question:
    the app answers it itself.
 
 ## 2. What's New in This Version
@@ -24,7 +24,7 @@ A SIDEBAR ON iPAD AND iPHONE DUO
 On a wide screen, the start screen's menu sits beside whatever it opens. In a game, the Table sits beside your screen, with everything the top bar holds on a phone: the Purse, Your role, who's still in, what you hold, and the host's Pause, Tools and moves.
 
 iPHONE DUO, CLOSED
-The game fits the cover screen, the pause included.
+The game fits the cover screen, the pause included, and its controls stand down the side beside the time, leaving the whole screen to the game.
 
 FOR THE HOST
 • See whose phone has gone quiet, and take them out so nobody waits on them.
