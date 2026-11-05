@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // Liquid Glass (iOS 26) for the controls that float over the game and the start screen: the top bar, the host's bar of
 // moves, the sidebars, back and close. Cards and the copper buttons keep the game's own look. Before iOS 26, the same
@@ -91,13 +92,34 @@ struct GlassCircle: ButtonStyle {
     }
 }
 
-// the safe area's sides (the iPhone Duo closed keeps its status bar down one side), read from the whole window
+// the window's safe area as UIKit has it (the iPhone Duo closed keeps its status bar down one side): a reader that
+// ignores the safe area is told it has none, and one inside it is too, so this asks the window itself
 struct SidesReader: ViewModifier {
     @Binding var sides: EdgeInsets
-    func body(content: Content) -> some View {
-        content.background {
-            GeometryReader { g in Color.clear.onAppear { sides = g.safeAreaInsets }.onChange(of: g.safeAreaInsets) { _, i in sides = i } }
-                .ignoresSafeArea()
+    func body(content: Content) -> some View { content.background(WindowInsets(sides: $sides).frame(width: 0, height: 0)) }
+}
+
+private struct WindowInsets: UIViewRepresentable {
+    @Binding var sides: EdgeInsets
+    func makeUIView(context: Context) -> Probe {
+        let v = Probe()
+        v.report = { i in DispatchQueue.main.async { if sides != i { sides = i } } }
+        return v
+    }
+    func updateUIView(_ v: Probe, context: Context) { v.send() }
+
+    final class Probe: UIView {
+        var report: ((EdgeInsets) -> Void)?
+        private var last: UIEdgeInsets?
+        override func didMoveToWindow() { super.didMoveToWindow(); send() }
+        override func layoutSubviews() { super.layoutSubviews(); send() } // (a fold changes the window, and lays this out again)
+        func send() {
+            guard let w = window else { return }
+            let i = w.safeAreaInsets
+            if i == last { return }
+            last = i
+            let rtl = effectiveUserInterfaceLayoutDirection == .rightToLeft
+            report?(EdgeInsets(top: i.top, leading: rtl ? i.right : i.left, bottom: i.bottom, trailing: rtl ? i.left : i.right))
         }
     }
 }
