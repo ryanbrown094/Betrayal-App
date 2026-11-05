@@ -31,6 +31,8 @@ struct HomeView: View {
     @State private var problem: String?
     @State private var question: Question?
     @State private var recent = Recent.room
+    @State private var width: CGFloat = 0
+    @State private var pane: Route? // wide: what shows beside the sidebar (nothing chosen: the welcome)
     @Environment(\.openURL) private var openURL
 
     // the premise, before this phone's first game (then: the Table it was about to open), or from How to play
@@ -80,7 +82,7 @@ struct HomeView: View {
             shop.start(); follow(model.link); Task { await shop.refresh() }
             Ads.shared.checkChoices()
             #if DEBUG
-            if let r = Demo.screen, path.isEmpty { path = [r] }
+            if let r = Demo.screen, path.isEmpty { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { show(r) } } // beside the sidebar when wide
             #endif
         }
         .onChange(of: model.link) { _, room in follow(room) }
@@ -115,26 +117,101 @@ struct HomeView: View {
         } message: { Text(problem ?? "") }
     }
 
-    // a phone's height of start screen, or more if the words are large
+    // a phone's height of start screen, or more if the words are large; wide (an iPad, the iPhone Duo open), the menu in
+    // a sidebar and what it opens beside it
     private var home: some View {
         GeometryReader { g in
-            ScrollView {
-                Column {
-                    header(crest: g.size.height >= 700)
-                    if let recent { tonight(recent) }
-                    VStack(spacing: 12) {
-                        Button("Join a game") { path.append(.join) }.btn(.fill, .big)
-                        Button("Host a game") { path.append(.host) }.btn(.ghost, .big)
+            if g.size.width >= Wide.from { wideHome(g.size) } else {
+                ScrollView {
+                    Column {
+                        header(crest: g.size.height >= 700)
+                        if let recent { tonight(recent) }
+                        VStack(spacing: 12) {
+                            Button("Join a game") { show(.join) }.btn(.fill, .big)
+                            Button("Host a game") { show(.host) }.btn(.ghost, .big)
+                        }
+                        .padding(.bottom, 26)
+                        menu(short: g.size.height < 700)
+                        footer
                     }
-                    .padding(.bottom, 26)
-                    menu(short: g.size.height < 700)
-                    footer
+                    .frame(minHeight: g.size.height)
                 }
-                .frame(minHeight: g.size.height)
             }
         }
+        .modifier(WidthReader(width: $width))
         .background(Backdrop())
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    // joining, hosting, the passes and the TV: beside the sidebar when wide, else a page of their own
+    private func show(_ r: Route) {
+        if width >= Wide.from { withAnimation(.easeOut(duration: 0.2)) { pane = r } } else { path.append(r) }
+    }
+
+    private func wideHome(_ size: CGSize) -> some View {
+        HStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Crest().frame(width: 44, height: 52).foregroundStyle(Theme.brass2)
+                        Text("The Betrayal").font(Theme.disp(34)).foregroundStyle(Theme.brass2)
+                    }
+                    .padding(.bottom, 18)
+                    if let recent { tonight(recent) }
+                    VStack(spacing: 4) {
+                        side("handshake", "Join a game", on: pane == .join) { show(.join) }
+                        side("table", "Host a game", on: pane == .host) { show(.host) }
+                        side("raven", busy ? "Opening…" : "Practice against bots") { if !busy { Task { await practise() } } }
+                        side("key", "Your passes", on: pane == .passes) { show(.passes) }
+                        side("eye", "Set up a TV", on: pane == .tv) { show(.tv) }
+                        side("scroll", "How to play") { intro = Intro() }
+                        side("candle", "FAQs") { page = .faq }
+                    }
+                    footer.padding(.top, 14)
+                }
+                .padding(.horizontal, 14).padding(.vertical, 20)
+            }
+            .scrollIndicators(.hidden)
+            .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+            .padding(10)
+            .frame(width: Wide.sidebar(size.width))
+
+            ScrollView {
+                Column {
+                    switch pane {
+                    case .some(.join): Live { joinScreen }
+                    case .some(.host): Live { hostScreen }
+                    case .some(.passes): Live { passesScreen }
+                    case .some(.tv): Live { tvScreen }
+                    default:
+                        header(crest: true)
+                        VStack(spacing: 12) {
+                            Button("Join a game") { show(.join) }.btn(.fill, .big)
+                            Button("Host a game") { show(.host) }.btn(.ghost, .big)
+                        }
+                    }
+                }
+                .padding(.top, 24)
+                .frame(minHeight: size.height - 60, alignment: pane == nil ? .center : .top)
+            }
+            .scrollDismissesKeyboard(.interactively)
+        }
+    }
+
+    // a sidebar row: the one showing beside it on a glass-lit band
+    private func side(_ icon: String, _ title: String, on: Bool = false, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Icon(name: icon).frame(width: 22, height: 22).foregroundStyle(Theme.brass2)
+                Text(title).font(Theme.ui(17, .bold)).foregroundStyle(Theme.tallow).lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 12).frame(minHeight: 46)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(on ? Theme.brass.opacity(0.28) : .clear))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     // joining, hosting and the passes: a page each, with the system's back button
@@ -175,8 +252,8 @@ struct HomeView: View {
     private func menu(short: Bool) -> some View {
         VStack(spacing: 0) {
             row("raven", busy ? "Opening…" : "Practice against bots", short: short) { if !busy { Task { await practise() } } }
-            row("key", "Your passes", short: short) { path.append(.passes) }
-            row("eye", "Set up a TV", short: short) { path.append(.tv) }
+            row("key", "Your passes", short: short) { show(.passes) }
+            row("eye", "Set up a TV", short: short) { show(.tv) }
             row("scroll", "How to play", short: short) { intro = Intro() }
             row("candle", "FAQs", short: short) { page = .faq }
         }
@@ -229,7 +306,7 @@ struct HomeView: View {
                     .disabled(!Codes.isRoom(tableCode) || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
                 Button("Scan a QR code") { scanning = true }.btn(.ghost)
             }
-            Button("Setting up a TV instead?") { path.append(.tv) }.btn(.dark, .sm).padding(.top, 24)
+            Button("Setting up a TV instead?") { show(.tv) }.btn(.dark, .sm).padding(.top, 24)
         }
     }
 
@@ -260,7 +337,7 @@ struct HomeView: View {
                 .disabled(busy || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
             Small("Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
-            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { path.append(.passes) }.btn(.ghost)
+            Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { show(.passes) }.btn(.ghost)
         }
     }
 
@@ -401,12 +478,25 @@ struct IntroView: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Button(ready == "Done" ? "Close" : "Skip", action: done).btn(.dark, .sm, fit: true)
+                Button(ready == "Done" ? "Close" : "Skip", action: done).glassButton()
             }
-            TabView(selection: $at) {
-                ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).tag(i) }
+            // (not a paged TabView: on an iPad it left the page blank)
+            // each page the size of the space left between Skip and the dots (not the scroll view's, which takes its
+            // height from them: the column would outgrow the screen)
+            GeometryReader { g in
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal) {
+                        HStack(spacing: 0) {
+                            ForEach(IntroView.steps.indices, id: \.self) { i in step(IntroView.steps[i]).frame(width: g.size.width, height: g.size.height).id(i) }
+                        }
+                        .scrollTargetLayout()
+                    }
+                    .scrollTargetBehavior(.paging)
+                    .scrollIndicators(.hidden)
+                    .scrollPosition(id: Binding(get: { at }, set: { if let i = $0 { at = i } }))
+                    .onAppear { if at > 0 { proxy.scrollTo(at) } }
+                }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
             HStack(spacing: 8) {
                 ForEach(IntroView.steps.indices, id: \.self) { i in Circle().fill(i == at ? Theme.brass2 : Theme.edge).frame(width: 8, height: 8) }
             }

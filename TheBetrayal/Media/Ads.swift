@@ -124,10 +124,21 @@ private final class Watcher: NSObject, FullScreenContentDelegate {
 // the lobby's banner (P1 a player's, P4 the host's): anchored, as wide as the phone's column
 struct AdBanner: View {
     let placement: String
+    @State private var width: CGFloat = 0
+    // as wide as the space it's given (not the window's: the iPhone Duo folded keeps a narrower screen), and a new one
+    // when that changes
     var body: some View {
-        let size = largeAnchoredAdaptiveBanner(width: min(Ads.top()?.view.bounds.width ?? 390, 520))
-        BannerBox(size: size).frame(width: size.size.width, height: size.size.height).frame(maxWidth: .infinity)
-            .onAppear { Events.send("ad_requested", placement: placement) }
+        Group {
+            if width > 0 {
+                let size = largeAnchoredAdaptiveBanner(width: min(width, 520))
+                BannerBox(size: size).frame(width: size.size.width, height: size.size.height).id(Int(size.size.width))
+            } else {
+                Color.clear.frame(height: 1)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .modifier(WidthReader(width: $width))
+        .onAppear { Events.send("ad_requested", placement: placement) }
     }
 }
 

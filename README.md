@@ -89,7 +89,13 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   in the page's words. As on the website: the lobby's code, QR code and **Share the code** on every phone; the host told
   whose phone has been quiet a minute (the reply's `away`), with **Take out**; a phone that lost its place in the lobby
   offered its own name back (`reclaim`); a one-tap rating at the end; and **Report a problem** (the host's Tools, the
-  foot of the lobby and the end), sent to `/api/report` with this device's recent log. `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
+  foot of the lobby and the end), sent to `/api/report` with this device's recent log. The top bar floats over the
+  screen as it scrolls and the host's moves at its foot, in Liquid Glass from iOS 26 (`UI/Glass.swift`; the system's
+  thin material before, a flat fill drawn offscreen); Your role is in the top bar, the same on every phone. From 540
+  points wide (an iPad, the iPhone Duo open; not its 466-point cover) the start screen's menu is a sidebar, and in a game the Table's sidebar
+  (`TableSidebar`) sits beside the screen, holding what the top bar holds on a phone (back, the player, the Table and
+  Purse, Your role, the host's Pause and Tools) and who's still in, this player's holdings and the host's moves.
+  `Model/Session.swift` does what the page's `poll`, `send`, `doJoin` and `doCreate` do: it polls
   `GET /api/g/CODE/m` about once a second (faster during Snap, slower in the background), sends taps to `m/act`, and
   keeps the phone's token under the page's own storage name (`bt-m-CODE`).
 - **The TV** (`UI/TVView.swift`): the TV page's every screen, sized to the screen as the page sizes it in `vh` and `vw`.
@@ -137,7 +143,8 @@ warn when the server's rules engine no longer plays the recorded game.
 
 ## Checks
 
-`.github/workflows/ios.yml` runs on one of GitHub's Macs on every push that changes more than Markdown (or by hand,
+`.github/workflows/ios.yml` runs on one of GitHub's Macs, on its Xcode 27 image (`runs-on: xcode-27`, the iPhone
+Duo's and iPhone 18's simulators), on every push that changes more than Markdown (or by hand,
 with options to play the whole game, to choose the server repo's branch, and to run instead the QA games, `qa`: a
 whole game hosted on a small iPhone, one as a guest on a large one with bigger text, and a stress game on an iPad TV;
 or `airplay`: a practice game with the TV on a second display, watched for a hang):
@@ -147,9 +154,13 @@ or `airplay`: a practice game with the TV on a second display, watched for a han
 2. It builds the app (Debug and Release) and runs it in the iPhone simulator: the start screen, the art (`-art`), the
    start screen's join, host and passes screens with made-up prices and saved codes (`-shop -screen passes`), the sheet
    after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
-   phone and TV drawn offscreen (`-render-all`, which can't draw text fields), and the App Store's pictures
-   (`-render-store`, captioned by `store/compose.py`: see `store/listing.md`). `ci/main.swift` also checks which
-   Table a scanned code or link opens.
+   phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Then the iPhone Duo closed, as
+   it boots (the cover, 466 × 678 points, its status bar down one side), the start screen's screens and two dozen
+   moments; the same on an iPad Pro, for the sidebars (a shot still on the launch screen is taken again 12 seconds later,
+   and a warning says if it's still blank). The Duo's inner screen can't be had on the CI's image (opening it takes
+   Simulator's menu, and the image has no Simulator app). The App Store's pictures: the phone's are the app's own screens
+   on the big iPhone (`-demo NAME`); the Duo's (669 × 951 points, with the sidebar) and the TV's are drawn offscreen
+   (`-render-store`); `store/compose.py` captions them (see `store/listing.md`). `ci/main.swift` also checks which Table a scanned code or link opens.
 3. It checks out the server repo, starts its Worker (`wrangler dev`, with a test master passcode), and `ci/drive.py`
    plays a game against
    bots as the host while the app shows the host's phone (`-server URL -play ROOM TOKEN`), photographing each new screen.

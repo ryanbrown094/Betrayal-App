@@ -16,7 +16,7 @@ enum Page: String, Identifiable {
         case .privacy: return "Privacy notice"
         }
     }
-    var updated: String? { self == .rules || self == .faq ? nil : "Last updated: \(self == .privacy ? 27 : 26) October 2026" }
+    var updated: String? { self == .rules || self == .faq ? nil : self == .privacy ? "Last updated: 4 November 2026" : "Last updated: 26 October 2026" }
 
     // each section: a heading and its paragraphs. **bold**; a paragraph starting "• " is a list item.
     var sections: [(String, [String])] {
@@ -188,6 +188,7 @@ enum Page: String, Identifiable {
             "• **Diagnostics:** a record of each game as it is played (every change the host makes, so we can replay it to find and fix problems); and from each phone and TV at a Table, a log of what happened on it: the screens it showed, what was tapped or sent (never what was typed, though an error shown on the screen can repeat a name), the ads and offers it showed, purchases started, connection trouble, errors and crashes, with the device’s model and its system and app versions. Each device is a random number of its own at each Table, not linked from one Table to the next. *Why:* to find and fix problems, and see how the app and its ads are working. *Lawful basis:* legitimate interests (keeping the game working). *How long:* deleted with the Table.",
             "• **Counts:** how many games were started and got going, how many ads and offers were shown and tapped, and how many passes were bought, each day. Nothing about who. *Why:* to see how the app is used and whether free games pay for themselves. *Lawful basis:* legitimate interests. *How long:* kept as daily totals.",
             "• **Technical data:** your IP address and basic request details. *Why:* to deliver the game, keep it secure and limit repeated wrong codes. *Lawful basis:* legitimate interests (security). *How long:* wrong-guess counts are held in memory for up to an hour; our host’s logs are kept for up to 30 days.",
+            "• **Problem reports** (Report a problem): what you tell us, your email if you give it, and this phone’s recent log at the Table (the diagnostics above). *Why:* to investigate the problem and reply to you. *Lawful basis:* legitimate interests. *How long:* 12 months.",
             "• **Messages you send us** by email. *Why:* to answer you. *Lawful basis:* legitimate interests. *How long:* 2 years.",
         ]),
         ("On your phone", [
@@ -198,7 +199,7 @@ enum Page: String, Identifiable {
         ("Guests at a party", ["If you’re a guest, the name or nickname you typed when you joined is in the game. It appears on the phones and the TV, we only use it to run that game, and it is deleted with the Table. We ask everyone to use first names or nicknames only. If you want your name removed sooner, ask the host, who can remove you, or contact us."]),
         ("Who we share it with", [
             "We don’t sell your data or share it for marketing. We use these providers:",
-            "• **Cloudflare, Inc.** hosts the game server and the game rooms, and processes data for us under contract.",
+            "• **Cloudflare, Inc.** hosts the game server and the game rooms, forwards problem reports to our inbox, and processes data for us under contract.",
             "• **Apple** takes payments in the app and handles refunds and subscriptions, as an independent controller under its own privacy policy.",
             "• **Google Ireland Limited (AdMob)** shows the ads in free games, and only there: a game with a pass never starts it. When the app opens, it also asks Google’s consent service whether the law where you are needs your consent to ads, so that **Ad choices** can appear on the start screen; that request sends Google basic information about the device, such as its IP address. It may collect your device’s IP address, information about the device and app, and how you interact with ads, to show and measure ads and prevent fraud; it uses your device’s advertising identifier, and personalises ads, only if you agree in its consent form and allow tracking when Apple asks. If you don’t, the ads are not personalised. Google uses this data as an independent controller under its own privacy policy (policies.google.com/privacy). *Lawful basis:* consent for personalised ads; legitimate interests (paying for free games) for the rest.",
             "We may also share data where the law requires it.",
@@ -222,7 +223,7 @@ struct PageView: View {
             Column {
                 HStack {
                     Spacer()
-                    if let close { Button("Close", action: close).btn(.dark, .sm, fit: true) }
+                    if let close { Button("Close", action: close).glassButton() }
                 }
                 H1(page.title)
                 if let u = page.updated { Small(u) }
