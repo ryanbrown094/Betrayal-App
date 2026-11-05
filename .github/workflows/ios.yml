@@ -130,8 +130,9 @@ jobs:
           tour "$UDID" "" store "${m[@]}"
           ls shots/store
 
+      # (on a push, the game against bots has a Mac of its own, the bots job; with QA, it's here, and QA uses its Worker)
       - name: A game against bots on a local Worker
-        if: env.SERVER_TOKEN != '' && !inputs.airplay
+        if: env.SERVER_TOKEN != '' && inputs.qa
         run: |
           cd server
           npm ci --no-audit --no-fund > /dev/null
@@ -330,6 +331,58 @@ jobs:
           name: screens-${{ matrix.device }}
           path: shots/
 
+  # a game against bots on a local Worker (the server's repo, checked out with SERVER_REPO_TOKEN), the app playing the
+  # host and photographing each new screen; pushes play the first round, a run by hand can play the whole game
+  bots:
+    if: ${{ !inputs.qa && !inputs.airplay }}
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      APP: uk.co.thebetrayal.app
+      SERVER_TOKEN: ${{ secrets.SERVER_REPO_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The game server
+        if: env.SERVER_TOKEN != ''
+        uses: actions/checkout@v4
+        with:
+          repository: ryanbrown094/Betrayal-Website
+          ref: ${{ inputs.server || 'main' }}
+          token: ${{ secrets.SERVER_REPO_TOKEN }}
+          path: server
+
+      - name: Build (Debug)
+        if: env.SERVER_TOKEN != ''
+        run: >
+          xcodebuild -quiet -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Debug
+          -destination "generic/platform=iOS Simulator" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: A game against bots on a local Worker
+        if: env.SERVER_TOKEN != ''
+        run: |
+          source ci/shots.sh
+          UDID=$(make_device "bots iPhone" big-iphone) || { echo "::error::no iPhone simulator could be made"; exit 1; }
+          boot "$UDID"
+          mkdir -p shots
+          cd server
+          npm ci --no-audit --no-fund > /dev/null
+          CI=true WRANGLER_SEND_METRICS=false npx wrangler dev --port 8790 --ip 127.0.0.1 --var ADMIN_TOKEN:dev --var MASTER_PASS:MASTERTEST --var SITE_PASSWORD: > wrangler.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:8790/ && break; sleep 2; done
+          python3 ../ci/drive.py http://127.0.0.1:8790 MASTERTEST --rounds ${{ inputs.full && '0' || '1' }} \
+            --launch "xcrun simctl terminate $UDID $APP 2>/dev/null; xcrun simctl launch $UDID $APP -server http://127.0.0.1:8790 -play {room} {tok} > /dev/null" \
+            --shot "xcrun simctl io $UDID screenshot ../shots/{name}.png > /dev/null"
+
+      - name: The game server's log
+        if: always()
+        run: cp server/wrangler.log shots/ 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screens-bots
+          path: shots/
+
   release:
     if: ${{ !inputs.airplay }}
     runs-on: xcode-27
@@ -343,7 +396,7 @@ jobs:
 
   # every Mac's pictures together: the run's "ios-native-screens" artifact, and one commit to refs/screens/ios-native
   pictures:
-    needs: [simulator, wide]
+    needs: [simulator, wide, bots]
     if: always()
     runs-on: ubuntu-latest
     permissions:

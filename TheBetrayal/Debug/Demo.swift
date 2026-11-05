@@ -98,25 +98,26 @@ enum Demo {
     }
 }
 
-// -tour: the moments one after another, each a Table of its own, as -demo shows one
-private struct Tour: View {
-    let names: [String]
-    @State private var at = 0
-    @State private var session: Session?
+// -tour: the moments one after another, each a Table of its own, as -demo shows one. One run of them for the app, not
+// one for each window: the iPhone Duo gives the app a window on each of its screens, and two runs answered each
+// other's "next" and raced ahead of the pictures.
+@MainActor @Observable private final class TourRun {
+    static let shared = TourRun()
+    private(set) var at = 0
+    private(set) var session: Session?
+    @ObservationIgnored private var started = false
     private static let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("tour")
 
-    var body: some View {
-        ZStack {
-            Backdrop()
-            if let session { TableView(session: session).id(at) }
-        }
-        .task { await run() }
+    func start(_ names: [String]) {
+        if started { return }
+        started = true
+        Task { await run(names) }
     }
 
-    @MainActor private func run() async {
-        let fm = FileManager.default, ready = Tour.dir.appendingPathComponent("ready"), next = Tour.dir.appendingPathComponent("next")
-        try? fm.removeItem(at: Tour.dir)
-        try? fm.createDirectory(at: Tour.dir, withIntermediateDirectories: true)
+    private func run(_ names: [String]) async {
+        let fm = FileManager.default, ready = TourRun.dir.appendingPathComponent("ready"), next = TourRun.dir.appendingPathComponent("next")
+        try? fm.removeItem(at: TourRun.dir)
+        try? fm.createDirectory(at: TourRun.dir, withIntermediateDirectories: true)
         for (n, name) in names.enumerated() {
             at = n
             session = Demo.session(name, tv: false)
@@ -125,7 +126,19 @@ private struct Tour: View {
             for _ in 0..<300 where !fm.fileExists(atPath: next.path) { try? await Task.sleep(for: .milliseconds(100)) }
             try? fm.removeItem(at: next)
         }
-        try? Data("ok".utf8).write(to: Tour.dir.appendingPathComponent("done"), options: .atomic)
+        try? Data("ok".utf8).write(to: TourRun.dir.appendingPathComponent("done"), options: .atomic)
+    }
+}
+
+private struct Tour: View {
+    let names: [String]
+    private var run: TourRun { TourRun.shared }
+    var body: some View {
+        ZStack {
+            Backdrop()
+            if let s = run.session { TableView(session: s).id(run.at) }
+        }
+        .onAppear { run.start(names) }
     }
 }
 

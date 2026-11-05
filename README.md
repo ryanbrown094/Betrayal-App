@@ -157,8 +157,8 @@ or `airplay`: a practice game with the TV on a second display, watched for a han
    steps through them, each photographed once it's drawn; `-demo NAME` shows one), and every moment as
    phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Meanwhile, each on a Mac of its
    own, the iPhone Duo closed, as it boots (the cover, 466 × 678 points, its status bar down one side), and an iPad Pro
-   (the sidebars): the start screen's screens and two dozen moments. The Release build has a Mac too, and a last job
-   gathers the pictures (a run is about a quarter of an hour). A shot still on the launch screen is taken again 12
+   (the sidebars): the start screen's screens and two dozen moments. The game against bots (step 3) and the Release build have Macs
+   too, and a last job gathers the pictures (a run is about a quarter of an hour). A shot still on the launch screen is taken again 12
    seconds later, and a warning says if it's still blank; `ci/shots.sh` has the ways of photographing, `ci/device.py`
    picks the simulators. The Duo's inner screen can't be had on the CI's image (opening it takes
    Simulator's menu, and the image has no Simulator app). The App Store's pictures: the phone's are the app's own screens
