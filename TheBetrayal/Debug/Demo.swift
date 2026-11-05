@@ -2,6 +2,9 @@
 import SwiftUI
 
 // A Debug build can show the game without a server, for the CI's screenshots (.github/workflows/ios-native.yml):
+//   -tour NAME,NAME…   those moments one after another in one launch, for the CI's pictures (a launch for each is
+//                      what takes the time on its Macs): each, once drawn, writes Documents/tour/ready ("N NAME"), and
+//                      the next comes when the CI writes Documents/tour/next (ci/shots.sh)
 //   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
 //                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
@@ -64,6 +67,7 @@ enum Demo {
         if let i = args.firstIndex(of: "-watch"), i + 1 < args.count {
             return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: args[i + 1], start: .tv))) })
         }
+        if let i = args.firstIndex(of: "-tour"), i + 1 < args.count { return AnyView(Tour(names: args[i + 1].split(separator: ",").map(String.init))) }
         if let i = args.firstIndex(of: "-demo"), i + 1 < args.count, let s = session(args[i + 1], tv: args.contains("-tv")) {
             return AnyView(TableView(session: s))
         }
@@ -91,6 +95,37 @@ enum Demo {
         s.show(v, rejoin: rejoin, away: f["away"].strings, peek: peek, tools: f["tools"].bool ?? false, rolePeek: f["peek"].bool ?? false)
         s.myRole = f["myRole"].int ?? 0
         return s
+    }
+}
+
+// -tour: the moments one after another, each a Table of its own, as -demo shows one
+private struct Tour: View {
+    let names: [String]
+    @State private var at = 0
+    @State private var session: Session?
+    private static let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("tour")
+
+    var body: some View {
+        ZStack {
+            Backdrop()
+            if let session { TableView(session: session).id(at) }
+        }
+        .task { await run() }
+    }
+
+    @MainActor private func run() async {
+        let fm = FileManager.default, ready = Tour.dir.appendingPathComponent("ready"), next = Tour.dir.appendingPathComponent("next")
+        try? fm.removeItem(at: Tour.dir)
+        try? fm.createDirectory(at: Tour.dir, withIntermediateDirectories: true)
+        for (n, name) in names.enumerated() {
+            at = n
+            session = Demo.session(name, tv: false)
+            try? await Task.sleep(for: .milliseconds(n == 0 ? 2500 : 1500)) // drawn, and its fade-in over
+            try? Data("\(n) \(name)".utf8).write(to: ready, options: .atomic)
+            for _ in 0..<300 where !fm.fileExists(atPath: next.path) { try? await Task.sleep(for: .milliseconds(100)) }
+            try? fm.removeItem(at: next)
+        }
+        try? Data("ok".utf8).write(to: Tour.dir.appendingPathComponent("done"), options: .atomic)
     }
 }
 

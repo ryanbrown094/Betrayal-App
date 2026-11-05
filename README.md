@@ -153,11 +153,14 @@ or `airplay`: a practice game with the TV on a second display, watched for a han
    recorded from the real rules engine by `tools/fixtures.mjs`), and every drawing.
 2. It builds the app (Debug and Release) and runs it in the iPhone simulator: the start screen, the art (`-art`), the
    start screen's join, host and passes screens with made-up prices and saved codes (`-shop -screen passes`), the sheet
-   after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-demo NAME`), and every moment as
-   phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Then the iPhone Duo closed, as
-   it boots (the cover, 466 × 678 points, its status bar down one side), the start screen's screens and two dozen
-   moments; the same on an iPad Pro, for the sidebars (a shot still on the launch screen is taken again 12 seconds later,
-   and a warning says if it's still blank). The Duo's inner screen can't be had on the CI's image (opening it takes
+   after a purchase (`-bought`), the premise's five screens (`-intro 0`), the four pages (`-page rules`), two dozen recorded moments as the phone shows them (`-tour NAME,…`: one launch
+   steps through them, each photographed once it's drawn; `-demo NAME` shows one), and every moment as
+   phone and TV drawn offscreen (`-render-all`, which can't draw text fields or glass). Meanwhile, each on a Mac of its
+   own, the iPhone Duo closed, as it boots (the cover, 466 × 678 points, its status bar down one side), and an iPad Pro
+   (the sidebars): the start screen's screens and two dozen moments. The Release build has a Mac too, and a last job
+   gathers the pictures (a run is about a quarter of an hour). A shot still on the launch screen is taken again 12
+   seconds later, and a warning says if it's still blank; `ci/shots.sh` has the ways of photographing, `ci/device.py`
+   picks the simulators. The Duo's inner screen can't be had on the CI's image (opening it takes
    Simulator's menu, and the image has no Simulator app). The App Store's pictures: the phone's are the app's own screens
    on the big iPhone (`-demo NAME`); the Duo's (669 × 951 points, with the sidebar) and the TV's are drawn offscreen
    (`-render-store`); `store/compose.py` captions them (see `store/listing.md`). `ci/main.swift` also checks which Table a scanned code or link opens.
