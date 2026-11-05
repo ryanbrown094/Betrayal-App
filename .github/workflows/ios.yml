@@ -11,6 +11,7 @@ on:
   push:
     paths-ignore:
       - "**.md"
+      - ".github/workflows/upload.yml"
   workflow_dispatch:
     inputs:
       full:
@@ -37,7 +38,7 @@ concurrency:
 jobs:
   simulator:
     runs-on: xcode-27 # Xcode 27 and its simulators: the iPhone Duo's two screens, the iPhone 18s
-    timeout-minutes: 80 # the Duo, closed and open, and the iPad add a quarter of an hour
+    timeout-minutes: 80 # the Duo closed and the iPad add a quarter of an hour
     permissions:
       contents: write # the pictures' ref (the last step)
     env:
