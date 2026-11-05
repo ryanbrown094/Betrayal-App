@@ -1,12 +1,14 @@
 # The CI's ways of making a simulator and photographing the app in it (.github/workflows/ios.yml). Source it, with
 # APP set to the app's bundle id.
 #   make_device NAME WHAT              a new simulator (WHAT as ci/device.py takes it): its UDID
-#   boot UDID                          booted, its status bar at 9:41, the app (Debug) installed
+#   start UDID                         booting, in the background (while the app builds: a boot takes minutes here)
+#   ready UDID                         booted, its status bar at 9:41, the app (Debug) installed
 #   picture UDID DISPLAY FILE          the screen as it is (DISPLAY: 1 on the iPhone Duo's cover, empty elsewhere)
 #   shot UDID DISPLAY FOLDER NAME WAIT ARGS…   the app launched with ARGS and photographed WAIT seconds later; if it's
 #                                      still the launch screen's flat colour, again 12 seconds later (slow, or stuck?)
 #   tour UDID DISPLAY FOLDER FILE:MOMENT…      the recorded moments one after another in one launch (-tour, Demo.swift),
-#                                      each photographed once the app says it's drawn (a launch each is the slow part)
+#                                      each photographed once the app says it's drawn, then acknowledged by its number
+#                                      (the app waits for that, so a slow picture can't leave it behind)
 # FOLDER is under shots/ (empty for shots/ itself).
 
 make_device() {
@@ -18,8 +20,11 @@ make_device() {
   return 1
 }
 
-boot() {
+start() {
   xcrun simctl boot "$1"
+}
+
+ready() {
   xcrun simctl bootstatus "$1" -b > /dev/null
   xcrun simctl status_bar "$1" override --time 9:41 --batteryState charged --batteryLevel 100 || true
   xcrun simctl install "$1" build/Build/Products/Debug-iphonesimulator/TheBetrayal.app
@@ -52,10 +57,10 @@ tour() {
   data=$(xcrun simctl get_app_container "$dev" "$APP" data)
   for p in "$@"; do
     f="shots/${dir:+$dir/}${p%%:*}.png"
-    for k in $(seq 1 150); do grep -q "^$n " "$data/Documents/tour/ready" 2>/dev/null && break; sleep 0.2; done
-    grep -q "^$n " "$data/Documents/tour/ready" 2>/dev/null || echo "::warning::${p#*:}: not drawn in 30 seconds"
+    for k in $(seq 1 300); do grep -q "^$n " "$data/Documents/tour/ready" 2>/dev/null && break; sleep 0.2; done
+    grep -q "^$n " "$data/Documents/tour/ready" 2>/dev/null || echo "::warning::${p#*:}: not drawn in 60 seconds"
     picture "$dev" "$disp" "$f"
-    touch "$data/Documents/tour/next"
+    echo "$n" > "$data/Documents/tour/next"
     n=$((n + 1))
   done
 }

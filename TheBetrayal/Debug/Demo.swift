@@ -4,7 +4,8 @@ import SwiftUI
 // A Debug build can show the game without a server, for the CI's screenshots (.github/workflows/ios-native.yml):
 //   -tour NAME,NAME…   those moments one after another in one launch, for the CI's pictures (a launch for each is
 //                      what takes the time on its Macs): each, once drawn, writes Documents/tour/ready ("N NAME"), and
-//                      the next comes when the CI writes Documents/tour/next (ci/shots.sh)
+//                      the next comes only when the CI writes N to Documents/tour/next, having photographed it
+//                      (ci/shots.sh): never on its own, or a slow picture (the Duo's take 17 seconds) leaves it behind
 //   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
 //                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
@@ -123,8 +124,11 @@ enum Demo {
             session = Demo.session(name, tv: false)
             try? await Task.sleep(for: .milliseconds(n == 0 ? 2500 : 1500)) // drawn, and its fade-in over
             try? Data("\(n) \(name)".utf8).write(to: ready, options: .atomic)
-            for _ in 0..<300 where !fm.fileExists(atPath: next.path) { try? await Task.sleep(for: .milliseconds(100)) }
-            try? fm.removeItem(at: next)
+            // until the CI says it has this one (for two minutes at most, if it's gone)
+            for _ in 0..<1200 {
+                if let said = try? String(contentsOf: next, encoding: .utf8), said.trimmingCharacters(in: .whitespacesAndNewlines) == "\(n)" { break }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
         }
         try? Data("ok".utf8).write(to: TourRun.dir.appendingPathComponent("done"), options: .atomic)
     }

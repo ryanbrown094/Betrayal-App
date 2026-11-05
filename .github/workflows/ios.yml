@@ -47,6 +47,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # a boot takes minutes on these Macs: it starts now, and the app builds meanwhile
+      - name: The simulator, booting while the app builds
+        run: |
+          source ci/shots.sh
+          UDID=$(make_device "big iPhone" big-iphone) || { echo "::error::no iPhone simulator could be made"; exit 1; }
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          start "$UDID"
+
       - name: The game server
         if: env.SERVER_TOKEN != ''
         uses: actions/checkout@v4
@@ -75,12 +83,10 @@ jobs:
           xcodebuild -quiet -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Debug
           -destination "generic/platform=iOS Simulator" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
-      - name: Boot the simulator
+      - name: The simulator, booted, with the app
         run: |
           source ci/shots.sh
-          UDID=$(make_device "big iPhone" big-iphone) || { echo "::error::no iPhone simulator could be made"; exit 1; }
-          echo "UDID=$UDID" >> "$GITHUB_ENV"
-          boot "$UDID"
+          ready "$UDID"
           mkdir -p shots/render
 
       - name: Recorded moments in the simulator
@@ -302,18 +308,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: The simulator, booting while the app builds
+        run: |
+          source ci/shots.sh
+          if [ "${{ matrix.device }}" = duo-closed ]; then what=iPhone-Duo; else what=iPad-Pro-13; fi
+          DEV=$(make_device "${{ matrix.device }}" "$what") || { echo "::warning::no $what simulator"; exit 0; }
+          echo "DEV=$DEV" >> "$GITHUB_ENV"
+          start "$DEV"
+
       - name: Build (Debug)
         run: >
           xcodebuild -quiet -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Debug
           -destination "generic/platform=iOS Simulator" -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
       - name: The start screen's screens and the recorded moments
+        if: env.DEV != ''
         run: |
           source ci/shots.sh
           d=${{ matrix.device }}
-          if [ "$d" = duo-closed ]; then what=iPhone-Duo; disp=1; else what=iPad-Pro-13; disp=""; fi
-          DEV=$(make_device "$d" "$what") || { echo "::warning::no $what simulator"; exit 0; }
-          boot "$DEV"
+          disp=""; [ "$d" = duo-closed ] && disp=1
+          ready "$DEV"
           mkdir -p "shots/$d"
           shot "$DEV" "$disp" "$d" home 8
           for x in join host passes tv; do shot "$DEV" "$disp" "$d" "home-$x" 6 -shop -screen "$x"; done
@@ -352,6 +366,14 @@ jobs:
           token: ${{ secrets.SERVER_REPO_TOKEN }}
           path: server
 
+      - name: The simulator, booting while the app builds
+        if: env.SERVER_TOKEN != ''
+        run: |
+          source ci/shots.sh
+          UDID=$(make_device "bots iPhone" big-iphone) || { echo "::error::no iPhone simulator could be made"; exit 1; }
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          start "$UDID"
+
       - name: Build (Debug)
         if: env.SERVER_TOKEN != ''
         run: >
@@ -362,8 +384,7 @@ jobs:
         if: env.SERVER_TOKEN != ''
         run: |
           source ci/shots.sh
-          UDID=$(make_device "bots iPhone" big-iphone) || { echo "::error::no iPhone simulator could be made"; exit 1; }
-          boot "$UDID"
+          ready "$UDID"
           mkdir -p shots
           cd server
           npm ci --no-audit --no-fund > /dev/null
