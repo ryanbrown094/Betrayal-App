@@ -2,6 +2,10 @@
 import SwiftUI
 
 // A Debug build can show the game without a server, for the CI's screenshots (.github/workflows/ios-native.yml):
+//   -tour NAME,NAME…   those moments one after another in one launch, for the CI's pictures (a launch for each is
+//                      what takes the time on its Macs): each, once drawn, writes Documents/tour/ready ("N NAME"), and
+//                      the next comes only when the CI writes N to Documents/tour/next, having photographed it
+//                      (ci/shots.sh): never on its own, or a slow picture (the Duo's take 17 seconds) leaves it behind
 //   -demo NAME [-tv]   one moment of Fixtures.json (tools/fixtures.mjs), as that phone saw it, or as the TV did;
 //                      NAME+free shows it as a free game in the app (the Trials a pass would add, listed)
 //   -render-all        every moment, phone and TV, drawn to Documents/shots/*.png, then Documents/shots/done
@@ -64,6 +68,7 @@ enum Demo {
         if let i = args.firstIndex(of: "-watch"), i + 1 < args.count {
             return AnyView(NavigationStack { TableView(session: AppModel.shared.session(for: Target(room: args[i + 1], start: .tv))) })
         }
+        if let i = args.firstIndex(of: "-tour"), i + 1 < args.count { return AnyView(Tour(names: args[i + 1].split(separator: ",").map(String.init))) }
         if let i = args.firstIndex(of: "-demo"), i + 1 < args.count, let s = session(args[i + 1], tv: args.contains("-tv")) {
             return AnyView(TableView(session: s))
         }
@@ -91,6 +96,53 @@ enum Demo {
         s.show(v, rejoin: rejoin, away: f["away"].strings, peek: peek, tools: f["tools"].bool ?? false, rolePeek: f["peek"].bool ?? false)
         s.myRole = f["myRole"].int ?? 0
         return s
+    }
+}
+
+// -tour: the moments one after another, each a Table of its own, as -demo shows one. One run of them for the app, not
+// one for each window: the iPhone Duo gives the app a window on each of its screens, and two runs answered each
+// other's "next" and raced ahead of the pictures.
+@MainActor @Observable private final class TourRun {
+    static let shared = TourRun()
+    private(set) var at = 0
+    private(set) var session: Session?
+    @ObservationIgnored private var started = false
+    private static let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("tour")
+
+    func start(_ names: [String]) {
+        if started { return }
+        started = true
+        Task { await run(names) }
+    }
+
+    private func run(_ names: [String]) async {
+        let fm = FileManager.default, ready = TourRun.dir.appendingPathComponent("ready"), next = TourRun.dir.appendingPathComponent("next")
+        try? fm.removeItem(at: TourRun.dir)
+        try? fm.createDirectory(at: TourRun.dir, withIntermediateDirectories: true)
+        for (n, name) in names.enumerated() {
+            at = n
+            session = Demo.session(name, tv: false)
+            try? await Task.sleep(for: .milliseconds(n == 0 ? 2500 : 1500)) // drawn, and its fade-in over
+            try? Data("\(n) \(name)".utf8).write(to: ready, options: .atomic)
+            // until the CI says it has this one (for two minutes at most, if it's gone)
+            for _ in 0..<1200 {
+                if let said = try? String(contentsOf: next, encoding: .utf8), said.trimmingCharacters(in: .whitespacesAndNewlines) == "\(n)" { break }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+        try? Data("ok".utf8).write(to: TourRun.dir.appendingPathComponent("done"), options: .atomic)
+    }
+}
+
+private struct Tour: View {
+    let names: [String]
+    private var run: TourRun { TourRun.shared }
+    var body: some View {
+        ZStack {
+            Backdrop()
+            if let s = run.session { TableView(session: s).id(run.at) }
+        }
+        .onAppear { run.start(names) }
     }
 }
 

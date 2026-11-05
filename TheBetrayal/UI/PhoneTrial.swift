@@ -218,7 +218,7 @@ struct SnapPlay: View {
                 }
                 .frame(maxWidth: .infinity).frame(height: 300)
                 if let prev {
-                    HStack(spacing: 6) { Text("before:").font(Theme.ui(15)).foregroundStyle(Theme.tallow2); Icon(name: prev).frame(width: 22, height: 22).foregroundStyle(Theme.brass2) }
+                    HStack(spacing: 6) { Text("The one before").font(Theme.ui(15)).foregroundStyle(Theme.tallow2); Icon(name: prev).frame(width: 22, height: 22).foregroundStyle(Theme.brass2) }
                         .frame(maxWidth: .infinity).padding(.bottom, 12)
                 }
                 Button("SNAP") { session.send(["a": "ans"]) }.btn(.blood, .big)
@@ -326,7 +326,7 @@ struct ItemReveal: View {
             Question(x.q ?? ""); Answer(x.a ?? "")
             Para((r.truth == "higher" ? "Higher" : "Lower") + " than " + (x.ref ?? "") + ". Right: " + names(r.right)); you
         case "vote":
-            Question(x.q ?? ""); Answer(names(r.top))
+            Question(x.q ?? ""); Answer(r.top.isEmpty ? "Nobody" : names(r.top))
             Sub(r.counts.map { v.name($0.id) + " \($0.n)" }.joined(separator: " · "))
         case "word":
             Letters(letters: x.letters ?? "")
@@ -349,9 +349,9 @@ struct ItemReveal: View {
                 ForEach(Array(r.bouts.enumerated()), id: \.offset) { _, bt in
                     VStack(spacing: 6) {
                         HStack {
-                            (Text(v.name(bt.a) + " ") + Text(bt.x).italic()).frame(maxWidth: .infinity, alignment: .leading)
+                            (Text(v.name(bt.a) + " ") + Text(bt.x.capitalized).italic().foregroundColor(Theme.tallow2)).frame(maxWidth: .infinity, alignment: .leading)
                             Text("v").foregroundStyle(Theme.mist)
-                            (Text(bt.y).italic() + Text(" " + v.name(bt.b))).frame(maxWidth: .infinity, alignment: .trailing)
+                            (Text(bt.y.capitalized).italic().foregroundColor(Theme.tallow2) + Text(" " + v.name(bt.b))).frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .font(Theme.ui(18)).foregroundStyle(Theme.tallow)
                         Text(bt.w.map { v.name($0) + " goes through" } ?? "Draw · both go through").font(Theme.ui(15)).foregroundStyle(Theme.brass2).frame(maxWidth: .infinity, alignment: .leading)
@@ -386,7 +386,7 @@ struct YouLine: View { // .you
     let tone: Tone
     var body: some View {
         Text(text).font(Theme.ui(18)).foregroundStyle(tone == .good ? Color(hex: 0xBFEADB) : tone == .bad ? Color(hex: 0xF3B7C4) : Theme.tallow2)
-            .multilineTextAlignment(.center).frame(maxWidth: .infinity).padding(.vertical, 16)
+            .multilineTextAlignment(.leading).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 16) // (in line with the result above it)
     }
 }
 
@@ -448,7 +448,7 @@ struct TrialDone: View {
             H1(TrialDone.head(v, t))
             if t.special == "cast" { Sub("Whoever won holds it now. Only they know.") }
             if w != nil && t.byLot && t.key != "tempt" { Small("A tie at the top, settled by lot.") }
-            (Text(Words.signed(t.points)).font(Theme.book(30)).foregroundColor(Theme.brass2) + Text(" to the Purse").font(Theme.book(15)).foregroundColor(Theme.tallow2)).monospacedDigit().padding(.bottom, 4)
+            if t.points != 0 { (Text(Words.signed(t.points)).font(Theme.book(30)).foregroundColor(Theme.brass2) + Text(" to the Purse").font(Theme.book(15)).foregroundColor(Theme.tallow2)).monospacedDigit().padding(.bottom, 4) } // (no "+0")
             Meter(pot: v.pot, cap: v.potCap, tiers: v.tiers)
             if t.wrongF > 0 { Small("The Forsworn gave " + Words.plural(t.wrongF, "wrong answer") + ", and the Purse paid for them.") }
             if let s = t.sanctPublic { Banner(.sanct, v.name(s) + " takes Sanctuary for tonight.") }

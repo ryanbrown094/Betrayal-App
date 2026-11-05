@@ -153,6 +153,7 @@ struct Column<Content: View>: View {
     init(@ViewBuilder content: () -> Content) { self.content = content() }
     var body: some View {
         VStack(alignment: .leading, spacing: 0) { content }
+            .frame(maxWidth: .infinity, alignment: .leading) // (a screen of short lines starts at the edge too, not centred)
             .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 24)
             .frame(maxWidth: 520)
             .frame(maxWidth: .infinity)
@@ -271,6 +272,7 @@ struct PlayView: View {
     @Environment(\.rendering) private var rendering
     @Environment(\.renderWidth) private var renderWidth
     @State private var width: CGFloat = 0
+    @State private var sides = EdgeInsets()
 
     // the top bar floats over the screen as it scrolls, and the host's moves at its foot (on glass, from iOS 26); wide
     // (an iPad, the iPhone Duo open), the Table's sidebar sits beside it and holds them both
@@ -278,6 +280,7 @@ struct PlayView: View {
         if let v = session.view, let me = v.me {
             let w = rendering ? renderWidth : width
             let wide = !me.left && w >= Wide.from
+            let rail = !wide && !rendering && !me.left ? SideRail.edge(sides) : nil
             ZStack {
                 if rendering {
                     // drawn offscreen at a width (the App Store's iPhone Duo pictures): the sidebar too, if it's wide
@@ -291,7 +294,7 @@ struct PlayView: View {
                         ScrollView { page(v, me, wide: wide) }
                             .scrollDismissesKeyboard(.interactively)
                             .safeAreaInset(edge: .top, spacing: 0) {
-                                if !me.left && !wide { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
+                                if !me.left && !wide && rail == nil { TopBar(v: v, me: me).frame(maxWidth: 520).padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 6).frame(maxWidth: .infinity) }
                             }
                             .safeAreaInset(edge: .bottom, spacing: 0) {
                                 VStack(spacing: 8) {
@@ -305,10 +308,19 @@ struct PlayView: View {
                     VStack { Spacer(); Text("Reconnecting…").font(Theme.ui(14)).foregroundStyle(Color(hex: 0xF3B7C4)).padding(.horizontal, 12).padding(.vertical, 6)
                         .background(RoundedRectangle(cornerRadius: 3).fill(Color(hex: 0x2A1316))).overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(Color(hex: 0x6A2733), lineWidth: 1)).padding(.bottom, 14) }
                 }
+                if let rail {
+                    SideRail(v: v, me: me)
+                        .frame(width: rail == .trailing ? sides.trailing : sides.leading)
+                        .padding(.bottom, 12)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: rail == .trailing ? .bottomTrailing : .bottomLeading)
+                        .ignoresSafeArea(.container, edges: rail == .trailing ? .trailing : .leading)
+                        .ignoresSafeArea(.keyboard) // (behind the keyboard while it's up, not pushed up into the time)
+                }
                 // the host's tools open over the pause (its Host tools button), and close back to it
                 if v.paused != nil && !(session.tools && me.director) { PauseBox(v: v, me: me) }
             }
             .modifier(WidthReader(width: $width))
+            .modifier(SidesReader(sides: $sides))
         } else if session.isTV {
             TVView()
         } else {
@@ -370,7 +382,7 @@ struct TableSidebar: View {
             if rendering { contents.frame(maxHeight: .infinity, alignment: .top) } else { ScrollView { contents }.scrollIndicators(.hidden) }
         }
         .glass(in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.leading, 10).padding(.vertical, 10)
+        .padding(10) // (as the start screen's sidebar, so it doesn't change width when a game starts)
     }
 
     private var contents: some View {
@@ -434,13 +446,14 @@ struct TopBar: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
-    // on one line if it all fits, then with shorter labels, then on two lines (a small phone, larger text): each piece on
-    // glass of its own, floating over the screen
+    // on one line if it all fits, then with shorter labels, then with the player as their seal alone (the host's bar
+    // holds the most), then on two lines (larger text): each piece on glass of its own, floating over the screen
     var body: some View {
         GlassGroup {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: false) }
                 HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 8); right(short: true) }
+                HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me, seal: true); Spacer(minLength: 8); right(short: true) }
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) { LeaveButton(v: v, me: me); WhoChip(v: v, me: me); Spacer(minLength: 0) }
                     HStack { Spacer(minLength: 0); right(short: true) }
@@ -450,7 +463,7 @@ struct TopBar: View {
     }
 
     // the Table's code (before the game) or the Purse, Your role (the same on every phone, from the first day), and the
-    // host's Pause and Tools; short: the code alone, Role, Pause as bars
+    // host's Pause and Tools; short: the code alone, Role, Pause as bars, Tools as its icon
     private func right(short: Bool) -> some View {
         HStack(spacing: 10) {
             let early = ["lobby", "oath", "roles"].contains(v.phase)
@@ -460,14 +473,18 @@ struct TopBar: View {
                 .glass(in: Capsule())
             HStack(spacing: 8) {
                 if Controls.role(v) {
-                    Button(short ? "Role" : "Your role") { session.toggleRole() }.glassButton(top: true).accessibilityLabel("Your role")
+                    Button(short ? "Role" : "Your role") { session.toggleRole() }.buttonStyle(GlassPill(on: session.myRole > 0)).accessibilityLabel("Your role")
                 }
                 if Controls.pause(v, me) {
                     Button { session.askPause() } label: { if short { PauseBars() } else { Text("Pause") } }
-                        .glassButton(top: true).accessibilityLabel("Pause the game")
+                        .buttonStyle(GlassPill()).accessibilityLabel("Pause the game")
                 }
                 if me.director {
-                    Button(session.tools ? "Close" : "Tools") { session.toggleTools() }.glassButton(top: true).accessibilityLabel("Host tools")
+                    Button { session.toggleTools() } label: {
+                        if short { Image(systemName: session.tools ? "xmark" : "slider.horizontal.3").font(.system(size: 15, weight: .semibold)) }
+                        else { Text(session.tools ? "Close" : "Tools") }
+                    }
+                    .buttonStyle(GlassPill(on: session.tools)).accessibilityLabel("Host tools")
                 }
             }
         }
@@ -491,16 +508,22 @@ extension Session {
 struct LeaveButton: View {
     let v: Snapshot
     let me: Me
+    var tile = false
     @Environment(Session.self) private var session
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.rendering) private var rendering
     var body: some View {
-        let b = Button(action: leave) {
-            Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
-                .frame(width: 26, height: 30).contentShape(Rectangle())
+        Group {
+            if tile {
+                Button(action: leave) { RailLabel(icon: "chevron.left", text: "Back") }.buttonStyle(RailTile())
+            } else {
+                Button(action: leave) {
+                    Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.tallow2)
+                        .frame(width: 40, height: 40).contentShape(Circle())
+                }
+                .buttonStyle(GlassCircle())
+            }
         }
         .accessibilityLabel("Back to the start")
-        if Glassy.on && !rendering { b.glassButton(top: true) } else { b.buttonStyle(.plain).frame(width: 40, height: 40).glass(in: Circle()) }
     }
     private func leave() {
         if ["lobby", "end"].contains(v.phase) || (!me.alive && !me.director) { dismiss(); return }
@@ -513,7 +536,17 @@ struct LeaveButton: View {
 struct WhoChip: View {
     let v: Snapshot
     let me: Me
+    var seal = false // the seal alone, in a 40-point circle
     var body: some View {
+        if seal {
+            Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
+                .frame(width: 40, height: 40).glass(in: Circle())
+                .accessibilityElement().accessibilityLabel(me.name + (me.director ? ", host" : ""))
+        } else {
+            chip
+        }
+    }
+    private var chip: some View {
         HStack(spacing: 8) {
             Seal(name: me.name, color: v.player(me.id).color).frame(width: 28, height: 28)
             Text(me.name).font(Theme.ui(16)).foregroundStyle(Theme.tallow).lineLimit(1).truncationMode(.tail)
@@ -521,6 +554,84 @@ struct WhoChip: View {
         }
         .padding(.leading, 6).padding(.trailing, 12).frame(minHeight: 40)
         .glass(in: Capsule())
+    }
+}
+
+// The iPhone Duo closed keeps its status bar in a column down one side, free below the time: the top bar's controls go
+// there, one under another and all the same size, and the screen gets the top bar's height back. Only where a side of
+// the safe area is that wide (an iPhone is upright only, so no other phone has one).
+struct SideRail: View {
+    let v: Snapshot
+    let me: Me
+    @Environment(Session.self) private var session
+
+    static func edge(_ i: EdgeInsets) -> HorizontalEdge? { i.trailing >= 40 ? .trailing : i.leading >= 40 ? .leading : nil }
+
+    var body: some View {
+        GlassGroup {
+            VStack(spacing: 10) {
+                LeaveButton(v: v, me: me, tile: true)
+                VStack(spacing: 4) {
+                    Seal(name: me.name, color: v.player(me.id).color).frame(width: 26, height: 26)
+                    Text(me.name).font(Theme.ui(11, .bold, fixed: true)).lineLimit(1).minimumScaleFactor(0.7).padding(.horizontal, 4)
+                }
+                .modifier(RailFace())
+                .accessibilityElement(children: .combine)
+                let early = ["lobby", "oath", "roles"].contains(v.phase)
+                VStack(spacing: 3) {
+                    Text(early ? "Table" : "Purse").font(Theme.sc(11, bold: true, fixed: true)).tracking(0.4).foregroundStyle(Theme.brass2)
+                    Text(verbatim: early ? session.room : "\(v.pot)").font(Theme.ui(14, .bold, fixed: true)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.6)
+                        .padding(.horizontal, 4)
+                }
+                .modifier(RailFace())
+                .accessibilityElement(children: .combine)
+                if Controls.role(v) {
+                    Button { session.toggleRole() } label: { RailLabel(icon: "person.text.rectangle", text: "Role") }
+                        .buttonStyle(RailTile(on: session.myRole > 0)).accessibilityLabel("Your role")
+                }
+                if Controls.pause(v, me) {
+                    Button { session.askPause() } label: { RailLabel(icon: "pause.fill", text: "Pause") }
+                        .buttonStyle(RailTile()).accessibilityLabel("Pause the game")
+                }
+                if me.director {
+                    Button { session.toggleTools() } label: { RailLabel(icon: session.tools ? "xmark" : "slider.horizontal.3", text: session.tools ? "Close" : "Tools") }
+                        .buttonStyle(RailTile(on: session.tools)).accessibilityLabel("Host tools")
+                }
+            }
+        }
+    }
+}
+
+// a tile of the side rail: 64 × 58 points on glass, brass-edged while what it opens is open
+struct RailFace: ViewModifier {
+    var on = false
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        content.foregroundStyle(on ? Theme.brass2 : Theme.tallow)
+            .frame(width: 64, height: 58)
+            .contentShape(shape)
+            .glass(in: shape)
+            .overlay { if on { shape.strokeBorder(Theme.brass2.opacity(0.75), lineWidth: 1) } }
+    }
+}
+
+struct RailTile: ButtonStyle {
+    var on = false
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.modifier(RailFace(on: on))
+            .scaleEffect(configuration.isPressed ? 0.95 : 1).opacity(configuration.isPressed ? 0.75 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+struct RailLabel: View {
+    let icon: String
+    let text: String
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon).font(.system(size: 17, weight: .semibold)).frame(height: 20)
+            Text(text).font(Theme.ui(11, .bold, fixed: true)).lineLimit(1).minimumScaleFactor(0.8)
+        }
     }
 }
 
