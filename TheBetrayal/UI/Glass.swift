@@ -68,6 +68,40 @@ struct GlassRow<Content: View>: View {
     var body: some View { GlassGroup { HStack(spacing: spacing) { content } } }
 }
 
+// the top bar's buttons: on glass, as high as the chips beside them (40 points), so the bar reads as one row; brass
+// while what it opens is open
+struct GlassPill: ButtonStyle {
+    var on = false
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.font(Theme.ui(14, .bold)).foregroundStyle(on ? Theme.brass2 : Theme.tallow).lineLimit(1)
+            .padding(.horizontal, 14).frame(minWidth: 40, minHeight: 40)
+            .contentShape(Capsule())
+            .glass(in: Capsule())
+            .scaleEffect(configuration.isPressed ? 0.96 : 1).opacity(configuration.isPressed ? 0.75 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+// a round button on glass (back), 40 points like the bar's chips
+struct GlassCircle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label.glass(in: Circle())
+            .scaleEffect(configuration.isPressed ? 0.94 : 1).opacity(configuration.isPressed ? 0.75 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+// the safe area's sides (the iPhone Duo closed keeps its status bar down one side), read from the whole window
+struct SidesReader: ViewModifier {
+    @Binding var sides: EdgeInsets
+    func body(content: Content) -> some View {
+        content.background {
+            GeometryReader { g in Color.clear.onAppear { sides = g.safeAreaInsets }.onChange(of: g.safeAreaInsets) { _, i in sides = i } }
+                .ignoresSafeArea()
+        }
+    }
+}
+
 // the width this view is given, for the layouts that change with it
 struct WidthReader: ViewModifier {
     @Binding var width: CGFloat
