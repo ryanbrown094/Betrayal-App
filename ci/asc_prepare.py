@@ -52,6 +52,13 @@ if rd:
 else:
     print("   ::warning:: no App Review details on this version: paste store/review-notes.txt into App Review Information by hand")
 
+print("\nthe screenshots:")
+for loc in call("GET", f"/v1/appStoreVersions/{vid}/appStoreVersionLocalizations")["data"]:
+    for st in call("GET", f"/v1/appStoreVersionLocalizations/{loc['id']}/appScreenshotSets")["data"]:
+        shots = call("GET", f"/v1/appScreenshotSets/{st['id']}/appScreenshots")["data"]
+        states = [((x["attributes"].get("assetDeliveryState") or {}).get("state")) for x in shots]
+        print(f"   {loc['attributes']['locale']} {st['attributes']['screenshotDisplayType']}: {len(shots)}, " + ", ".join(f"{states.count(k)} {k}" for k in sorted(set(states), key=str)))
+
 print("\nthe passes:")
 for p in call("GET", f"/v1/apps/{aid}/inAppPurchasesV2", limit=20)["data"]:
     print(f"   {p['attributes']['productId']}: {p['attributes']['state']}")
