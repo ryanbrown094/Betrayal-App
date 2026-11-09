@@ -74,7 +74,7 @@ Replace the notes with these (the first four paragraphs are 1.0's; the fifth is 
 ```
 The Betrayal is a party game for 8 to 24 people in one room, each playing on their own phone. To play on your own, tap Practice against bots on the start screen, type a name and start: bots fill the Table and play every other part. You're the host, so your phone moves the game on: tap the button on each screen (Begin, Start the Trial, Continue). (Before a phone's first game, five short screens explain the game; Skip passes them.) The first time you enter a free or practice game, Google's consent form (where the law requires it) and then Apple's tracking question appear; the game is the same whatever you answer.
 
-In-app purchases: tap Host a game, type a name and tap Start a free game; in the lobby, under Trials, tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). At once the list of locked Trials goes and the game is ad-free for everyone at the Table (a real game needs 8 players' phones to start). The same passes are under Your passes on the start screen, with Restore purchases and Manage subscription. A practice game can't use a pass: it's for trying the game alone.
+In-app purchases: on the start screen, tap Your passes: the Night Pass and the Host Pass, each with its Buy or Subscribe button, with Restore purchases and Manage subscription. They're also offered in a game: tap Host a game, type a name and tap Start a free game; in the lobby, under Trials, tap Make it ad-free with a pass to buy a Night Pass (consumable) or the Host Pass (yearly subscription). At once the list of locked Trials goes and the game is ad-free for everyone at the Table (a real game needs 8 players' phones to start). A practice game can't use a pass: it's for trying the game alone.
 
 Guests join with the six-character Table code shown on the host's phone, or by scanning its QR code (on the host's phone, or the TV). An iPad can be the TV: tap Set up a TV on the start screen, type the code and tap Use this screen as the TV.
 
@@ -102,7 +102,11 @@ are already declared. The privacy notice at thebetrayal.co.uk/app-privacy, and i
 
 - **Age rating**: as 1.0. If the questionnaire asks again, user-generated content and messaging: yes (names, last
   words, the Forsworn's chat); keep 16+ or 18+.
-- **In-app purchases**: the Night Pass and the Host Pass are already approved; nothing to attach to this version.
+- **In-app purchases**: until a version with them has been approved, the Night Pass and the Host Pass go for review
+  with the version: on its page, under **In-App Purchases and Subscriptions**, select both. Both must be **Ready to
+  Submit** (not Missing Metadata: display name, description, price, review screenshot, and the subscription group's
+  localization), and the **Paid Apps Agreement** must be active (Business → Agreements, with bank and tax details):
+  until it is, the App Store gives the app no products, and Your passes says "Passes aren't available right now".
 - **Pricing and availability**: as 1.0.
 
 ## 9. Submit
