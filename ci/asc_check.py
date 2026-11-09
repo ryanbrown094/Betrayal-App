@@ -83,3 +83,5 @@ for g in get(f"/v1/apps/{aid}/subscriptionGroups", limit=20)["data"]:
 print("\nthe app asks for:", ", ".join(sorted(APP_IDS)))
 print("missing from App Store Connect:", ", ".join(sorted(APP_IDS - found)) or "none")
 print("in App Store Connect but not asked for:", ", ".join(sorted(x for x in found - APP_IDS if x)) or "none")
+
+# (run on 2026-11-09)
