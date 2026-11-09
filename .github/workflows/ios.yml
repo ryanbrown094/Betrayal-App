@@ -14,6 +14,8 @@ on:
       - ".github/workflows/upload.yml"
       - ".github/workflows/asc-check.yml"
       - "ci/asc_check.py"
+      - ".github/workflows/asc-screenshots.yml"
+      - "ci/asc_screenshots.py"
   workflow_dispatch:
     inputs:
       full:
