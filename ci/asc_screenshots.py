@@ -74,3 +74,5 @@ for loc in call("GET", f"/v1/appStoreVersions/{ver['id']}/appStoreVersionLocaliz
 
 missing = sorted(name for name, _ in OURS.values() if name not in done)
 print("\nnot sent (no set of that size on the version: add one picture there by hand, then run this again):", ", ".join(missing) or "none")
+
+# (sent on 2026-11-09)
