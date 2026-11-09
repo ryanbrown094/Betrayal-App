@@ -19,6 +19,8 @@ on:
       - ".github/workflows/asc-prepare.yml"
       - "ci/asc_prepare.py"
       - "store/review-notes.txt"
+      - ".github/workflows/asc-iaps.yml"
+      - "ci/asc_iaps.py"
   workflow_dispatch:
     inputs:
       full:
