@@ -16,6 +16,9 @@ on:
       - "ci/asc_check.py"
       - ".github/workflows/asc-screenshots.yml"
       - "ci/asc_screenshots.py"
+      - ".github/workflows/asc-prepare.yml"
+      - "ci/asc_prepare.py"
+      - "store/review-notes.txt"
   workflow_dispatch:
     inputs:
       full:
