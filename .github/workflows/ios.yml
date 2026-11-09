@@ -12,6 +12,8 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/workflows/upload.yml"
+      - ".github/workflows/asc-check.yml"
+      - "ci/asc_check.py"
   workflow_dispatch:
     inputs:
       full:

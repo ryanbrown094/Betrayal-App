@@ -1,0 +1,24 @@
+name: App Store Connect check
+
+# What App Store Connect has for the app's passes (ci/asc_check.py), read-only, with the upload's API key (the
+# ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 secrets): by hand, or when the script changes on a push.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ci/asc_check.py
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: The passes as App Store Connect has them
+        env:
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          pip install --quiet "pyjwt[crypto]"
+          python3 ci/asc_check.py
