@@ -187,6 +187,28 @@ against the account's Actions allowance, and the month's ran out.
 The Debug build's launch arguments (`Debug/Demo.swift`) are compiled out of Release, and `Fixtures.json` is left out of
 the Release bundle.
 
+## Releasing
+
+A new version goes to App Review from GitHub, without a Mac or App Store Connect's website, through the App Store
+Connect API (`ci/asc.py`) and the key in the `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_P8` secrets (an Admin team key):
+
+1. In a pull request: the new version number in the project (`MARKETING_VERSION`, for both configurations), its
+   What's New in `store/whats-new.txt`, and, if they've changed, App Review's notes (`store/review-notes.txt`) and the
+   screenshots (`python3 store/compose.py` from the CI's pictures, into `store/screenshots/`). Merge it.
+2. Actions → **Release to the App Store** → Run workflow on `main`. It builds with the next build number App Store
+   Connect hasn't seen (never bumped by hand), uploads, waits for Apple to process the build, then makes the version
+   (released by hand once approved), sets What's New, the build and the notes, and with **screenshots** sends
+   `store/screenshots/` into the sets of their sizes. With **submit**, it submits the version, with any pass versions
+   waiting to go (a changed price or wording: the new In-App Purchase, subscription and group versions), together
+   in one review submission; without it, look the version over in App Store Connect, then Actions → **App Store
+   Connect** → `submit` (or submit on the website).
+3. Once App Review approves it, release it in App Store Connect.
+
+Actions → **App Store Connect** runs one task by hand: `check` (only reads: the app's versions, and each pass's
+versions, wording, price and territories), `screenshots`, `prepare`, `submit-preview` (what would go, only reads) or
+`submit`. **Upload to App Store Connect** only builds and uploads. App Privacy, age rating and the reply to a message
+from App Review have no API, and stay on the website.
+
 ## Not checked yet
 
 - The TV over AirPlay: the CI's simulator can't show a second display, so it has only been tried by hand, on the
