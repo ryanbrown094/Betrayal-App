@@ -241,3 +241,5 @@ if __name__ == "__main__":
     elif cmd == "screenshots": screenshots()
     elif cmd == "submit": submit("--go" in a)
     else: sys.exit("check | next-build | wait-build V B | prepare V [B] | screenshots | submit [--go]")
+
+# (checked against App Store Connect on 2026-11-16)
