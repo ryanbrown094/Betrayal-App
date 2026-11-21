@@ -93,7 +93,11 @@ def check():
     aid = app_id()
     av = call("GET", f"/v1/apps/{aid}/appAvailabilityV2", ok=True).get("data")
     if av: print(f"the app: available in new territories {av['attributes'].get('availableInNewTerritories')}, territories {territories('/v2/appAvailabilities/' + av['id'] + '/territoryAvailabilities')}")
-    for v in versions(aid)[:5]: print(f"   version {v['attributes']['versionString']}: {state(v)}")
+    for i, v in enumerate(versions(aid)[:5]):
+        print(f"   version {v['attributes']['versionString']}: {state(v)}")
+        # the store's links (the developer website is where AdMob looks for app-ads.txt)
+        for loc in call("GET", f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")["data"] if i < 2 else []:
+            a = loc["attributes"]; print(f"      {a.get('locale')}: marketing URL {a.get('marketingUrl')}, support URL {a.get('supportUrl')}")
     found = set()
     print("\nthe passes:")
     for kind, pid, name, st in passes(aid):
