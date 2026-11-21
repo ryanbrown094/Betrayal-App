@@ -197,12 +197,12 @@ Connect API (`ci/asc.py`) and the key in the `ASC_KEY_ID`, `ASC_ISSUER_ID` and `
    screenshots (`python3 store/compose.py` from the CI's pictures, into `store/screenshots/`). Merge it.
 2. Actions → **Release to the App Store** → Run workflow on `main`. It builds with the next build number App Store
    Connect hasn't seen (never bumped by hand), uploads, waits for Apple to process the build, then makes the version
-   (released by hand once approved), sets What's New, the build and the notes, and with **screenshots** sends
-   `store/screenshots/` into the sets of their sizes. With **submit**, it submits the version, with any pass versions
-   waiting to go (a changed price or wording: the new In-App Purchase, subscription and group versions), together
-   in one review submission; without it, look the version over in App Store Connect, then Actions → **App Store
-   Connect** → `submit` (or submit on the website).
-3. Once App Review approves it, release it in App Store Connect.
+   (live as soon as App Review approves it; with **on_approval** off, released by hand), sets What's New, the build
+   and the notes, and with **screenshots** sends `store/screenshots/` into the sets of their sizes. With **submit**,
+   it submits the version, with any pass versions waiting to go (a changed price or wording: the new In-App Purchase,
+   subscription and group versions), together in one review submission; without it, look the version over in App Store
+   Connect, then Actions → **App Store Connect** → `submit` (or submit on the website).
+3. Once App Review approves it, it goes live (with **on_approval** off, release it in App Store Connect).
 
 Actions → **App Store Connect** runs one task by hand: `check` (only reads: the app's versions, and each pass's
 versions, wording, price and territories), `screenshots`, `prepare`, `submit-preview` (what would go, only reads) or

@@ -4,7 +4,7 @@ name: Release to the App Store
 # the next build number (upload.yml); then, once Apple has processed it, the version made ready (ci/asc.py prepare: the
 # project's version number, What's New from store/whats-new.txt, the build, App Review's notes from
 # store/review-notes.txt), store/screenshots/ sent if asked, and the version submitted to App Review if asked, with any
-# pass versions waiting to go. Released by hand once approved.
+# pass versions waiting to go. Live as soon as App Review approves it, or with on_approval off, released by hand.
 on:
   workflow_dispatch:
     inputs:
@@ -16,6 +16,10 @@ on:
         description: "Submit to App Review (else check it in App Store Connect, then run App Store Connect → submit)"
         type: boolean
         default: false
+      on_approval:
+        description: "Go live as soon as App Review approves it (else release it by hand in App Store Connect)"
+        type: boolean
+        default: true
 
 jobs:
   upload:
@@ -41,7 +45,7 @@ jobs:
       - name: Apple processes the build
         run: python3 ci/asc.py wait-build "$V" "$B"
       - name: The version, ready
-        run: python3 ci/asc.py prepare "$V" "$B"
+        run: python3 ci/asc.py prepare "$V" "$B" ${{ inputs.on_approval && '--on-approval' || '' }}
       - name: The screenshots
         if: ${{ inputs.screenshots }}
         run: python3 ci/asc.py screenshots

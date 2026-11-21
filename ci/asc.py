@@ -5,7 +5,9 @@
 #                                        territories, and which ids the app asks for are missing. Only reads.
 #   python3 ci/asc.py next-build         the next build number App Store Connect hasn't seen (the CI builds with it)
 #   python3 ci/asc.py wait-build V B     until build V (B) has been processed (or fails)
-#   python3 ci/asc.py prepare V [B]      version V, made if no version can be edited (released by hand): What's New
+#   python3 ci/asc.py prepare V [B] [--on-approval]
+#                                        version V, made if no version can be edited, released by hand once approved
+#                                        (with --on-approval, as soon as App Review approves it): What's New
 #                                        (store/whats-new.txt), build B (else V's newest processed one), App Review's
 #                                        notes (store/review-notes.txt)
 #   python3 ci/asc.py screenshots        store/screenshots/ into the version that can be edited: each screenshot set
@@ -138,20 +140,20 @@ def wait_build(v, b):
         time.sleep(30)
     sys.exit(f"build {v} ({b}) wasn't processed in 40 minutes")
 
-def prepare(v, b=None):
+def prepare(v, b=None, on_approval=False):
     aid = app_id()
     ver = editable(aid)
+    release = "AFTER_APPROVAL" if on_approval else "MANUAL"
     if ver is None:
-        made = call("POST", "/v1/appStoreVersions", {"data": {"type": "appStoreVersions", "attributes": {"platform": "IOS", "versionString": v, "releaseType": "MANUAL"},
+        made = call("POST", "/v1/appStoreVersions", {"data": {"type": "appStoreVersions", "attributes": {"platform": "IOS", "versionString": v, "releaseType": release},
                                                               "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}}, ok=True)
         if "error" in made: sys.exit(f"couldn't make version {v} (one may still be with App Review): {made['body']}")
-        ver = made["data"]; print(f"version {v}: made (released by hand once approved)")
-    elif ver["attributes"]["versionString"] != v:
-        call("PATCH", f"/v1/appStoreVersions/{ver['id']}", {"data": {"type": "appStoreVersions", "id": ver["id"], "attributes": {"versionString": v}}})
-        print(f"version {ver['attributes']['versionString']} ({state(ver)}): now {v}")
+        ver = made["data"]; print(f"version {v}: made")
     else:
-        print(f"version {v} ({state(ver)})")
+        call("PATCH", f"/v1/appStoreVersions/{ver['id']}", {"data": {"type": "appStoreVersions", "id": ver["id"], "attributes": {"versionString": v, "releaseType": release}}})
+        print(f"version {ver['attributes']['versionString']} ({state(ver)})" + (f": now {v}" if ver["attributes"]["versionString"] != v else ""))
     vid = ver["id"]
+    print("   released " + ("as soon as App Review approves it" if on_approval else "by hand once approved"))
     if not os.path.exists("store/whats-new.txt"):
         print("   ::warning:: no store/whats-new.txt: an update needs its What's New before it can be submitted")
     else:
@@ -236,14 +238,16 @@ def submit(go=False):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] | screenshots | submit [--go]")
+    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | screenshots | submit [--go]")
     cmd = a[0]
     if cmd == "check": check()
     elif cmd == "next-build": next_build()
     elif cmd == "wait-build": wait_build(a[1], a[2])
-    elif cmd == "prepare": prepare(a[1], a[2] if len(a) > 2 else None)
+    elif cmd == "prepare":
+        p = [x for x in a[1:] if not x.startswith("--")]
+        prepare(p[0], p[1] if len(p) > 1 else None, "--on-approval" in a)
     elif cmd == "screenshots": screenshots()
     elif cmd == "submit": submit("--go" in a)
-    else: sys.exit("check | next-build | wait-build V B | prepare V [B] | screenshots | submit [--go]")
+    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | screenshots | submit [--go]")
 
 # (checked against App Store Connect on 2026-11-16)
