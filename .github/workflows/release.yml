@@ -1,0 +1,53 @@
+name: Release to the App Store
+
+# A new version for App Store review without a Mac or the website (README → Releasing): the app built and uploaded with
+# the next build number (upload.yml); then, once Apple has processed it, the version made ready (ci/asc.py prepare: the
+# project's version number, What's New from store/whats-new.txt, the build, App Review's notes from
+# store/review-notes.txt), store/screenshots/ sent if asked, and the version submitted to App Review if asked, with any
+# pass versions waiting to go. Live as soon as App Review approves it, or with on_approval off, released by hand.
+on:
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: "Send store/screenshots/ too"
+        type: boolean
+        default: false
+      submit:
+        description: "Submit to App Review (else check it in App Store Connect, then run App Store Connect → submit)"
+        type: boolean
+        default: false
+      on_approval:
+        description: "Go live as soon as App Review approves it (else release it by hand in App Store Connect)"
+        type: boolean
+        default: true
+
+jobs:
+  upload:
+    uses: ./.github/workflows/upload.yml
+    secrets: inherit
+
+  store:
+    needs: upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: app-store-connect
+      cancel-in-progress: false
+    env:
+      KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+      P8: ${{ secrets.ASC_KEY_P8 }}
+      V: ${{ needs.upload.outputs.version }}
+      B: ${{ needs.upload.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install --quiet "pyjwt[crypto]" pillow
+      - name: Apple processes the build
+        run: python3 ci/asc.py wait-build "$V" "$B"
+      - name: The version, ready
+        run: python3 ci/asc.py prepare "$V" "$B" ${{ inputs.on_approval && '--on-approval' || '' }}
+      - name: The screenshots
+        if: ${{ inputs.screenshots }}
+        run: python3 ci/asc.py screenshots
+      - name: What goes to App Review
+        run: python3 ci/asc.py submit ${{ inputs.submit && '--go' || '' }}

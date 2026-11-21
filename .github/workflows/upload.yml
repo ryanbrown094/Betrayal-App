@@ -5,19 +5,48 @@ name: Upload to App Store Connect
 # automatic signing through an App Store Connect API key with the Admin role (App Store Connect → Users and Access →
 # Integrations → Team Keys), in three repository secrets: ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_P8 (the whole .p8
 # file). The key is only ever written to the runner's home folder, which goes with the runner.
-# The build is the project's version and build number (MARKETING_VERSION, CURRENT_PROJECT_VERSION): App Store Connect
-# refuses a build number it already has. Once it has processed the build (it emails), pick it on the version's page.
+# The version is the project's (MARKETING_VERSION); the build number is the next one App Store Connect hasn't seen
+# (ci/asc.py next-build), so it never needs bumping by hand. The release workflow (release.yml) calls this, then makes
+# the version ready; on its own, once Apple has processed the build (it emails), pick it on the version's page.
 on:
   workflow_dispatch:
-
-concurrency:
-  group: upload
-  cancel-in-progress: false
+  workflow_call:
+    outputs:
+      version:
+        value: ${{ jobs.number.outputs.version }}
+      build:
+        value: ${{ jobs.number.outputs.build }}
 
 jobs:
+  number:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.n.outputs.version }}
+      build: ${{ steps.n.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: n
+        name: The version, and the next build number
+        env:
+          KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+          P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          pip install --quiet "pyjwt[crypto]"
+          V=$(grep -m1 -o 'MARKETING_VERSION = [^;]*' TheBetrayal.xcodeproj/project.pbxproj | cut -d' ' -f3)
+          B=$(python3 ci/asc.py next-build)
+          echo "version $V, build $B"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "build=$B" >> "$GITHUB_OUTPUT"
+
   upload:
+    needs: number
     runs-on: xcode-27
     timeout-minutes: 40
+    concurrency:
+      group: upload
+      cancel-in-progress: false
     env:
       KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ISSUER: ${{ secrets.ASC_ISSUER_ID }}
@@ -27,8 +56,7 @@ jobs:
       - name: Xcode, and the version this uploads
         run: |
           xcodebuild -version
-          xcodebuild -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Release -showBuildSettings 2>/dev/null \
-            | grep -E "^ *(MARKETING_VERSION|CURRENT_PROJECT_VERSION|PRODUCT_BUNDLE_IDENTIFIER) ="
+          echo "uploading ${{ needs.number.outputs.version }} (${{ needs.number.outputs.build }})"
 
       - name: The API key
         env:
@@ -49,6 +77,7 @@ jobs:
           xcodebuild -quiet -project TheBetrayal.xcodeproj -scheme TheBetrayal -configuration Release \
             -destination "generic/platform=iOS" -archivePath "$RUNNER_TEMP/TheBetrayal.xcarchive" \
             -allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
+            MARKETING_VERSION="${{ needs.number.outputs.version }}" CURRENT_PROJECT_VERSION="${{ needs.number.outputs.build }}" \
             archive
 
       # Xcode's own upload (as Distribute App does); if it won't take the key for the upload, the .ipa exported and sent

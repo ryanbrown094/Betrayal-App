@@ -126,18 +126,19 @@ struct AdBanner: View {
     let placement: String
     @State private var width: CGFloat = 0
     // as wide as the space it's given (not the window's: the iPhone Duo folded keeps a narrower screen), and a new one
-    // when that changes
+    // when that changes. Read with a GeometryReader, which takes the width it's offered whatever is in it, so the banner
+    // can't widen what it's in: read from itself, a width taken before the iPhone Duo's sidebar came (520) held the
+    // column beside it at 520 when it had 419, and the lobby spilled off both sides
     var body: some View {
-        Group {
-            if width > 0 {
-                let size = largeAnchoredAdaptiveBanner(width: min(width, 520))
-                BannerBox(size: size).frame(width: size.size.width, height: size.size.height).id(Int(size.size.width))
-            } else {
-                Color.clear.frame(height: 1)
+        let w = min(width, 520), size = w > 0 ? largeAnchoredAdaptiveBanner(width: w) : nil
+        GeometryReader { g in
+            ZStack {
+                Color.clear.onAppear { width = g.size.width }.onChange(of: g.size.width) { _, x in width = x }
+                if let size { BannerBox(size: size).frame(width: size.size.width, height: size.size.height).id(Int(size.size.width)) }
             }
+            .frame(width: g.size.width, height: g.size.height)
         }
-        .frame(maxWidth: .infinity)
-        .modifier(WidthReader(width: $width))
+        .frame(height: size?.size.height ?? 1)
         .onAppear { Events.send("ad_requested", placement: placement) }
     }
 }

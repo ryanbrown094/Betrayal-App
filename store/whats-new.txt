@@ -1,0 +1,1 @@
+The game's set-up screen now fits the iPhone Duo when it's open; before, it could run off both sides.

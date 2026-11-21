@@ -12,6 +12,10 @@ on:
     paths-ignore:
       - "**.md"
       - ".github/workflows/upload.yml"
+      - ".github/workflows/release.yml"
+      - ".github/workflows/appstore.yml"
+      - "ci/asc.py"
+      - "store/**"
   workflow_dispatch:
     inputs:
       full:
