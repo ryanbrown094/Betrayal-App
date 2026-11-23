@@ -1,1 +1,1 @@
-The game's set-up screen now fits the iPhone Duo when it's open; before, it could run off both sides.
+Free games now keep a banner at the foot of the screen and show a short full-screen ad at each Reckoning and each night. A Night Pass or the Host Pass takes every ad away for everyone at your Table.

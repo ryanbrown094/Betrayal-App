@@ -309,20 +309,26 @@ final class Session {
         adMoment(v)
     }
 
-    // a free game's natural breaks, on every player's phone, the host's included (never the TV): the start of each day
-    // from the second round (it waits for the host's Begin, and each Trial for the host's Start, so no clock runs under
-    // the ad; the Reckoning's talk is timed for each player), and the results once they've been seen
+    // a free game's full-page ads, on every player's phone, the host's included (never the TV): as each Reckoning's
+    // debate starts (its clock runs on, but the table is talking, not tapping), at each night once this phone's choice
+    // is in (a Ghost's at once, the Forsworn's once they agree), and the results once they've been seen. Each is loaded
+    // beforehand while nobody is tapping, one try a quiet phase (a load that finds no ad isn't retried every poll), and
+    // skipped if it isn't ready or its moment has passed.
     private func adMoment(_ v: Snapshot) {
-        guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, v.me != nil else { return }
+        guard !demo, !isTV, tier.tier == "free", let limits = tier.ads, limits.enabled, let me = v.me else { return }
         if v.phase == "lobby" { adKeys.removeAll() } // a new game at the same Table has its own breaks
-        if v.phase == "talk", Ads.shared.ready, adKeys.insert("load \(v.round)").inserted { Ads.shared.preload() }
-        let key = v.phase == "day" && v.round > limits.afterRound ? "round \(v.round)" : v.phase == "end" ? "end" : ""
+        let load = "load \(v.phase) \(v.round)"
+        if ["day", "break", "talk", "reveal", "dawn"].contains(v.phase), !adKeys.contains(load), Ads.shared.preload() { adKeys.insert(load) }
+        let chosen = v.phase == "night" && (!me.alive || (v.night?.done == true && !me.split))
+        let key = v.round > limits.afterRound && v.phase == "talk" ? "talk \(v.round)"
+            : v.round > limits.afterRound && chosen ? "night \(v.round)"
+            : v.phase == "end" ? "end" : ""
         guard !key.isEmpty, !adKeys.contains(key) else { return }
         adKeys.insert(key)
         let phase = v.phase
         Task {
             try? await Task.sleep(for: .seconds(phase == "end" ? 8 : 1.5))
-            if view?.phase == phase && view?.paused == nil { Ads.shared.interstitial(room: room, limits: limits, placement: phase == "end" ? "P3" : "P2") }
+            if view?.phase == phase && view?.paused == nil { Ads.shared.interstitial(room: room, limits: limits, placement: phase == "end" ? "P3" : phase == "talk" ? "P2" : "P7") }
         }
     }
 

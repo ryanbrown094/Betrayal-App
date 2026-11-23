@@ -7,9 +7,12 @@
 #   python3 ci/asc.py wait-build V B     until build V (B) has been processed (or fails)
 #   python3 ci/asc.py prepare V [B] [--on-approval]
 #                                        version V, made if no version can be edited, released by hand once approved
-#                                        (with --on-approval, as soon as App Review approves it): What's New
-#                                        (store/whats-new.txt), build B (else V's newest processed one), App Review's
-#                                        notes (store/review-notes.txt)
+#                                        (with --on-approval, as soon as App Review approves it): the description
+#                                        (store/listing.md's), What's New (store/whats-new.txt), build B (else V's
+#                                        newest processed one), App Review's notes (store/review-notes.txt)
+#   python3 ci/asc.py adstxt             where AdMob looks for app-ads.txt (the developer website on the App Store's
+#                                        public listing) and what's there, from outside: http and https, with and
+#                                        without www, as a browser and by a Google crawler's name. Only reads.
 #   python3 ci/asc.py screenshots        store/screenshots/ into the version that can be edited: each screenshot set
 #                                        whose pictures are one of our sizes gets ours instead, six in order
 #   python3 ci/asc.py submit [--go]      the version that can be edited, with each pass version waiting to go, in one
@@ -117,6 +120,35 @@ def check():
             print("      territories: " + (", ".join(str(territories('/v1/subscriptionPlanAvailabilities/' + p['id'] + '/availableTerritories')) for p in plans) or "NONE SET"))
     print("\nthe app asks for:", ", ".join(sorted(WANT_IDS)), "· missing:", ", ".join(sorted(WANT_IDS - found)) or "none")
 
+def adstxt():
+    hosts = set()
+    for c in ("gb", "us"):
+        try:
+            with urllib.request.urlopen(f"https://itunes.apple.com/lookup?bundleId={BUNDLE}&country={c}", timeout=20) as r: res = json.loads(r.read()).get("results", [])
+        except Exception as e: print(f"the App Store's listing ({c}): {e}"); continue
+        if not res: print(f"the App Store's listing ({c}): not found")
+        for x in res:
+            print(f"the App Store's listing ({c}): version {x.get('version')}, developer website {x.get('sellerUrl') or 'NONE'}")
+            if x.get("sellerUrl"): hosts.add(urllib.parse.urlparse(x["sellerUrl"]).hostname.removeprefix("www."))
+
+    class Hops(urllib.request.HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, headers, newurl):
+            print(f"      {code} → {newurl}")
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+    get = urllib.request.build_opener(Hops)
+    agents = {"a browser": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+              "Googlebot's name": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"}
+    for h in sorted(hosts or {"thebetrayal.co.uk"}):
+        for url in (f"https://{h}/app-ads.txt", f"http://{h}/app-ads.txt", f"https://www.{h}/app-ads.txt"):
+            for who, ua in agents.items():
+                print(f"   {url}, as {who}:")
+                try:
+                    with get.open(urllib.request.Request(url, headers={"User-Agent": ua}), timeout=20) as r:
+                        body = r.read()
+                        print(f"      {r.status} {r.headers.get('Content-Type')} from {r.url}: {body[:300]!r}")
+                except urllib.error.HTTPError as e: print(f"      {e.code}: {e.read()[:200]!r}")
+                except Exception as e: print(f"      failed: {e}")
+
 def next_build():
     nums = [int(b["attributes"]["version"]) for b in every("/v1/builds", **{"filter[app]": app_id(), "fields[builds]": "version"})
             if re.fullmatch(r"\d+", b["attributes"].get("version") or "")]
@@ -154,6 +186,12 @@ def prepare(v, b=None, on_approval=False):
         print(f"version {ver['attributes']['versionString']} ({state(ver)})" + (f": now {v}" if ver["attributes"]["versionString"] != v else ""))
     vid = ver["id"]
     print("   released " + ("as soon as App Review approves it" if on_approval else "by hand once approved"))
+    desc = description()
+    if not desc: print("   ::warning:: no description in store/listing.md: the version keeps the one it has")
+    else:
+        for loc in call("GET", f"/v1/appStoreVersions/{vid}/appStoreVersionLocalizations")["data"]:
+            r = call("PATCH", f"/v1/appStoreVersionLocalizations/{loc['id']}", {"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": {"description": desc}}}, ok=True)
+            print(f"   description ({loc['attributes']['locale']}, {len(desc)} characters): " + ("set" if "error" not in r else f"not set: {r['body'][:200]}"))
     if not os.path.exists("store/whats-new.txt"):
         print("   ::warning:: no store/whats-new.txt: an update needs its What's New before it can be submitted")
     else:
@@ -174,6 +212,11 @@ def prepare(v, b=None, on_approval=False):
         call("POST", "/v1/appStoreReviewDetails", {"data": {"type": "appStoreReviewDetails", "attributes": {"notes": notes, "demoAccountRequired": False},
                                                             "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}})
     print(f"   App Review's notes: store/review-notes.txt ({len(notes)} characters)")
+
+def description():  # the description in store/listing.md, the block under **Description**
+    try: m = re.search(r"\*\*Description\*\*[^\n]*\n+```\n(.*?)\n```", open("store/listing.md").read(), re.S)
+    except OSError: return None
+    return m.group(1).strip() if m else None
 
 def screenshots():
     from PIL import Image
@@ -238,7 +281,7 @@ def submit(go=False):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | screenshots | submit [--go]")
+    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | screenshots | submit [--go]")
     cmd = a[0]
     if cmd == "check": check()
     elif cmd == "next-build": next_build()
@@ -246,8 +289,9 @@ if __name__ == "__main__":
     elif cmd == "prepare":
         p = [x for x in a[1:] if not x.startswith("--")]
         prepare(p[0], p[1] if len(p) > 1 else None, "--on-approval" in a)
+    elif cmd == "adstxt": adstxt()
     elif cmd == "screenshots": screenshots()
     elif cmd == "submit": submit("--go" in a)
-    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | screenshots | submit [--go]")
+    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | screenshots | submit [--go]")
 
 # (checked against App Store Connect on 2026-11-16)

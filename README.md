@@ -57,12 +57,13 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   Every response from an app-made Table carries its tier (`room.tier`), which `Model/Session.swift` keeps as `tier`.
 - **Ads in free games** (`Media/Ads.swift`), with Google's AdMob SDK (`GoogleMobileAds` through Swift Package Manager,
   13.11 or later in 13.x; Google's consent library comes with it). The SDK starts only at a free game, after Google's
-  consent form and Apple's tracking question. A banner sits at the foot of a free game's lobby; an interstitial may show
-  on a player's phone as each day starts from the second round (the day waits for the host's Begin, so no clock runs
-  under it), and on the results, on the host's phone too but never the TV, once a break, with no gap or cap beyond that
-  (the server sends these limits, and `ADS_ENABLED=0` on the server turns ads off). Each is loaded during the
-  Reckoning's talk before it, when nobody is tapping (a load keeps the phone busy for a few seconds); an ad that hasn't
-  loaded by its moment is skipped. After a round, a
+  consent form and Apple's tracking question. A banner sits at the foot of a free game's screens all game (the large
+  size in the lobby, the smaller one once the game starts); an interstitial may show as each Reckoning's debate starts
+  (the table is talking, not tapping), at each night once that phone's choice is in (a Ghost's at once, the Forsworn's
+  once they agree), and on the results, on the host's phone too but never the TV, with no gap or cap beyond the
+  server's limits (from the first round; `ADS_ENABLED=0` on the server turns ads off). Each is loaded beforehand while
+  nobody is tapping (the day, a break, the debate, the reveal, the dawn: a load keeps the phone busy for a few seconds),
+  one try a quiet phase; an ad that hasn't loaded by its moment, or whose moment has passed, is skipped. Between Trials, a
   player's phone says "The host can remove ads for everyone tonight." **Ad choices** on the start screen reopens
   Google's form where the law asks for it.
   - **AdMob's IDs** are in `Info.plist`: the app ID (`GADApplicationIdentifier`) and the units (`BTAdBanner`,

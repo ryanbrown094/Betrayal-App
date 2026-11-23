@@ -1,14 +1,15 @@
 name: App Store Connect
 
-# One of ci/asc.py's tasks, by hand: check (only reads), screenshots, prepare (version and build: blank for the
-# project's version and its newest processed build), submit-preview (what would go, only reads) or submit. When
-# ci/asc.py changes on a push, it checks itself against App Store Connect: check and submit-preview, which only read.
+# One of ci/asc.py's tasks, by hand: check (only reads), adstxt (where AdMob looks for app-ads.txt, only reads),
+# screenshots, prepare (version and build: blank for the project's version and its newest processed build),
+# submit-preview (what would go, only reads) or submit. When ci/asc.py changes on a push, it checks itself against App
+# Store Connect: check, adstxt and submit-preview, which only read.
 on:
   workflow_dispatch:
     inputs:
       task:
         type: choice
-        options: [check, screenshots, prepare, submit-preview, submit]
+        options: [check, adstxt, screenshots, prepare, submit-preview, submit]
         default: check
       version:
         description: "Version (prepare): blank for the project's"
@@ -47,5 +48,6 @@ jobs:
             prepare) python3 ci/asc.py prepare "$V" $BUILD ;;
             submit-preview) python3 ci/asc.py submit ;;
             submit) python3 ci/asc.py submit --go ;;
-            self-check) python3 ci/asc.py check && python3 ci/asc.py submit || true ;;
+            adstxt) python3 ci/asc.py adstxt ;;
+            self-check) python3 ci/asc.py check && python3 ci/asc.py adstxt && python3 ci/asc.py submit || true ;;
           esac
