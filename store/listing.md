@@ -24,7 +24,7 @@ and the Forsworn type messages to each other in their chat); if it asks about **
 
 Everyone swore an oath tonight. Not everyone meant it. Gather your friends, play on your own phones, and find the Forsworn before they take the Purse.
 
-**Description** (2344/4000)
+**Description** (2374/4000)
 
 ```
 Everyone swore an oath tonight. Not everyone meant it.
@@ -50,7 +50,7 @@ PRACTISE ON YOUR OWN
 Practice against bots: they fill the Table and play every part, so you can learn the game before the party.
 
 FREE, OR AD-FREE
-Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host.
+Free games show a banner, and a short full-screen ad at each Reckoning, each night and the end (never during a Trial or a vote), and use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host.
 
 You'll need 8 to 24 players in one room, and a phone each. The game is made for adults.
 

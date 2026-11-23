@@ -56,20 +56,21 @@ final class Ads {
         }
     }
 
-    // loaded ahead of its moment, so showing one never waits, and while the table talks at the Reckoning (Session.adMoment):
-    // a load keeps the phone busy for a few seconds, so it never runs while anyone is tapping
-    func preload() {
-        guard ready, interstitial == nil, !loading else { return }
+    // loaded ahead of its moment, so showing one never waits, and only while nobody is tapping (Session.adMoment): a load
+    // keeps the phone busy for a few seconds. Whether a load started (none while one's loaded, loading or ads aren't on)
+    @discardableResult func preload() -> Bool {
+        guard ready, interstitial == nil, !loading else { return false }
         loading = true
         Task {
             defer { loading = false }
             interstitial = try? await InterstitialAd.load(with: Ads.interstitialUnit, request: Request())
             interstitial?.fullScreenContentDelegate = watcher
         }
+        return true
     }
 
-    // a player's phone at a natural break (placement P2 as each day starts, from the second round, P3 the results): shown if the limits allow and
-    // one is loaded
+    // a phone at a natural break (placement P2 as a Reckoning's debate starts, P7 at night once its choice is in, P3 the
+    // results): shown if the limits allow and one is loaded
     func interstitial(room: String, limits: AdsConfig, placement: String) {
         guard limits.enabled else { return }
         let n = shown[room] ?? 0
@@ -121,25 +122,30 @@ private final class Watcher: NSObject, FullScreenContentDelegate {
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) { Task { @MainActor in Ads.shared.closed() } }
 }
 
-// the lobby's banner (P1 a player's, P4 the host's): anchored, as wide as the phone's column
+// a free game's banner at the foot of the screen (P1 a player's lobby, P4 the host's; P5 a player's game, P6 the host's):
+// anchored, as wide as the phone's column, and the smaller size once the game starts, so the screens above keep their room
 struct AdBanner: View {
     let placement: String
+    var large = true
     @State private var width: CGFloat = 0
     // as wide as the space it's given (not the window's: the iPhone Duo folded keeps a narrower screen), and a new one
     // when that changes. Read with a GeometryReader, which takes the width it's offered whatever is in it, so the banner
     // can't widen what it's in: read from itself, a width taken before the iPhone Duo's sidebar came (520) held the
     // column beside it at 520 when it had 419, and the lobby spilled off both sides
     var body: some View {
-        let w = min(width, 520), size = w > 0 ? largeAnchoredAdaptiveBanner(width: w) : nil
+        let w = min(width, 520), size = w > 0 ? (large ? largeAnchoredAdaptiveBanner(width: w) : currentOrientationAnchoredAdaptiveBanner(width: w)) : nil
         GeometryReader { g in
             ZStack {
                 Color.clear.onAppear { width = g.size.width }.onChange(of: g.size.width) { _, x in width = x }
-                if let size { BannerBox(size: size).frame(width: size.size.width, height: size.size.height).id(Int(size.size.width)) }
+                if let size {
+                    BannerBox(size: size).frame(width: size.size.width, height: size.size.height)
+                        .id("\(Int(size.size.width))x\(Int(size.size.height))")
+                        .onAppear { Events.send("ad_requested", placement: placement) } // each new banner
+                }
             }
             .frame(width: g.size.width, height: g.size.height)
         }
         .frame(height: size?.size.height ?? 1)
-        .onAppear { Events.send("ad_requested", placement: placement) }
     }
 }
 
@@ -155,22 +161,26 @@ private struct BannerBox: UIViewRepresentable {
     func updateUIView(_ b: BannerView, context: Context) {}
 }
 
-// a free game's foot: the lobby's banner, and after a round, on a player's phone, who can end the ads (words only: a
-// player can't buy anything)
+// a free game's foot: the banner, all game, the lobby's included; and between Trials, on a player's phone, who can end
+// the ads (words only: a player can't buy anything)
 struct AdStrip: View {
     let v: Snapshot
     let me: Me
     @Environment(Session.self) private var session
     var body: some View {
         if session.tier.tier == "free", let ads = session.tier.ads, ads.enabled {
-            if v.phase == "lobby" {
-                // the host's banner gives way to the offer while it's showing (Offers, U1)
-                if ads.banner && Ads.shared.ready && !(me.director && Offers.lobbyDue(v, session)) { AdBanner(placement: me.director ? "P4" : "P1") }
-            } else if !me.director && ["day", "talk", "break", "end"].contains(v.phase) && v.round > ads.afterRound {
-                Text("The host can remove ads for everyone tonight.")
-                    .font(Theme.ui(14)).foregroundStyle(Theme.tallow2)
-                    .frame(maxWidth: .infinity).padding(.vertical, 8)
-                    .background(Theme.soot.opacity(0.85))
+            let lobby = v.phase == "lobby"
+            VStack(spacing: 0) {
+                if !lobby && !me.director && ["day", "talk", "break", "end"].contains(v.phase) && v.round > ads.afterRound {
+                    Text("The host can remove ads for everyone tonight.")
+                        .font(Theme.ui(14)).foregroundStyle(Theme.tallow2)
+                        .frame(maxWidth: .infinity).padding(.vertical, 8)
+                        .background(Theme.soot.opacity(0.85))
+                }
+                // one banner from the lobby on (the host's gives way to the offer in the lobby while it's showing, Offers U1)
+                if ads.banner && Ads.shared.ready && !(lobby && me.director && Offers.lobbyDue(v, session)) {
+                    AdBanner(placement: lobby ? (me.director ? "P4" : "P1") : (me.director ? "P6" : "P5"), large: lobby)
+                }
             }
         }
     }

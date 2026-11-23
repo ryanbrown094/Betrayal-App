@@ -7,9 +7,9 @@
 #   python3 ci/asc.py wait-build V B     until build V (B) has been processed (or fails)
 #   python3 ci/asc.py prepare V [B] [--on-approval]
 #                                        version V, made if no version can be edited, released by hand once approved
-#                                        (with --on-approval, as soon as App Review approves it): What's New
-#                                        (store/whats-new.txt), build B (else V's newest processed one), App Review's
-#                                        notes (store/review-notes.txt)
+#                                        (with --on-approval, as soon as App Review approves it): the description
+#                                        (store/listing.md's), What's New (store/whats-new.txt), build B (else V's
+#                                        newest processed one), App Review's notes (store/review-notes.txt)
 #   python3 ci/asc.py adstxt             where AdMob looks for app-ads.txt (the developer website on the App Store's
 #                                        public listing) and what's there, from outside: http and https, with and
 #                                        without www, as a browser and by a Google crawler's name. Only reads.
@@ -186,6 +186,12 @@ def prepare(v, b=None, on_approval=False):
         print(f"version {ver['attributes']['versionString']} ({state(ver)})" + (f": now {v}" if ver["attributes"]["versionString"] != v else ""))
     vid = ver["id"]
     print("   released " + ("as soon as App Review approves it" if on_approval else "by hand once approved"))
+    desc = description()
+    if not desc: print("   ::warning:: no description in store/listing.md: the version keeps the one it has")
+    else:
+        for loc in call("GET", f"/v1/appStoreVersions/{vid}/appStoreVersionLocalizations")["data"]:
+            r = call("PATCH", f"/v1/appStoreVersionLocalizations/{loc['id']}", {"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": {"description": desc}}}, ok=True)
+            print(f"   description ({loc['attributes']['locale']}, {len(desc)} characters): " + ("set" if "error" not in r else f"not set: {r['body'][:200]}"))
     if not os.path.exists("store/whats-new.txt"):
         print("   ::warning:: no store/whats-new.txt: an update needs its What's New before it can be submitted")
     else:
@@ -206,6 +212,11 @@ def prepare(v, b=None, on_approval=False):
         call("POST", "/v1/appStoreReviewDetails", {"data": {"type": "appStoreReviewDetails", "attributes": {"notes": notes, "demoAccountRequired": False},
                                                             "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}})
     print(f"   App Review's notes: store/review-notes.txt ({len(notes)} characters)")
+
+def description():  # the description in store/listing.md, the block under **Description**
+    try: m = re.search(r"\*\*Description\*\*[^\n]*\n+```\n(.*?)\n```", open("store/listing.md").read(), re.S)
+    except OSError: return None
+    return m.group(1).strip() if m else None
 
 def screenshots():
     from PIL import Image
