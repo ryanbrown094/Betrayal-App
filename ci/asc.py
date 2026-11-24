@@ -326,7 +326,7 @@ def event(go=False):
     aid = app_id()
     av = call("GET", f"/v1/apps/{aid}/appAvailabilityV2")["data"]
     terr = [t["relationships"]["territory"]["data"]["id"] for t in every(f"/v2/appAvailabilities/{av['id']}/territoryAvailabilities", include="territory") if t["attributes"].get("available")]
-    attrs = {k: c[k] for k in ("referenceName", "badge", "purpose", "priority", "primaryLocale", "purchaseRequirement") if k in c}
+    attrs = {k: c[k] for k in ("referenceName", "badge", "purpose", "priority", "primaryLocale", "purchaseRequirement", "deepLink") if k in c}
     attrs["territorySchedules"] = [{"territories": terr, "publishStart": c["publishStart"], "eventStart": c["eventStart"], "eventEnd": c["eventEnd"]}]
     ev = next((e for e in every(f"/v1/apps/{aid}/appEvents") if e["attributes"]["referenceName"] == c["referenceName"]), None)
     print(f"{c['referenceName']}: " + (f"there ({ev['attributes'].get('eventState')})" if ev else "new") + f"; {c['name']!r}, {c['eventStart']} to {c['eventEnd']}, seen from {c['publishStart']}, {len(terr)} territories")
