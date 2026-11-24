@@ -326,7 +326,7 @@ def event(go=False):
     aid = app_id()
     av = call("GET", f"/v1/apps/{aid}/appAvailabilityV2")["data"]
     terr = [t["relationships"]["territory"]["data"]["id"] for t in every(f"/v2/appAvailabilities/{av['id']}/territoryAvailabilities", include="territory") if t["attributes"].get("available")]
-    attrs = {k: c[k] for k in ("referenceName", "badge", "purpose", "priority", "primaryLocale")}
+    attrs = {k: c[k] for k in ("referenceName", "badge", "purpose", "priority", "primaryLocale", "purchaseRequirement") if k in c}
     attrs["territorySchedules"] = [{"territories": terr, "publishStart": c["publishStart"], "eventStart": c["eventStart"], "eventEnd": c["eventEnd"]}]
     ev = next((e for e in every(f"/v1/apps/{aid}/appEvents") if e["attributes"]["referenceName"] == c["referenceName"]), None)
     print(f"{c['referenceName']}: " + (f"there ({ev['attributes'].get('eventState')})" if ev else "new") + f"; {c['name']!r}, {c['eventStart']} to {c['eventEnd']}, seen from {c['publishStart']}, {len(terr)} territories")
@@ -406,7 +406,7 @@ def submit(go=False):
         if (typ, iid) in have: print(f"   already in: {what}"); continue
         r = call("POST", "/v1/reviewSubmissionItems", {"data": {"type": "reviewSubmissionItems", "relationships": {
             "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": sub["id"]}}, rel: {"data": {"type": typ, "id": iid}}}}}, ok=True)
-        print(f"   added: {what}" if "error" not in r else f"   not added: {what}: {r['body'][:300]}")
+        print(f"   added: {what}" if "error" not in r else f"   not added: {what}: {r['body'][:2500]}")
     r = call("PATCH", f"/v1/reviewSubmissions/{sub['id']}", {"data": {"type": "reviewSubmissions", "id": sub["id"], "attributes": {"submitted": True}}}, ok=True)
     print("submitted to App Review" if "error" not in r else f"not submitted: {r['body']}")
     if "error" in r: sys.exit(1)
