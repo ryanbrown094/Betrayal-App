@@ -206,8 +206,14 @@ Connect API (`ci/asc.py`) and the key in the `ASC_KEY_ID`, `ASC_ISSUER_ID` and `
 3. Once App Review approves it, it goes live (with **on_approval** off, release it in App Store Connect).
 
 Actions → **App Store Connect** runs one task by hand: `check` (only reads: the app's versions, and each pass's
-versions, wording, price and territories), `screenshots`, `prepare`, `submit-preview` (what would go, only reads) or
-`submit`. **Upload to App Store Connect** only builds and uploads. App Privacy, age rating and the reply to a message
+versions, wording, price and territories), `adstxt` (where AdMob looks for `app-ads.txt`), `analytics` (Apple's
+reports: impressions, page views and downloads by source), `promo` (`store/listing.md`'s promotional text, live without
+a new version), `pages` (the custom product pages in `store/custom-pages.json`: each a copy of the live page with its
+own promotional text and keywords, which must be among the live version's), `event` (the In-App Event in
+`store/event.json`, with its pictures in `store/event/`), `screenshots`, `prepare`, `submit-preview` (what would go,
+only reads) or `submit` (a version, passes, custom pages and events that are ready; pages and events can go while a
+version is with App Review). A release's `prepare` also sends the description, keywords and promotional text from
+`store/listing.md`. **Upload to App Store Connect** only builds and uploads. App Privacy, age rating and the reply to a message
 from App Review have no API, and stay on the website.
 
 ## Not checked yet

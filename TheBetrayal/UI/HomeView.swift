@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 
 // What the start screen opens: a Table, and how (as a player, as a player joining with the name saved on this phone,
 // as the host setting it up, or as the TV)
@@ -12,11 +13,30 @@ struct Target: Hashable {
 // The start screen's own screens, before a Table
 enum Route: Hashable { case join, host, passes, tv, table(Target) }
 
+// Apple's rating prompt: back on the start screen after a phone has seen a game through to its results, at most every
+// two months (and Apple shows it no more than three times a year, whatever is asked)
+enum Review {
+    private static let finishedKey = "bt-finished", askedKey = "bt-review-asked"
+    static func finished(_ room: String) {
+        let d = UserDefaults.standard, seen = d.stringArray(forKey: finishedKey) ?? []
+        if !seen.contains(room) { d.set(Array((seen + [room]).suffix(20)), forKey: finishedKey) }
+    }
+    static var due: Bool {
+        let d = UserDefaults.standard
+        return !(d.stringArray(forKey: finishedKey) ?? []).isEmpty && Date().timeIntervalSince1970 - d.double(forKey: askedKey) > 60 * 86400
+    }
+    static func asked() {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: askedKey)
+        UserDefaults.standard.removeObject(forKey: finishedKey) // the next ask waits for another finished game
+    }
+}
+
 // The start screen: two choices, join a Table or host one, and the rest underneath (practice, the passes, how to play,
 // the questions, setting up a TV). Joining takes a Table's code (typed, scanned or from a link) and a name; hosting opens
 // a Table, free or with a pass. The same calls as the website's home page (site/index.html: open, go, subChoice); buying is the App Store's
 // (Model/Shop.swift).
 struct HomeView: View {
+    @Environment(\.requestReview) private var requestReview
     @State private var path: [Route] = []
     @State private var scanning = false
     @State private var page: Page?
@@ -141,6 +161,10 @@ struct HomeView: View {
         .modifier(WidthReader(width: $width))
         .background(Backdrop())
         .toolbar(.hidden, for: .navigationBar)
+        .onChange(of: path.isEmpty) { _, home in // back on the start screen from a Table
+            guard home, Review.due else { return }
+            Task { try? await Task.sleep(for: .seconds(1.5)); Review.asked(); requestReview() } // once it has settled
+        }
     }
 
     // joining, hosting, the passes and the TV: beside the sidebar when wide, else a page of their own
