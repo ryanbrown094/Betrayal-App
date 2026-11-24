@@ -42,7 +42,8 @@ def token():
     if not _token or _token[1] < time.time() + 60:
         import jwt
         exp = int(time.time()) + 1100
-        _token = (jwt.encode({"iss": os.environ["ISSUER"], "iat": int(time.time()), "exp": exp, "aud": "appstoreconnect-v1"},
+        # issued a minute back, in case a runner's clock is a little ahead of Apple's (one run got a 401 out of the blue)
+        _token = (jwt.encode({"iss": os.environ["ISSUER"], "iat": int(time.time()) - 60, "exp": exp, "aud": "appstoreconnect-v1"},
                              os.environ["P8"], algorithm="ES256", headers={"kid": os.environ["KEY_ID"], "typ": "JWT"}), exp)
     return _token[0]
 
