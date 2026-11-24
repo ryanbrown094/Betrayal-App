@@ -291,7 +291,7 @@ def pages(go=False):
     aid = app_id()
     live = next((v for v in versions(aid) if state(v) in ("READY_FOR_DISTRIBUTION", "READY_FOR_SALE")), None)
     if not live: sys.exit("no live version to copy")
-    words = {k["id"].lower(): k["id"] for k in every(f"/v1/apps/{aid}/searchKeywords")}
+    words = {k["id"].lower(): k["id"] for k in every(f"/v1/apps/{aid}/searchKeywords", **{"filter[locale]": "en-GB", "filter[platform]": "IOS"})}
     print("keywords a page can take (the live version's):", ", ".join(sorted(words.values())) or "none")
     have = {p["attributes"]["name"]: p for p in every(f"/v1/apps/{aid}/appCustomProductPages")}
     for c in cfg:
