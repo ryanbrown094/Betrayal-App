@@ -60,10 +60,10 @@ Terms of use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy: https://thebetrayal.co.uk/app-privacy
 ```
 
-**Keywords** (99/100; words in the name and subtitle are already searched, so they're not repeated)
+**Keywords** (96/100; words in the name and subtitle are already searched, so they're not repeated. Before 1.4 the live field, set in App Store Connect, was: social deduction, traitors, traitor, mystery, bluff, deception, liar, group, friends, quiz, werewolf, mafia)
 
 ```
-social deduction,hidden roles,mystery,murder,deception,christmas,friends,quiz,trivia,werewolf,mafia
+social deduction,traitors,traitor,mystery,murder,deception,christmas,friends,quiz,werewolf,mafia
 ```
 
 | field | value |
