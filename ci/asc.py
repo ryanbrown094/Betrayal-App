@@ -10,6 +10,15 @@
 #                                        (with --on-approval, as soon as App Review approves it): the description
 #                                        (store/listing.md's), What's New (store/whats-new.txt), build B (else V's
 #                                        newest processed one), App Review's notes (store/review-notes.txt)
+#   python3 ci/asc.py promo              store/listing.md's promotional text on the live version (and one with App
+#                                        Review): it changes without a new version
+#   python3 ci/asc.py analytics          Apple's analytics reports for the app (asked for once, ongoing; they come a
+#                                        day or two later): impressions, page views and downloads by source, 14 days
+#   python3 ci/asc.py pages [--go]       the custom product pages in store/custom-pages.json (each a copy of the live
+#                                        page with its own promotional text and keywords); without --go, a preview
+#   python3 ci/asc.py event [--go]       the In-App Event in store/event.json, with its two pictures; without --go, a
+#                                        preview. submit sends custom pages and events that are ready, with or
+#                                        without a version
 #   python3 ci/asc.py adstxt             where AdMob looks for app-ads.txt (the developer website on the App Store's
 #                                        public listing) and what's there, from outside: http and https, with and
 #                                        without www, as a browser and by a Google crawler's name. Only reads.
@@ -96,6 +105,7 @@ def territories(path):
 # ---------------------------------------------------------------------------------------------------------------
 def check():
     aid = app_id()
+    print(f"the app: Apple ID {aid}, https://apps.apple.com/app/id{aid}")
     av = call("GET", f"/v1/apps/{aid}/appAvailabilityV2", ok=True).get("data")
     if av: print(f"the app: available in new territories {av['attributes'].get('availableInNewTerritories')}, territories {territories('/v2/appAvailabilities/' + av['id'] + '/territoryAvailabilities')}")
     for i, v in enumerate(versions(aid)[:5]):
@@ -186,12 +196,12 @@ def prepare(v, b=None, on_approval=False):
         print(f"version {ver['attributes']['versionString']} ({state(ver)})" + (f": now {v}" if ver["attributes"]["versionString"] != v else ""))
     vid = ver["id"]
     print("   released " + ("as soon as App Review approves it" if on_approval else "by hand once approved"))
-    desc = description()
-    if not desc: print("   ::warning:: no description in store/listing.md: the version keeps the one it has")
-    else:
+    words = listing()
+    for k in ("description", "keywords", "promotionalText"):
+        if not words.get(k): print(f"   ::warning:: no {k} in store/listing.md: the version keeps the one it has"); continue
         for loc in call("GET", f"/v1/appStoreVersions/{vid}/appStoreVersionLocalizations")["data"]:
-            r = call("PATCH", f"/v1/appStoreVersionLocalizations/{loc['id']}", {"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": {"description": desc}}}, ok=True)
-            print(f"   description ({loc['attributes']['locale']}, {len(desc)} characters): " + ("set" if "error" not in r else f"not set: {r['body'][:200]}"))
+            r = call("PATCH", f"/v1/appStoreVersionLocalizations/{loc['id']}", {"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": {k: words[k]}}}, ok=True)
+            print(f"   {k} ({loc['attributes']['locale']}, {len(words[k])} characters): " + ("set" if "error" not in r else f"not set: {r['body'][:200]}"))
     if not os.path.exists("store/whats-new.txt"):
         print("   ::warning:: no store/whats-new.txt: an update needs its What's New before it can be submitted")
     else:
@@ -213,10 +223,131 @@ def prepare(v, b=None, on_approval=False):
                                                             "relationships": {"appStoreVersion": {"data": {"type": "appStoreVersions", "id": vid}}}}})
     print(f"   App Review's notes: store/review-notes.txt ({len(notes)} characters)")
 
-def description():  # the description in store/listing.md, the block under **Description**
-    try: m = re.search(r"\*\*Description\*\*[^\n]*\n+```\n(.*?)\n```", open("store/listing.md").read(), re.S)
-    except OSError: return None
-    return m.group(1).strip() if m else None
+def listing():  # store/listing.md's words: the promotional text (the paragraph under it), the description and the keywords (their blocks)
+    try: t = open("store/listing.md").read()
+    except OSError: return {}
+    out, m = {}, re.search(r"\*\*Promotional text\*\*[^\n]*\n+(.+?)\n\n", t, re.S)
+    if m: out["promotionalText"] = m.group(1).strip()
+    for k, label in (("description", "Description"), ("keywords", "Keywords")):
+        m = re.search(r"\*\*" + label + r"\*\*[^\n]*\n+```\n(.*?)\n```", t, re.S)
+        if m: out[k] = m.group(1).strip()
+    return out
+
+def upload(path, kind, attrs, rel):  # a picture into an asset slot (an app screenshot or an event's): reserve, send the parts, commit
+    data = open(path, "rb").read()
+    item = call("POST", f"/v1/{kind}", {"data": {"type": kind, "attributes": {"fileName": os.path.basename(path), "fileSize": len(data), **attrs}, "relationships": rel}})["data"]
+    for op in item["attributes"]["uploadOperations"]:
+        req = urllib.request.Request(op["url"], data=data[op["offset"]:op["offset"] + op["length"]], method=op["method"],
+                                     headers={h["name"]: h["value"] for h in op.get("requestHeaders", [])})
+        with urllib.request.urlopen(req) as r: r.read()
+    done = {"uploaded": True} if kind == "appEventScreenshots" else {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest()}
+    call("PATCH", f"/v1/{kind}/{item['id']}", {"data": {"type": kind, "id": item["id"], "attributes": done}})
+    return item["id"]
+
+def promo():
+    text = listing().get("promotionalText")
+    if not text: sys.exit("no promotional text in store/listing.md")
+    if len(text) > 170: sys.exit(f"the promotional text is {len(text)} characters: 170 at most")
+    aid = app_id()
+    for v in versions(aid)[:2]:
+        for loc in call("GET", f"/v1/appStoreVersions/{v['id']}/appStoreVersionLocalizations")["data"]:
+            r = call("PATCH", f"/v1/appStoreVersionLocalizations/{loc['id']}", {"data": {"type": "appStoreVersionLocalizations", "id": loc["id"], "attributes": {"promotionalText": text}}}, ok=True)
+            print(f"version {v['attributes']['versionString']} ({state(v)}) {loc['attributes']['locale']}: promotional text " + ("set" if "error" not in r else f"not set: {r['body'][:200]}"))
+    print(f"   {text}")
+
+REPORTS = ("App Store Discovery and Engagement Standard", "App Downloads Standard")
+def analytics(days=14):
+    import csv, gzip, io, collections
+    aid = app_id()
+    on = [r for r in every(f"/v1/apps/{aid}/analyticsReportRequests") if r["attributes"].get("accessType") == "ONGOING" and not r["attributes"].get("stoppedDueToInactivity")]
+    if not on:
+        r = call("POST", "/v1/analyticsReportRequests", {"data": {"type": "analyticsReportRequests", "attributes": {"accessType": "ONGOING"},
+                                                                  "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}}, ok=True)
+        print("asked Apple for the app's analytics reports, from now on: " + ("they come a day or two later" if "error" not in r else f"refused: {r['body'][:300]}")); return
+    reports = every(f"/v1/analyticsReportRequests/{on[0]['id']}/reports")
+    print(f"{len(reports)} reports ready to read")
+    for rep in reports:
+        if rep["attributes"]["name"] not in REPORTS: continue
+        inst = sorted(every(f"/v1/analyticsReports/{rep['id']}/instances", **{"filter[granularity]": "DAILY"}), key=lambda i: i["attributes"]["processingDate"])[-days:]
+        print(f"\n{rep['attributes']['name']}: " + (f"{inst[0]['attributes']['processingDate']} to {inst[-1]['attributes']['processingDate']}" if inst else "nothing yet"))
+        tot, cols = collections.Counter(), None
+        for i in inst:
+            for seg in every(f"/v1/analyticsReportInstances/{i['id']}/segments"):
+                with urllib.request.urlopen(seg["attributes"]["url"]) as r: raw = r.read()
+                try: raw = gzip.decompress(raw)
+                except OSError: pass
+                text = raw.decode("utf-8", "replace")
+                rows = list(csv.DictReader(io.StringIO(text), delimiter="\t" if text.count("\t") > text.count(",") else ","))
+                if rows and cols is None: cols = list(rows[0])
+                for row in rows:
+                    key = " · ".join(row[k] for k in ("Event", "Download Type", "Source Type", "Page Type") if row.get(k))
+                    try: tot[key] += int(float(row.get("Counts") or row.get("Count") or 0))
+                    except ValueError: pass
+        if cols: print("   columns:", ", ".join(cols))
+        for k, n in tot.most_common(30): print(f"   {n:>7}  {k or '(all)'}")
+
+def pages(go=False):
+    cfg = json.load(open("store/custom-pages.json"))
+    aid = app_id()
+    live = next((v for v in versions(aid) if state(v) in ("READY_FOR_DISTRIBUTION", "READY_FOR_SALE")), None)
+    if not live: sys.exit("no live version to copy")
+    words = {k["id"].lower(): k["id"] for k in every(f"/v1/apps/{aid}/searchKeywords")}
+    print("keywords a page can take (the live version's):", ", ".join(sorted(words.values())) or "none")
+    have = {p["attributes"]["name"]: p for p in every(f"/v1/apps/{aid}/appCustomProductPages")}
+    for c in cfg:
+        if len(c["promo"]) > 170: sys.exit(f"{c['name']}: promotional text {len(c['promo'])} characters, 170 at most")
+        page, ids = have.get(c["name"]), [words[k.lower()] for k in c["keywords"] if k.lower() in words]
+        missing = [k for k in c["keywords"] if k.lower() not in words]
+        print(f"\n{c['name']}: " + ("there" if page else "new") + f"; keywords {', '.join(ids) or 'none'}" + (f" (not the app's, left out: {', '.join(missing)})" if missing else ""))
+        if not go: continue
+        if not page:
+            r = call("POST", "/v1/appCustomProductPages", {"data": {"type": "appCustomProductPages", "attributes": {"name": c["name"]}, "relationships": {
+                        "app": {"data": {"type": "apps", "id": aid}}, "appStoreVersionTemplate": {"data": {"type": "appStoreVersions", "id": live["id"]}},
+                        "appCustomProductPageVersions": {"data": [{"type": "appCustomProductPageVersions", "id": "${v}"}]}}},
+                    "included": [{"type": "appCustomProductPageVersions", "id": "${v}", "relationships": {"appCustomProductPage": {}, "appCustomProductPageLocalizations": {
+                                     "data": [{"type": "appCustomProductPageLocalizations", "id": "${l}"}]}}},
+                                 {"type": "appCustomProductPageLocalizations", "id": "${l}", "attributes": {"locale": "en-GB", "promotionalText": c["promo"]}}]}, ok=True)
+            if "error" in r: print(f"   not made: {r['body'][:500]}"); continue
+            page = r["data"]; print(f"   made: {page['attributes'].get('url')}")
+        vers = every(f"/v1/appCustomProductPages/{page['id']}/appCustomProductPageVersions")
+        ver = next((v for v in vers if v["attributes"].get("state") in ("PREPARE_FOR_SUBMISSION", "READY_FOR_REVIEW", "REJECTED")), None)
+        if not ver: print("   no version that can be edited: " + ", ".join(v["attributes"].get("state", "?") for v in vers)); continue
+        for loc in every(f"/v1/appCustomProductPageVersions/{ver['id']}/appCustomProductPageLocalizations"):
+            r = call("PATCH", f"/v1/appCustomProductPageLocalizations/{loc['id']}", {"data": {"type": "appCustomProductPageLocalizations", "id": loc["id"], "attributes": {"promotionalText": c["promo"]}}}, ok=True)
+            k = call("POST", f"/v1/appCustomProductPageLocalizations/{loc['id']}/relationships/searchKeywords", {"data": [{"type": "appKeywords", "id": i} for i in ids]}, ok=True) if ids else {}
+            sets = call("GET", f"/v1/appCustomProductPageLocalizations/{loc['id']}/appScreenshotSets", ok=True).get("data") or []
+            print(f"   {loc['attributes']['locale']}: promotional text " + ("set" if "error" not in r else f"not set: {r['body'][:200]}") +
+                  "; keywords " + ("set" if "error" not in k else f"not set: {k['body'][:300]}") + f"; {len(sets)} screenshot sets from the live page")
+
+def event(go=False):
+    c = json.load(open("store/event.json"))
+    for k, most in (("name", 30), ("shortDescription", 50), ("longDescription", 120)):
+        if len(c[k]) > most: sys.exit(f"the event's {k} is {len(c[k])} characters: {most} at most")
+    aid = app_id()
+    av = call("GET", f"/v1/apps/{aid}/appAvailabilityV2")["data"]
+    terr = [t["relationships"]["territory"]["data"]["id"] for t in every(f"/v2/appAvailabilities/{av['id']}/territoryAvailabilities", include="territory") if t["attributes"].get("available")]
+    attrs = {k: c[k] for k in ("referenceName", "badge", "purpose", "priority", "primaryLocale")}
+    attrs["territorySchedules"] = [{"territories": terr, "publishStart": c["publishStart"], "eventStart": c["eventStart"], "eventEnd": c["eventEnd"]}]
+    ev = next((e for e in every(f"/v1/apps/{aid}/appEvents") if e["attributes"]["referenceName"] == c["referenceName"]), None)
+    print(f"{c['referenceName']}: " + (f"there ({ev['attributes'].get('eventState')})" if ev else "new") + f"; {c['name']!r}, {c['eventStart']} to {c['eventEnd']}, seen from {c['publishStart']}, {len(terr)} territories")
+    if not go: return
+    if not ev:
+        ev = call("POST", "/v1/appEvents", {"data": {"type": "appEvents", "attributes": attrs, "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}})["data"]
+        print("   made")
+    elif ev["attributes"].get("eventState") in ("DRAFT", "READY_FOR_REVIEW", "REJECTED"):
+        call("PATCH", f"/v1/appEvents/{ev['id']}", {"data": {"type": "appEvents", "id": ev["id"], "attributes": attrs}}); print("   updated")
+    else: print("   with App Review or past it: left as it is"); return
+    words = {k: c[k] for k in ("name", "shortDescription", "longDescription")}
+    loc = next((l for l in every(f"/v1/appEvents/{ev['id']}/localizations") if l["attributes"]["locale"] == c["primaryLocale"]), None)
+    if loc: call("PATCH", f"/v1/appEventLocalizations/{loc['id']}", {"data": {"type": "appEventLocalizations", "id": loc["id"], "attributes": words}})
+    else: loc = call("POST", "/v1/appEventLocalizations", {"data": {"type": "appEventLocalizations", "attributes": {"locale": c["primaryLocale"], **words},
+                                                                   "relationships": {"appEvent": {"data": {"type": "appEvents", "id": ev["id"]}}}}})["data"]
+    print(f"   {c['primaryLocale']}: {words['name']!r} · {words['shortDescription']!r}")
+    shots = {s["attributes"].get("appEventAssetType"): s for s in every(f"/v1/appEventLocalizations/{loc['id']}/appEventScreenshots")}
+    for kind, f in (("EVENT_CARD", c["card"]), ("EVENT_DETAILS_PAGE", c["details"])):
+        if kind in shots: call("DELETE", f"/v1/appEventScreenshots/{shots[kind]['id']}")
+        upload(f, "appEventScreenshots", {"appEventAssetType": kind}, {"appEventLocalization": {"data": {"type": "appEventLocalizations", "id": loc["id"]}}})
+        print(f"   {kind}: {f}")
 
 def screenshots():
     from PIL import Image
@@ -238,37 +369,38 @@ def screenshots():
             for o in old: call("DELETE", f"/v1/appScreenshots/{o['id']}")
             ids = []
             for f in match[1]:
-                data = open(f, "rb").read()
-                shot = call("POST", "/v1/appScreenshots", {"data": {"type": "appScreenshots", "attributes": {"fileName": os.path.basename(f), "fileSize": len(data)},
-                                                                    "relationships": {"appScreenshotSet": {"data": {"type": "appScreenshotSets", "id": s["id"]}}}}})["data"]
-                for op in shot["attributes"]["uploadOperations"]:
-                    req = urllib.request.Request(op["url"], data=data[op["offset"]:op["offset"] + op["length"]], method=op["method"],
-                                                 headers={h["name"]: h["value"] for h in op.get("requestHeaders", [])})
-                    with urllib.request.urlopen(req) as r: r.read()
-                call("PATCH", f"/v1/appScreenshots/{shot['id']}", {"data": {"type": "appScreenshots", "id": shot["id"], "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest()}}})
-                ids.append(shot["id"])
+                ids.append(upload(f, "appScreenshots", {}, {"appScreenshotSet": {"data": {"type": "appScreenshotSets", "id": s["id"]}}}))
             call("PATCH", f"/v1/appScreenshotSets/{s['id']}/relationships/appScreenshots", {"data": [{"type": "appScreenshots", "id": i} for i in ids]})
             done.add(match[0])
     print("   not sent (no set of that size):", ", ".join(sorted(n for n, _ in ours.values() if n not in done)) or "none")
 
 def submit(go=False):
-    aid = app_id(); ver = editable(aid)
-    if ver is None: sys.exit("no version that can be edited: nothing to submit")
-    vid = ver["id"]
-    b = call("GET", f"/v1/appStoreVersions/{vid}/build", ok=True).get("data")
-    if not b: sys.exit(f"version {ver['attributes']['versionString']} has no build: run prepare first")
-    items = [("appStoreVersion", "appStoreVersions", vid, f"version {ver['attributes']['versionString']} ({b['attributes']['version']})")]
-    for kind, pid, name, st in passes(aid):
-        for v, _ in pass_versions(kind, pid):
+    aid = app_id(); ver = editable(aid); items = []
+    if ver is not None:
+        vid = ver["id"]
+        b = call("GET", f"/v1/appStoreVersions/{vid}/build", ok=True).get("data")
+        if not b: sys.exit(f"version {ver['attributes']['versionString']} has no build: run prepare first")
+        items.append(("appStoreVersion", "appStoreVersions", vid, f"version {ver['attributes']['versionString']} ({b['attributes']['version']})"))
+        for kind, pid, name, st in passes(aid):
+            for v, _ in pass_versions(kind, pid):
+                if v["attributes"].get("state") in GOING:
+                    rel, typ = ITEM[kind]
+                    items.append((rel, typ, v["id"], f"{kind} {name!r} version {v['attributes'].get('version')} ({v['attributes'].get('state')})"))
+    # custom product pages and In-App Events go on their own too, while a version is with App Review
+    for pg in every(f"/v1/apps/{aid}/appCustomProductPages"):
+        for v in every(f"/v1/appCustomProductPages/{pg['id']}/appCustomProductPageVersions"):
             if v["attributes"].get("state") in GOING:
-                rel, typ = ITEM[kind]
-                items.append((rel, typ, v["id"], f"{kind} {name!r} version {v['attributes'].get('version')} ({v['attributes'].get('state')})"))
+                items.append(("appCustomProductPageVersion", "appCustomProductPageVersions", v["id"], f"custom page {pg['attributes']['name']!r} ({v['attributes'].get('state')})"))
+    for e in every(f"/v1/apps/{aid}/appEvents"):
+        if e["attributes"].get("eventState") in ("DRAFT", "READY_FOR_REVIEW"):
+            items.append(("appEvent", "appEvents", e["id"], f"event {e['attributes']['referenceName']!r} ({e['attributes'].get('eventState')})"))
+    if not items: print("nothing to submit (no version that can be edited, nor a custom page or event waiting)"); return
     print("to App Review, together:"); [print("   " + x[3]) for x in items]
     if not go: print("(a preview: run with --go to submit)"); return
     drafts = [r for r in every(f"/v1/apps/{aid}/reviewSubmissions", **{"filter[platform]": "IOS"}) if r["attributes"].get("state") == "READY_FOR_REVIEW"]
     sub = drafts[0] if drafts else call("POST", "/v1/reviewSubmissions", {"data": {"type": "reviewSubmissions", "attributes": {"platform": "IOS"},
                                                                                    "relationships": {"app": {"data": {"type": "apps", "id": aid}}}}})["data"]
-    have = {(r.get("type"), r.get("id")) for it in every(f"/v1/reviewSubmissions/{sub['id']}/items", include="appStoreVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion")
+    have = {(r.get("type"), r.get("id")) for it in every(f"/v1/reviewSubmissions/{sub['id']}/items", include="appStoreVersion,inAppPurchaseVersion,subscriptionVersion,subscriptionGroupVersion,appCustomProductPageVersion,appEvent")
             for r in [d.get("data") or {} for d in it.get("relationships", {}).values()]}
     for rel, typ, iid, what in items:
         if (typ, iid) in have: print(f"   already in: {what}"); continue
@@ -281,7 +413,7 @@ def submit(go=False):
 
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | screenshots | submit [--go]")
+    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go]")
     cmd = a[0]
     if cmd == "check": check()
     elif cmd == "next-build": next_build()
@@ -290,8 +422,12 @@ if __name__ == "__main__":
         p = [x for x in a[1:] if not x.startswith("--")]
         prepare(p[0], p[1] if len(p) > 1 else None, "--on-approval" in a)
     elif cmd == "adstxt": adstxt()
+    elif cmd == "promo": promo()
+    elif cmd == "analytics": analytics()
+    elif cmd == "pages": pages("--go" in a)
+    elif cmd == "event": event("--go" in a)
     elif cmd == "screenshots": screenshots()
     elif cmd == "submit": submit("--go" in a)
-    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | screenshots | submit [--go]")
+    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go]")
 
 # (checked against App Store Connect on 2026-11-16)

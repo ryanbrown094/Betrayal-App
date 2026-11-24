@@ -1,15 +1,17 @@
 name: App Store Connect
 
 # One of ci/asc.py's tasks, by hand: check (only reads), adstxt (where AdMob looks for app-ads.txt, only reads),
+# analytics (Apple's reports: asked for once, then read), promo (the promotional text, live), pages-preview / pages (the
+# custom product pages in store/custom-pages.json), event-preview / event (the In-App Event in store/event.json),
 # screenshots, prepare (version and build: blank for the project's version and its newest processed build),
-# submit-preview (what would go, only reads) or submit. When ci/asc.py changes on a push, it checks itself against App
-# Store Connect: check, adstxt and submit-preview, which only read.
+# submit-preview (what would go, only reads) or submit (a version, passes, custom pages and events that are ready). When
+# ci/asc.py changes on a push, it checks itself against App Store Connect with the tasks that only read.
 on:
   workflow_dispatch:
     inputs:
       task:
         type: choice
-        options: [check, adstxt, screenshots, prepare, submit-preview, submit]
+        options: [check, adstxt, analytics, promo, pages-preview, pages, event-preview, event, screenshots, prepare, submit-preview, submit]
         default: check
       version:
         description: "Version (prepare): blank for the project's"
@@ -49,5 +51,11 @@ jobs:
             submit-preview) python3 ci/asc.py submit ;;
             submit) python3 ci/asc.py submit --go ;;
             adstxt) python3 ci/asc.py adstxt ;;
-            self-check) python3 ci/asc.py check && python3 ci/asc.py adstxt && python3 ci/asc.py submit || true ;;
+            analytics) python3 ci/asc.py analytics ;;
+            promo) python3 ci/asc.py promo ;;
+            pages-preview) python3 ci/asc.py pages ;;
+            pages) python3 ci/asc.py pages --go ;;
+            event-preview) python3 ci/asc.py event ;;
+            event) python3 ci/asc.py event --go ;;
+            self-check) python3 ci/asc.py check && python3 ci/asc.py adstxt && python3 ci/asc.py pages && python3 ci/asc.py event && python3 ci/asc.py submit || true ;;
           esac

@@ -1,0 +1,15 @@
+{
+ "referenceName": "Christmas Quiz 2026",
+ "badge": "SPECIAL_EVENT",
+ "purpose": "ATTRACT_NEW_USERS",
+ "priority": "HIGH",
+ "primaryLocale": "en-GB",
+ "publishStart": "2026-11-27T00:00:00Z",
+ "eventStart": "2026-12-01T00:00:00Z",
+ "eventEnd": "2026-12-31T23:00:00Z",
+ "name": "The Christmas Quiz",
+ "shortDescription": "The Quiz Trial goes Christmas all December",
+ "longDescription": "All December, the Quiz Trial's fifteen questions are all about Christmas, and Most Likely To goes festive. Free to play.",
+ "card": "store/event/card.jpg",
+ "details": "store/event/details.png"
+}

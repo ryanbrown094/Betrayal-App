@@ -170,6 +170,7 @@ final class Session {
                 return say("You’re no longer at this Table. Type your name to join it again.", error: true)
             }
             view = v; off = v.now - local; changed()
+            if v.phase == "end", v.me != nil, !demo, !isTV { Review.finished(room) } // the rating prompt waits for this
         }
         if let t = Tier(j["room"]["tier"]), t != tier { tier = t }
         if tier.tier == "free", tier.ads?.enabled == true, !isTV, !demo { Ads.shared.prepare() }

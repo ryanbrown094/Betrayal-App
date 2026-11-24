@@ -20,9 +20,9 @@ and the Forsworn type messages to each other in their chat); if it asks about **
 
 ## The version page
 
-**Promotional text** (150/170, can change without a new version)
+**Promotional text** (150/170, can change without a new version: `ci/asc.py promo`. From January, back to: *Everyone swore an oath tonight. Not everyone meant it. Gather your friends, play on your own phones, and find the Forsworn before they take the Purse.*)
 
-Everyone swore an oath tonight. Not everyone meant it. Gather your friends, play on your own phones, and find the Forsworn before they take the Purse.
+Christmas sorted: one room, 8 to 24 friends, a phone each. All December the Quiz is Christmas questions. Find the Forsworn before they take the Purse.
 
 **Description** (2374/4000)
 
@@ -63,7 +63,7 @@ Privacy: https://thebetrayal.co.uk/app-privacy
 **Keywords** (99/100; words in the name and subtitle are already searched, so they're not repeated)
 
 ```
-social deduction,hidden roles,mystery,bluff,deception,liar,group,friends,quiz,trivia,werewolf,mafia
+social deduction,hidden roles,mystery,murder,deception,christmas,friends,quiz,trivia,werewolf,mafia
 ```
 
 | field | value |
