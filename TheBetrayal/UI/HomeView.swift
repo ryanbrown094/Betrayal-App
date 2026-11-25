@@ -74,12 +74,12 @@ struct HomeView: View {
         }
         var message: String {
             switch self {
-            case .regular: return "Carry on with it, or start a new one? A new game closes the one that’s open."
+            case .regular: return "Do you want to carry on with it, or start a new one? Starting a new game closes the one that’s open."
             case .test: return "Play Modern with real phones, or against bots that play by themselves."
             case .usePass(_, let host, let until):
-                if host { return "Your Host Pass makes this game ad-free, with every Trial." }
-                if let until { return "Your Night Pass makes this game ad-free, with every Trial. Its 24 hours run until " + until.formatted(date: .omitted, time: .shortened) + "." }
-                return "Your Night Pass makes tonight ad-free, with every Trial. Its 24 hours start now."
+                if host { return "Your Host Pass makes this game ad-free for everyone, with every Trial." }
+                if let until { return "Your Night Pass makes this game ad-free for everyone, with every Trial. Its 24 hours last until " + until.formatted(date: .omitted, time: .shortened) + "." }
+                return "Your Night Pass makes tonight ad-free for everyone, with every Trial. If you use it, its 24 hours start now."
             }
         }
     }
@@ -321,7 +321,7 @@ struct HomeView: View {
     private var joinScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Join a game")
-            Sub("Type the Table code from the host’s phone or the TV, or scan its QR code.")
+            Sub("Type the Table code. It’s the six letters and numbers on the host’s phone or the TV. Or scan the QR code instead.")
             // each label just above its own field
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -344,28 +344,28 @@ struct HomeView: View {
     private var tvScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Set up a TV")
-            Sub("The TV shows the game to the whole room: the Table, the Trials, the votes and the reveals, with music. Never anyone’s role. It’s optional.")
+            Sub("A TV is optional, but it turns the game into a show. It shows the whole room who’s playing, the Trials, the votes and the reveals, with music. It never shows anyone’s secret role.")
             Label2("This screen as the TV")
-            Small("On an iPad or a spare phone: connect it to the TV with a cable or AirPlay, or stand it where everyone can see it. Type the Table code from the host’s phone.")
+            Small("Use an iPad or a spare phone. Connect it to the TV with a cable or AirPlay, or just stand it where everyone can see it. Then type the Table code from the host’s phone.")
             VStack(spacing: 10) {
                 Field(placeholder: "ABC123", text: $tableCode, code: true, submit: watchTable)
                 Button("Use this screen as the TV", action: watchTable).btn(.fill, .big).disabled(!Codes.isRoom(tableCode))
             }
-            Label2("Or the host’s phone").padding(.top, 26)
-            Small("AirPlay the host’s phone to the TV (Control Centre, then Screen Mirroring). While the game is open, the TV shows the game, not the phone’s screen.")
+            Label2("Or use the host’s phone").padding(.top, 26)
+            Small("The host can AirPlay their phone to the TV. Open Control Centre and tap Screen Mirroring. While the game is open, the TV shows the game, not what’s on the host’s phone, so their role stays secret.")
         }
     }
 
     private var hostScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Host a game")
-            Sub("Start a Table on this phone. You play too, and your phone moves the evening on; everyone else joins on their own phone with the Table’s code. It stays open for 48 hours. Best with 8 to 16 players.")
+            Sub("This starts a new game, called a Table. You play too, with a secret role like everyone else. Your phone also has the buttons that move the game on. Everyone else joins on their own phone with the Table code. You need at least 8 players, and 8 to 16 is best. The Table stays open for 48 hours.")
             Label2("Your name")
             Field(placeholder: "As the table knows you", text: $playerName, max: 14, submit: startGame)
             Spacer().frame(height: 10)
             Button(busy ? "Opening…" : shop.usable.isEmpty ? "Start a free game" : "Start a game", action: startGame).btn(.fill, .big)
                 .disabled(busy || playerName.trimmingCharacters(in: .whitespaces).isEmpty)
-            Small("Free games show a short ad as each day starts and at the end, never during a Trial or a vote, and use the base set of Trials. A pass makes the night ad-free, with every Trial.").padding(.top, 10)
+            Small("A free game shows a banner ad at the bottom of each phone’s screen. Each phone also shows a short full-screen ad when the debate before each vote starts, at night once that player has chosen, and at the end. There are never ads during a Trial or a vote. A free game plays 8 of the 15 Trials. A pass takes the ads away for everyone at your Table and adds every Trial.").padding(.top, 10)
             YourCodes(open: openCode)
             Button(shop.codes.isEmpty ? "Make it ad-free with a pass" : "Buy or restore a pass") { show(.passes) }.btn(.ghost)
         }
@@ -374,7 +374,7 @@ struct HomeView: View {
     private var passesScreen: some View {
         VStack(alignment: .leading, spacing: 0) {
             H1("Your passes")
-            if shop.codes.isEmpty { Sub("None on this phone yet. A pass you buy appears here.") }
+            if shop.codes.isEmpty { Sub("You don’t have any passes on this phone yet. When you buy one, it appears here.") }
             YourCodes(open: openCode)
             BookCard(open: openCode, show: { page = $0 })
         }
@@ -492,15 +492,15 @@ struct IntroView: View {
     private struct Step { let seals: [(BigSeal.Kind, String)]; let eyebrow: String; let title: String; let text: String }
     private static let steps = [
         Step(seals: [(.forsworn, "blade"), (.loyal, "candle")], eyebrow: "the oath", title: "Everyone swears an oath. Not everyone means it.",
-             text: "A few of you are secretly **Forsworn**, and know each other. Everyone else is **Loyal**, and knows nothing. Your role is on your phone, for your eyes only."),
+             text: "A few of you are secretly **Forsworn**, the traitors, and they know who each other are. Everyone else is **Loyal**, and doesn’t know who anyone is. Your phone shows you your role. Keep it to yourself."),
         Step(seals: [(.loyal, "chalice")], eyebrow: "by day", title: "Play for the Purse",
-             text: "Each round opens with a Trial on your phones: a quiz, a guessing game, charades and more. Trials fill a shared Purse, and most give their winner **Sanctuary**, safe from that night’s poison. The Forsworn play along, and quietly sabotage."),
+             text: "Each round starts with a Trial, a party game on your phones, like a quiz, a guessing game or charades. Trials fill the **Purse**, a prize pot you all share. The winner usually gets **Sanctuary**, which keeps them safe from poison that night. The Forsworn play along, but quietly try to spoil things."),
         Step(seals: [(.steel, "scales")], eyebrow: "the reckoning", title: "Argue, accuse, vote",
-             text: "A few minutes of open debate, then everyone votes in secret. The player with the most votes is exiled, and the table learns what they were: Forsworn, or Loyal."),
+             text: "At the **Reckoning**, you all argue for a few minutes about who might be Forsworn. Then everyone votes in secret. The player with the most votes is exiled. That means they’re out, and everyone sees if they were Forsworn or Loyal."),
         Step(seals: [(.forsworn, "moon")], eyebrow: "by night", title: "The Forsworn choose",
-             text: "Heads down. The Forsworn pick someone to poison, and everyone else taps a name too, so nobody can tell who’s choosing. The exiled and the poisoned stay on as **Ghosts**, watching."),
+             text: "At night, the Forsworn secretly choose someone to poison, and that player is out. Everyone else taps a name too, so nobody can tell who’s choosing. Players who are out stay at the party as **Ghosts**, and keep watching."),
         Step(seals: [(.loyal, "crown")], eyebrow: "the end", title: "Who takes the Purse?",
-             text: "The Loyal win if every Forsworn is gone by the end, and share the Purse they built. If even one Forsworn survives, they take what the Purse fell short. Don’t worry about remembering it all: your phone tells you what to do, when."),
+             text: "The Loyal win if every Forsworn is gone by the end, and they share the Purse they built. If even one Forsworn is left, the Forsworn win and take what the Purse fell short of its target. Don’t worry about remembering it all. Your phone tells you what to do, and when."),
     ]
 
     var body: some View {

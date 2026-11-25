@@ -54,7 +54,7 @@ struct LobbyOffer: View {
         if !gone && Offers.lobbyDue(v, session) {
             Card(.hot) {
                 Text("\(v.players.count) players are about to see ads.").font(Theme.book(23)).foregroundStyle(Theme.tallow).padding(.bottom, 6)
-                Sub("Make tonight ad-free with a Night Pass\(Offers.price(Shop.shared.night)), or every night you host with the Host Pass\(Offers.price(Shop.shared.host)). Either adds every Trial too.")
+                Sub("A Night Pass\(Offers.price(Shop.shared.night)) makes tonight ad-free for everyone at your Table. The Host Pass\(Offers.price(Shop.shared.host)) does that for every game you host. Both passes add every Trial too.")
                 HStack(spacing: 10) {
                     Button("Make it ad-free") { Events.send("upsell_clicked", placement: "U1"); open = true }.btn(.fill, .sm, fit: true)
                     Button("Not tonight") { Offers.wave(session.room, "U1"); gone = true }.btn(.dark, .sm, fit: true)
@@ -117,7 +117,7 @@ struct ResultsOffer: View {
         if !gone && Offers.resultsDue(v, session) {
             Card(.hot) {
                 Text("Hosting again?").font(Theme.book(23)).foregroundStyle(Theme.tallow).padding(.bottom, 6)
-                Sub("The Host Pass\(Offers.price(Shop.shared.host)): no ads and every Trial, every time you host.")
+                Sub("With the Host Pass\(Offers.price(Shop.shared.host)), every game you host is ad-free for everyone at your Table, with every Trial.")
                 HStack(spacing: 10) {
                     Button("Get the Host Pass") { Events.send("upsell_clicked", placement: "U4", product: "host"); open = true }.btn(.fill, .sm, fit: true)
                     Button("No thanks") { Offers.wave(session.room, "U4"); gone = true }.btn(.dark, .sm, fit: true)
@@ -141,12 +141,12 @@ struct HostPassSheet: View {
             Column {
                 HStack { Spacer(); Button("Close") { dismiss() }.glassButton() }
                 H1("The Host Pass")
-                Sub("Every game you host ad-free, for everyone at the Table, with every Trial and the full question banks.")
+                Sub("With the Host Pass, every game you host is ad-free for everyone at your Table. Each game also has every Trial and the full question banks.")
                 if done != nil {
                     Card(.hot, center: true) {
                         Eyebrow("thank you")
                         Text("Your Host Pass").font(Theme.book(30)).foregroundStyle(Theme.brass2).padding(.vertical, 8)
-                        Sub("It’s on this phone, under Your passes. Your next game is ad-free.")
+                        Sub("It’s saved on this phone under Your passes. Your next game will be ad-free.")
                     }
                 } else if let h = shop.host {
                     Button(shop.buying == h.id ? "Waiting for the App Store…" : "Subscribe for \(h.price) \(h.period ?? "a year")") {
@@ -158,7 +158,7 @@ struct HostPassSheet: View {
                     .btn(.fill).disabled(shop.buying != nil || h.product == nil)
                     SubscriptionTerms(plan: h)
                 } else {
-                    Small("The App Store isn’t answering. Try again from the start screen.")
+                    Small("The App Store isn’t answering right now. Check you’re online, then try again from Your passes on the start screen.")
                 }
                 if let problem { Text(problem).font(Theme.ui(16)).foregroundStyle(Theme.blood2).padding(.top, 10) }
             }

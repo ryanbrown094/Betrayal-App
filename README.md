@@ -87,7 +87,8 @@ up in App Store Connect (the server repo's HANDOVER §6.2a).
   (`site/pages/rules.html`, `terms.html`, `privacy.html` in the server repo).
 - **The game** (`UI/PhoneView.swift`, `PhonePhases.swift`, `PhoneTrial.swift`, `Tools.swift`): every phase, every
   Trial, the host's tools (with the three checks before **Show me the roles**), pause, rejoin requests and last words,
-  in the page's words. As on the website: the lobby's code, QR code and **Share the code** on every phone; the host told
+  in the voice of the server repo's HANDOVER §5.9 (full, short sentences, each game name explained where a player
+  first meets it; the app words its own screens, and the Trials' rules come from the server). As on the website: the lobby's code, QR code and **Share the code** on every phone; the host told
   whose phone has been quiet a minute (the reply's `away`), with **Take out**; a phone that lost its place in the lobby
   offered its own name back (`reclaim`); a one-tap rating at the end; and **Report a problem** (the host's Tools, the
   foot of the lobby and the end), sent to `/api/report` with this device's recent log. The top bar floats over the

@@ -14,12 +14,12 @@ struct BookCard: View {
         Card {
             Eyebrow("passes")
             H2("Make it ad-free")
-            Sub("A pass takes the ads away for everyone at your Table, and adds every Trial and the full question banks: thousands of questions and prompts.")
+            Sub("A pass is for the host. It takes the ads away for everyone at your Table, not just you. It also adds every Trial and the full question banks, with thousands of questions and prompts.")
             if let n = shop.night {
-                plan(n, name: "Night Pass", about: "Tonight, ad-free: every game you start in the 24 hours after you first use it. If none of them gets going, you get the night back.", buy: "Buy for \(n.price)")
+                plan(n, name: "Night Pass", about: "It makes tonight ad-free. Its 24 hours start the first time you use it, and every game you start in those 24 hours is ad-free. If none of those games gets past the Oath, where everyone gets their role, you can use the pass again another night.", buy: "Buy for \(n.price)")
             }
             if let h = shop.host {
-                plan(h, name: "Host Pass", about: "Every night ad-free, whenever you host, with every Trial and the full question banks. Cancel any time.", buy: "Subscribe for \(h.price) \(h.period ?? "a year")")
+                plan(h, name: "Host Pass", about: "It makes every game you host ad-free, with every Trial and the full question banks, for as long as your subscription is paid. You can cancel at any time.", buy: "Subscribe for \(h.price) \(h.period ?? "a year")")
             }
             if shop.night == nil && shop.host == nil {
                 if shop.loaded {
@@ -29,7 +29,7 @@ struct BookCard: View {
                     Small("Asking the App Store for prices…")
                 }
             } else {
-                Small("Your pass appears under Your passes as soon as you’ve paid, and stays on this phone. Use it when you start a game, or on a free game from its lobby. Prices include VAT where it applies.")
+                Small("Your pass appears under Your passes as soon as you’ve paid, and it stays on this phone. You can use it when you start a game, or from the lobby of a free game you’re hosting. Prices include VAT where it applies.")
                 if let h = shop.host { Small(SubscriptionTerms.words(h)) }
             }
             Flow(spacing: 8) {
@@ -120,10 +120,10 @@ struct BoughtSheet: View {
                     Eyebrow("thank you")
                     Text(bought.sub ? "Your Host Pass" : "Your Night Pass").font(Theme.book(30)).foregroundStyle(Theme.brass2).padding(.vertical, 10)
                     Sub(bought.sub
-                        ? "Every game you host is ad-free while it’s active, with every Trial and the full question banks."
-                        : "Its 24 hours start when you first use it: start a game with it, or use it on a free game from its lobby.")
+                        ? "While your Host Pass is active, every game you host is ad-free for everyone at your Table, with every Trial and the full question banks."
+                        : "Its 24 hours start the first time you use it. You can start a new game with it, or use it on a free game you’re hosting, from that game’s lobby.")
                 }
-                Small(bought.sub ? "It’s on this phone, under Your passes, and Restore purchases brings it to your other devices." : "It’s on this phone, under Your passes, ready when you are.", center: true)
+                Small(bought.sub ? "It’s saved on this phone under Your passes. To use it on your other devices, tap Restore purchases under Your passes on each one." : "It’s saved on this phone under Your passes, ready for whenever you want it.", center: true)
                 VStack(spacing: 10) {
                     Button("Start an ad-free game now") { dismiss(); open(bought.pass) }.btn(.fill)
                     Button("Later") { dismiss() }.btn(.dark, .sm)
@@ -154,7 +154,7 @@ struct SubscriptionTerms: View {
         .sheet(item: $page) { p in PageView(page: p) { page = nil } }
     }
     static func words(_ h: Shop.Plan) -> String {
-        "The Host Pass is a yearly subscription at \(h.price) \(h.period ?? "a year"): every game you host is ad-free for everyone at the Table, with every Trial and the full question banks. Payment is taken from your Apple Account when you confirm. It renews automatically at the same price unless you cancel at least 24 hours before the end of the year, in your Apple Account’s subscriptions."
+        "The Host Pass is a yearly subscription. It costs \(h.price) \(h.period ?? "a year"). While it’s active, every game you host is ad-free for everyone at your Table, with every Trial and the full question banks. Payment is taken from your Apple Account when you confirm the purchase. It renews automatically at the same price, unless you cancel at least 24 hours before the end of the year. You can cancel at any time in your Apple Account’s subscriptions."
     }
 }
 
@@ -186,7 +186,7 @@ struct UsePassSheet: View {
             Column {
                 HStack { Spacer(); Button("Close") { dismiss() }.glassButton() }
                 H1("Make tonight ad-free")
-                Sub("A pass takes the ads away for everyone at this Table, and adds every Trial and the full question banks from the next Trial on. A Night Pass’s 24 hours start the first time it’s used.")
+                Sub("A pass takes the ads away for everyone at this Table. It also adds every Trial and the full question banks, starting from the next Trial. A Night Pass’s 24 hours start the first time you use it.")
                 if !usable.isEmpty {
                     Label2("Your passes")
                     ForEach(usable) { c in

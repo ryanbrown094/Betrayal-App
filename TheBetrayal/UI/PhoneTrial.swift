@@ -18,18 +18,20 @@ struct TrialView: View {
             Eyebrow("trial" + TrialView.prizeLine(t))
             H1(t.title)
             Para(t.rules)
+            if t.prize && t.special == nil { Small("Whoever holds Sanctuary can’t be poisoned tonight.") }
             if me.forsworn && t.key != "tempt" && t.key != "likely" {
                 // a Forsworn's wrong answer only costs the Purse where answers are right or wrong (modern.js score: wrongF)
-                let costs: String = t.key == "quiz" ? "Forsworn: every wrong answer here before the brutal questions costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
-                    : "Forsworn: every wrong answer here costs the Purse 50, and if you win you take every point it falls short, so sabotage quietly."
-                Banner(.plain, ["quiz", "change", "snap"].contains(t.key) ? costs : "Forsworn: if you win, you take every point the Purse falls short, so sabotage quietly.")
+                let low: String = "You’re Forsworn, so you want the Purse to stay low. If you win, you take every point it falls short of its target. "
+                let costs: String = t.key == "quiz" ? low + "Each wrong answer you give costs the Purse 50 points, except on the brutal questions. Sabotage quietly, so nobody notices."
+                    : low + "Each wrong answer you give here costs the Purse 50 points. Sabotage quietly, so nobody notices."
+                Banner(.plain, ["quiz", "change", "snap"].contains(t.key) ? costs : low + "So sabotage quietly, without anyone noticing.")
             }
             if t.introEnd != nil {
                 HStack(spacing: 6) { Text("Starts in").font(Theme.ui(18)).foregroundStyle(Theme.tallow2); Clock(end: t.introEnd) }
             } else {
                 DirCard {
                     Button("Start the Trial") { session.act("cont") }.btn(.fill, .big)
-                    Small("When everyone has heard the rules.", center: true)
+                    Small("Tap this once everyone has heard the rules.", center: true)
                 }
                 WaitHost(v: v)
             }
@@ -56,7 +58,7 @@ struct TrialView: View {
             if it.isOpenish, let end = it.end, let from = it.from { TimeBar(from: from, end: end).padding(.top, 8).padding(.bottom, 14) }
             if !me.alive && it.k == "survive" && t.key == "statue" && it.stage == "open" {
                 Question("You’re a Ghost, so haunt them.")
-                Sub("Make the statues move or laugh, anything short of touching. Still standing: " + Words.andList(v.alive.filter { !it.out.contains($0.id) }.map(\.name)) + ".")
+                Sub("Try to make the statues move or laugh. You can do anything except touch them. Still standing: " + Words.andList(v.alive.filter { !it.out.contains($0.id) }.map(\.name)) + ".")
             } else if it.stage == "reveal" {
                 ItemReveal(v: v, me: me, t: t, x: it)
             } else if !me.alive && !(it.k == "survive" && t.key == "statue") {
@@ -74,7 +76,7 @@ struct Sent: View {
     var value: String? = nil
     var body: some View {
         DoneLine("handshake", Text("Locked in") + (value.map { $0.isEmpty ? Text("") : Text(": ") + b($0) } ?? Text("")) + Text(".\n")
-                 + Text("\(x.answered) of \(x.of > 0 ? String(x.of) : "?") in").font(Theme.ui(15)))
+                 + Text("\(x.answered) of \(x.of > 0 ? String(x.of) : "?") have answered.").font(Theme.ui(15)))
     }
 }
 
@@ -142,7 +144,7 @@ struct ItemPlay: View {
             Question(x.q ?? "")
             if let m = x.mine, !m.isEmpty { Sent(x: x, value: v.name(m)) } else { PickGrid(list: v.alive) { p in session.act("ans", p.id) } }
         case "word":
-            Sub("The longest real word from these letters. You can change it until time’s up.")
+            Sub("Make the longest real word you can from these letters. You can change it until the time is up.")
             Letters(letters: x.letters ?? "")
             if let m = x.mine, !m.isEmpty {
                 DoneLine("scroll", Text("Your word: ") + b(m.uppercased()))
@@ -151,17 +153,17 @@ struct ItemPlay: View {
             AnswerForm(placeholder: "Your word", label: (x.mine ?? "").isEmpty ? "Send" : "Change it")
         case "recall":
             if x.stage == "study" {
-                Sub("Remember these. They vanish in a moment.")
+                Sub("Remember as many of these words as you can. They’ll disappear soon.")
                 WordWall(words: x.words)
             } else {
-                Sub("Type every word you remember, separated by commas or new lines. You can send again to add more.")
+                Sub("Type every word you remember. Put a comma or a new line between them. You can send again to add more.")
                 AnswerForm(placeholder: "", label: (x.mine ?? "").isEmpty ? "Send my list" : "Update my list", multiline: true, initial: x.mine ?? "")
             }
         case "cell":
-            if x.stage == "study" { Sub("Study the grid."); Cells(grid: x.grid ?? []) }
+            if x.stage == "study" { Sub("Study the grid closely. Something in it is about to change."); Cells(grid: x.grid ?? []) }
             else if x.stage == "blank" { Sub("Something is changing…"); Cells(grid: [], blank: true) }
             else {
-                Sub("Tap what changed. The first right answer scores double.")
+                Sub("Tap a symbol that changed. The first right answer scores double.")
                 if let m = x.mine, let i = Int(m) { Cells(grid: x.grid ?? [], mine: i); Spacer().frame(height: 12); Sent(x: x) }
                 else { Cells(grid: x.grid ?? [], tap: { i in session.act("ans", String(i)) }) }
             }
@@ -174,13 +176,13 @@ struct ItemPlay: View {
                         ForEach(["rock", "paper", "scissors"], id: \.self) { r in Button(r.capitalized) { session.act("ans", r) }.btn(.fill, .big) }
                     }
                 }
-            } else if x.bye == me.id { Question("You have a bye this bout."); Sub("Sit this one out.") }
+            } else if x.bye == me.id { Question("You sit this round out."); Sub("There was an odd number of players, so you go straight through to the next round.") }
             else { Question("You’re out."); Sub("Watch the rest battle it out.") }
         case "survive":
             let out = x.out.contains(me.id)
             let still = v.alive.filter { !x.out.contains($0.id) }
             Question(t.key == "statue" ? "Freeze." : "On one leg.")
-            Sub(out ? "You’re out. Watch the rest." : "Last one standing wins. If you’re out, tap it honestly.")
+            Sub(out ? "You’re out. Watch the rest." : t.key == "statue" ? "The last statue standing wins. If you move or laugh, be honest and tap I’m out." : "The last one standing wins. If you put a foot down, be honest and tap I’m out.")
             if !out { Button("I’m out") { session.send(["a": "out"]) }.btn(.blood, .big).padding(.bottom, 12) }
             Small("Still in: " + still.map(\.name).joined(separator: ", "))
             if me.director {
@@ -190,7 +192,7 @@ struct ItemPlay: View {
         case "truths": TruthsPlay(v: v, me: me, x: x)
         case "tempt":
             Question("PURSE or SELF?")
-            Sub("Exactly one SELF: they take Sanctuary and the Purse grows by \(t.offer). Nobody: it grows by \(t.offer * 2). Two or more: nobody gets it, and the Purse loses \(t.offer).")
+            Sub("Choose in secret. If exactly one person chooses SELF, they get Sanctuary tonight and the Purse grows by \(t.offer). If nobody does, it grows by \(t.offer * 2). If two or more choose SELF, nobody gets Sanctuary and the Purse loses \(t.offer).")
             if let m = x.mine, !m.isEmpty { Sent(x: x, value: m.uppercased()) } else {
                 Columns(2) {
                     Button("PURSE") { session.act("ans", "purse") }.btn(.verd, .big)
@@ -222,7 +224,7 @@ struct SnapPlay: View {
                         .frame(maxWidth: .infinity).padding(.bottom, 12)
                 }
                 Button("SNAP") { session.send(["a": "ans"]) }.btn(.blood, .big)
-                Small("Tap only when the symbol matches the one before. A wrong tap loses a point." + (x.myTaps > 0 ? " Your snaps: \(x.myTaps)." : ""), center: true).padding(.top, 12)
+                Small("Tap SNAP only when the symbol is the same as the one before. A wrong tap loses you a point." + (x.myTaps > 0 ? " You’ve tapped " + Words.plural(x.myTaps, "time") + "." : ""), center: true).padding(.top, 12)
             }
         }
     }
@@ -238,10 +240,10 @@ struct ActorPlay: View {
     var body: some View {
         if x.actor != me.id {
             Question(v.name(x.actor) + " is up.")
-            Sub((t.key == "hum" ? "Name that song." : "Shout your guess.") + " When someone gets it, " + v.name(x.actor) + " taps who.")
+            Sub((t.key == "hum" ? "Shout out the song’s name." : "Shout out your guess.") + " When someone gets it right, " + v.name(x.actor) + " taps their name.")
         } else {
             Card(.hot, center: true) { Eyebrow("yours, secretly"); Answer(x.word ?? "", center: true) }
-            Sub((t.key == "hum" ? "Hum it. No words." : t.key == "draw" ? "Draw it. No letters or numbers." : "Act it out. No words, no sounds.") + " Who got it?")
+            Sub((t.key == "hum" ? "Hum it. No words." : t.key == "draw" ? "Draw it. No letters or numbers." : "Act it out. No words, no sounds.") + " When someone guesses it, tap their name.")
             PickGrid(list: v.alive.filter { $0.id != me.id }) { p in session.act("guess", p.id) }
             Spacer().frame(height: 10)
             HStack(spacing: 10) {
@@ -261,7 +263,7 @@ struct TruthsPlay: View {
         if x.teller == me.id {
             if x.stage == "prep" {
                 Question("Your turn: two truths and a lie.")
-                Sub("Choose which one will be the lie, tell all three to the table, then tap “All told”.")
+                Sub("Think of three things about yourself: two true and one a lie. Tap the number of the lie, tell all three to the table in that order, then tap “All told”.")
                 Columns(3) { ForEach(1...3, id: \.self) { n in Button("No. \(n)") { session.act("lie", n) }.btn(x.lie == n ? .on : .dark) } }
                 Spacer().frame(height: 10)
                 Button("All told. Open the vote") { session.act("told") }.btn(.fill, .big).disabled(x.lie == nil)
@@ -272,7 +274,7 @@ struct TruthsPlay: View {
             }
         } else if x.stage == "prep" {
             Question(v.name(x.teller) + " is telling you three things.")
-            Sub("Listen closely. One is a lie.")
+            Sub("Listen closely. Two are true and one is a lie. Then you’ll vote for the lie.")
         } else {
             Question("Which was " + v.name(x.teller) + "’s lie?")
             if let m = x.mine, !m.isEmpty { Sent(x: x, value: "No. " + m) } else {
@@ -308,7 +310,7 @@ struct ItemReveal: View {
         switch x.k {
         case "text":
             Question(x.q ?? ""); Answer(x.a ?? "")
-            Para("Right: " + names(r.right) + (r.first.map { " · fastest " + v.name($0) } ?? ""))
+            Para("Right: " + names(r.right) + "." + (r.first.map { " Fastest: " + v.name($0) + "." } ?? ""))
             you
             if me.director && !x.wrong.isEmpty {
                 More("Mark a near miss right") {
@@ -343,7 +345,7 @@ struct ItemReveal: View {
             Cells(grid: x.grid ?? [], mine: x.mine.flatMap { Int($0) }, hit: x.changed)
             Para("Right: " + names(r.right)).padding(.top, 12); you
         case "snap":
-            Question("Snap!"); Para("Snaps caught: " + names(r.hits)); you
+            Question("Snap!"); Para("Who caught a snap: " + names(r.hits)); you
         case "rps":
             VStack(spacing: 0) {
                 ForEach(Array(r.bouts.enumerated()), id: \.offset) { _, bt in
@@ -354,7 +356,7 @@ struct ItemReveal: View {
                             (Text(bt.y.capitalized).italic().foregroundColor(Theme.tallow2) + Text(" " + v.name(bt.b))).frame(maxWidth: .infinity, alignment: .trailing)
                         }
                         .font(Theme.ui(18)).foregroundStyle(Theme.tallow)
-                        Text(bt.w.map { v.name($0) + " goes through" } ?? "Draw · both go through").font(Theme.ui(15)).foregroundStyle(Theme.brass2).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(bt.w.map { v.name($0) + " goes through" } ?? "A draw, so both go through").font(Theme.ui(15)).foregroundStyle(Theme.brass2).frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(.vertical, 8)
                     .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule2).frame(height: 1) }
@@ -366,15 +368,15 @@ struct ItemReveal: View {
         case "survive":
             Question("Last standing: " + names(r.still))
         case "actor":
-            Sub(v.name(r.actor) + "’s was"); Answer(r.word ?? "")
+            Sub(v.name(r.actor) + (t.key == "hum" ? "’s song was" : "’s word was")); Answer(r.word ?? "")
             Para(r.guess != nil && r.guess != "none" ? v.name(r.guess) + " got it" : "Nobody got it"); you
         case "truths":
             Question(v.name(r.teller) + "’s lie was No. \(r.lie ?? 0)")
-            Para("Right: " + names(r.right) + " · fooled \(r.fooled)"); you
+            Para("Right: " + names(r.right) + ". Fooled: \(r.fooled)."); you
         case "tempt":
             let n = r.selfCount
             Question(n == 1 ? "One SELF." : n > 0 ? "\(n) SELFs." : "Nobody chose SELF.")
-            Sub(n == 1 ? "They take Sanctuary tonight, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held, so the Purse grows double.")
+            Sub(n == 1 ? "They take Sanctuary tonight, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held together, so the Purse grows twice as much.")
         default: EmptyView()
         }
     }
@@ -415,7 +417,7 @@ struct GhostItem: View {
                     ForEach(Array(x.pairs.enumerated()), id: \.offset) { _, pr in
                         (Text(v.name(pr.first)) + Text(" v ").foregroundColor(Theme.mist) + Text(v.name(pr.last))).font(Theme.ui(18)).foregroundStyle(Theme.tallow)
                     }
-                    if let bye = x.bye { Text("bye: " + v.name(bye)).font(Theme.ui(18)).foregroundStyle(Theme.tallow) }
+                    if let bye = x.bye { Text(v.name(bye) + " sits out").font(Theme.ui(18)).foregroundStyle(Theme.tallow) }
                 }
                 Text("\(x.answered) of \(x.of) chosen").font(Theme.sc(15)).tracking(1.5).foregroundStyle(Theme.tallow2).padding(.top, 8)
             case "survive": H2("Still standing"); Sub(v.alive.filter { !x.out.contains($0.id) }.map(\.name).joined(separator: ", "))
@@ -446,19 +448,19 @@ struct TrialDone: View {
         VStack(alignment: .leading, spacing: 0) {
             Eyebrow(t.title + " · the result")
             H1(TrialDone.head(v, t))
-            if t.special == "cast" { Sub("Whoever won holds it now. Only they know.") }
-            if w != nil && t.byLot && t.key != "tempt" { Small("A tie at the top, settled by lot.") }
+            if t.special == "cast" { Sub("Whoever won now holds the Casting Vote, but only they know it’s them.") }
+            if w != nil && t.byLot && t.key != "tempt" { Small("There was a tie for first place, so the winner was picked at random.") }
             if t.points != 0 { (Text(Words.signed(t.points)).font(Theme.book(30)).foregroundColor(Theme.brass2) + Text(" to the Purse").font(Theme.book(15)).foregroundColor(Theme.tallow2)).monospacedDigit().padding(.bottom, 4) } // (no "+0")
             Meter(pot: v.pot, cap: v.potCap, tiers: v.tiers)
-            if t.wrongF > 0 { Small("The Forsworn gave " + Words.plural(t.wrongF, "wrong answer") + ", and the Purse paid for them.") }
-            if let s = t.sanctPublic { Banner(.sanct, v.name(s) + " takes Sanctuary for tonight.") }
-            if me.wonSanct == "yes" { Banner(.sanct, icon: "shield", "You won Sanctuary. Nobody can take you tonight. " + (t.sanctPublic != nil ? "" : "Only you know.")) }
-            if me.wonSanct == "wasted" { Banner(.plain, "You won, but Sanctuary protects only the Loyal. Nobody else knows.") }
-            if let g = t.gave { Banner(.plain, icon: "crown", g == me.id ? "You take the Crown: Sanctuary tonight, and once, at a Reckoning, you can lay it down to be safe from that exile." : v.name(g) + " takes the Crown.") }
-            if me.gave == "cast" { Banner(.plain, icon: "scales", "You won the Casting Vote. If a Reckoning ties and you voted for one of them, your vote decides it. Only you know.") }
+            if t.wrongF > 0 { Small("The Forsworn gave " + Words.plural(t.wrongF, "wrong answer") + ", and the Purse lost points for them.") }
+            if let s = t.sanctPublic { Banner(.sanct, v.name(s) + " wins Sanctuary, so the Forsworn can’t poison them tonight.") }
+            if me.wonSanct == "yes" { Banner(.sanct, icon: "shield", "You won Sanctuary, so the Forsworn can’t poison you tonight. " + (t.sanctPublic != nil ? "" : "Only you know you have it.")) }
+            if me.wonSanct == "wasted" { Banner(.plain, "You won, but Sanctuary only protects the Loyal, so it does nothing for you. Nobody else knows that.") }
+            if let g = t.gave { Banner(.plain, icon: "crown", g == me.id ? "You win the Crown. It gives you Sanctuary tonight, so the Forsworn can’t poison you. Once, at a Reckoning, you can also lay it down so nobody can vote you out." : v.name(g) + " wins the Crown, which gives them Sanctuary tonight.") }
+            if me.gave == "cast" { Banner(.plain, icon: "scales", "You won the Casting Vote. If a vote at a Reckoning ties, and you voted for one of the tied players, your vote decides it. Only you know you have it.") }
             if me.gave == "confess" {
-                Banner(.ghost, icon: "eye", me.confess == "self" ? Text("You won the Confessor’s prize: no other Forsworn is left at the table.")
-                       : Text("You won the Confessor’s prize: ") + Text(me.confess ?? "").font(Theme.ui(16, .bold)) + Text(" is Forsworn. Keep it to yourself."))
+                Banner(.ghost, icon: "eye", me.confess == "self" ? Text("You won the Confessor’s prize, the name of a Forsworn still playing. There’s no other Forsworn left, so it’s just you.")
+                       : Text("You won the Confessor’s prize, the name of a Forsworn still playing. ") + Text(me.confess ?? "").font(Theme.ui(16, .bold)) + Text(" is Forsworn. Keep it to yourself."))
             }
             if !sc.isEmpty && t.key != "tempt" && t.key != "likely" {
                 VStack(spacing: 0) {

@@ -37,11 +37,11 @@ struct TableView: View {
         case .join: ScrollView { JoinCard(back: { dismiss() }) }.scrollDismissesKeyboard(.interactively)
         case .create(let test): ScrollView { CreateCard(test: test) }.scrollDismissesKeyboard(.interactively)
         case .choose: ScrollView { ChooseCard() }
-        case .wait: ScrollView { Notice(title: "Asking to come back in…", text: "The game has started, so someone lets you back in: the host, from their phone. If you’re the host, anyone at the Table can, once your old phone has been quiet for half a minute.") }
+        case .wait: ScrollView { Notice(title: "Asking to come back in…", text: "The game has already started, so the host has to let you back in from their phone. Stay on this screen until they do. If you’re the host, anyone else at the Table can let you in once your old phone has been quiet for 30 seconds.") }
         case .nogame:
             ScrollView {
                 Notice(title: session.classic ? "Not a Table for the app" : "Not open yet",
-                       text: session.classic ? "Table \(session.room) can’t be played in the app. Ask the host to start a new Table in the app." : "Table \(session.room) hasn’t been set up. The host opens it first, then you can join.")
+                       text: session.classic ? "Table \(session.room) is set up for a different kind of game, so it can’t be played in the app. Ask the host to start a new Table in the app instead." : "Table \(session.room) hasn’t been set up yet. The host needs to open it first. This screen lets you join as soon as they do.")
             }
             .task { while session.screen == .nogame && !Task.isCancelled { try? await Task.sleep(nanoseconds: 4_000_000_000); await recheck() } }
         case .play: PlayView().overlay { ShareGuard() }
@@ -72,8 +72,8 @@ private struct ShareGuard: View {
                         Brand()
                         VStack(spacing: 0) {
                             H2("Your screen is on show")
-                            Sub("This phone’s screen is being shared: mirrored to a TV, or recorded. Your role and your choices would show too, so they’re hidden until it stops.")
-                            Small("To stop: Control Centre, then Screen Mirroring (or the record button). For the game on a TV, use an iPad or a spare phone as the TV: Set up a TV, on the start screen.", center: true)
+                            Sub("This phone’s screen is being mirrored to a TV or recorded. Your role and your choices would show up there too, so they’re hidden until it stops.")
+                            Small("To stop it, open Control Centre and tap Screen Mirroring, or the record button. To show the game on a TV, use an iPad or a spare phone as the TV instead. Tap Set up a TV on the start screen.", center: true)
                         }
                         .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                         Button("Show my screen anyway") { shown = true }.btn(.dark, .sm)
@@ -181,7 +181,7 @@ struct JoinCard: View {
             Brand()
             Card {
                 H2("Join a game")
-                Sub("Everyone plays on their own phone, and your role never leaves this screen.")
+                Sub("Everyone plays on their own phone. Your role is secret, and it only ever shows on this phone.")
                 VStack(alignment: .leading, spacing: 10) {
                     Para(Text("Table ") + b(session.room).font(Theme.ui(18, .bold)))
                     Label2("Your name")
@@ -189,7 +189,7 @@ struct JoinCard: View {
                     Button("Join", action: go).btn(.fill, .big)
                     // the name is taken by a phone that has gone quiet: it may be this person's own (the lobby only)
                     if let r = session.reclaim {
-                        Small("If \(r) is you, on another phone, you can carry on as them.")
+                        Small("Someone called \(r) has already joined, on a phone that has gone quiet. If that was you on another phone, you can carry on as \(r) here.")
                         Button("It’s me: carry on as " + r) { Task { await session.join(name: name, mine: true) } }.btn(.dark)
                     }
                 }
@@ -214,13 +214,13 @@ struct CreateCard: View {
             Card {
                 if session.practice {
                     H2("A practice game")
-                    Sub("Table \(session.room). You and the bots: they swear, play the Trials, vote, choose at night and trust by themselves, so you can play a whole game on your own. The Trials that need people in the room are left out.")
+                    Sub("Table \(session.room). It’s just you and some bots. The bots take the Oath, play the Trials, vote and make every other choice themselves, so you can play a whole game on your own. Trials that need people in the same room are left out.")
                 } else if test {
                     H2("A test game against bots")
-                    Sub("Table \(session.room). You host, and the bots swear, vote, choose at night and trust by themselves. Trials give everyone a random score, and every countdown is ten seconds.")
+                    Sub("Table \(session.room). You’re the host, and the bots take the Oath, vote and make every other choice themselves. In the Trials, everyone gets a random score. Every countdown lasts ten seconds at most.")
                 } else {
                     H2("You’re the host")
-                    Sub("Table \(session.room). Your phone begins each part of the evening when the table is ready, and can call a short break. The rest runs itself, and you never see anyone else’s role.")
+                    Sub("Table \(session.room). You play too, with a secret role of your own. Your phone also starts each part of the evening when everyone is ready, and it can call a short break. The rest runs itself, and you never see anyone else’s role.")
                 }
                 Label2("Your name")
                 Field(placeholder: "", text: $name, max: 14, submit: go)
@@ -252,7 +252,7 @@ struct ChooseCard: View {
             Brand()
             Card {
                 H2("Table \(session.room)")
-                Sub("This Table is playing Modern, so everyone plays on their own phone.")
+                Sub("Everyone at this Table plays on their own phone. You can join as a player, or use this screen as the TV for the room to watch.")
                 VStack(spacing: 10) {
                     Button("Join as a player") { session.screen = session.token != nil ? .play : .join }.btn(.fill, .big)
                     Button("Use this screen as the TV") { session.screen = .tv; session.start() }.btn(.ghost)
@@ -338,7 +338,7 @@ struct PlayView: View {
         Column {
             if me.left {
                 Brand()
-                VStack(spacing: 0) { H2("You’ve left the game"); Sub("The host has taken you out of this one. Thanks for playing, and keep what you know to yourself.") }
+                VStack(spacing: 0) { H2("You’ve left the game"); Sub("The host has taken you out of this game. Thanks for playing. Please keep what you know to yourself, so the game stays fair for everyone else.") }
                     .multilineTextAlignment(.center).frame(maxWidth: .infinity)
                 if !rendering { Button("Back to the start") { dismiss() }.btn(.ghost) }
             } else {
@@ -357,7 +357,7 @@ struct PlayView: View {
         if session.hostGone { TakeOverCard(v: v) }
         if me.director && ["lobby", "oath", "roles", "day"].contains(v.phase) { AwayCard(v: v) }
         if !me.alive && !["lobby", "oath", "roles", "end", "dawn", "reveal"].contains(v.phase) && v.trial?.key != "statue" {
-            Banner(.ghost, icon: "ghost", "You’re a Ghost. You still watch, cheer and call it at the Reckoning, but you don’t vote or play.")
+            Banner(.ghost, icon: "ghost", "You’re a Ghost, so you’re out of the game. You can still watch and cheer. At the Reckoning you can say who you think should go, but it doesn’t count as a vote, and Ghosts don’t play the Trials.")
         }
         if !wide { Holdings(v: v, me: me) }
         if let t = session.toast { Banner(.plain, t.text) }
@@ -500,7 +500,7 @@ enum Controls {
 
 extension Session {
     func toggleRole() { if myRole > 0 { myRole = 0 } else { myRole = 1; tools = false; peekList = nil } }
-    func askPause() { confirm("Pause the game? Every clock stops until you carry on.", yes: "Pause") { [weak self] in self?.act("pause") } }
+    func askPause() { confirm("Pause the game? Every clock stops, and nobody can answer anything until you tap Carry on.", yes: "Pause") { [weak self] in self?.act("pause") } }
     func toggleTools() { tools.toggle(); peekList = nil }
 }
 
@@ -527,8 +527,8 @@ struct LeaveButton: View {
     }
     private func leave() {
         if ["lobby", "end"].contains(v.phase) || (!me.alive && !me.director) { dismiss(); return }
-        session.confirm(me.director ? "Leave the game for now? It waits for you to move it on: come back to it from the start screen."
-                                    : "Leave the game for now? It carries on, and you can come back to it from the start screen.", yes: "Leave") { dismiss() }
+        session.confirm(me.director ? "Leave the game for now? Some steps wait for the host, so the game may stop until you’re back. Come back to it from the start screen."
+                                    : "Leave the game for now? It carries on without you. You can come back to it from the start screen.", yes: "Leave") { dismiss() }
     }
 }
 
@@ -668,12 +668,12 @@ struct Holdings: View {
     private struct Info: Identifiable { let kind: Banner.Kind; let icon: String; let title: String; let why: String; var id: String { title } }
     private var list: [Info] {
         var c: [Info] = []
-        if me.shield { c.append(Info(kind: .sanct, icon: "shield", title: "Sanctuary tonight", why: "Nobody can take you tonight. Keep it to yourself.")) }
-        if me.cast { c.append(Info(kind: .plain, icon: "scales", title: "The Casting Vote", why: "If a Reckoning ties and you voted for one of them, your vote decides it. Once. Nobody knows it’s you.")) }
-        if me.crown && !["talk", "vote"].contains(v.phase) { c.append(Info(kind: .plain, icon: "crown", title: "The Crown", why: "Once, at a Reckoning, lay it down to be safe from that exile.")) }
+        if me.shield { c.append(Info(kind: .sanct, icon: "shield", title: "Sanctuary tonight", why: "You hold Sanctuary, so the Forsworn can’t poison you tonight. Keep it to yourself.")) }
+        if me.cast { c.append(Info(kind: .plain, icon: "scales", title: "The Casting Vote", why: "If a vote at the Reckoning ends in a tie, and you voted for one of the tied players, your vote decides who goes. It works once. Nobody will know it was you.")) }
+        if me.crown && !["talk", "vote"].contains(v.phase) { c.append(Info(kind: .plain, icon: "crown", title: "The Crown", why: "Once, at a Reckoning, you can lay the Crown down. Then nobody can vote you out that time.")) }
         if let f = me.confess {
             c.append(Info(kind: .ghost, icon: "eye", title: f == "self" ? "The Confessor: nobody else" : "A Forsworn: " + f,
-                          why: f == "self" ? "The Confessor’s prize: no other Forsworn is left at the table. It’s just you." : "The Confessor’s prize: " + f + " is Forsworn. Only you know."))
+                          why: f == "self" ? "You won the Confessor’s prize, the name of a Forsworn still playing. There’s no other Forsworn left, so it’s just you." : "You won the Confessor’s prize. " + f + " is Forsworn, one of the secret traitors. Only you know."))
         }
         return c
     }
@@ -704,7 +704,7 @@ struct RejoinCard: View {
     @Environment(Session.self) private var session
     var body: some View {
         Card(.hot) {
-            Para(b(r.name) + Text(" is asking to come back in on a new phone. Only let them in if it’s really them."))
+            Para(b(r.name) + Text(" is asking to come back into the game on a new phone. Only let them in if you’re sure it’s really them."))
             HStack(spacing: 10) {
                 Button("Let them in") { session.letIn(r, true) }.btn(.fill, .sm)
                 Button("No") { session.letIn(r, false) }.btn(.ghost, .sm)
@@ -721,9 +721,9 @@ struct TakeOverCard: View {
     var body: some View {
         let host = v.director?.name ?? "The host"
         Card(.hot) {
-            Para(b(host) + Text("’s phone has gone quiet. If they can’t come back, someone can take over as host and move the evening on."))
+            Para(b(host) + Text("’s phone has gone quiet, and only the host’s phone can move the evening on. If they can’t come back, someone else can take over as host."))
             Button("Take over as host") {
-                session.confirm("Take over as host?", yes: "Take over") { session.act("takeover") }
+                session.confirm("Take over as host? Your phone will get the buttons that move the evening on.", yes: "Take over") { session.act("takeover") }
             }.btn(.fill, .sm)
         }
     }
@@ -737,8 +737,8 @@ struct AwayCard: View {
     var body: some View {
         let gone = v.players.filter { session.away.contains($0.id) && $0.alive }
         let lobby = v.phase == "lobby"
-        let seen: String = gone.count > 1 ? ": these phones haven’t been seen for a minute. " : ": this phone hasn’t been seen for a minute. "
-        let advice: String = lobby ? "If they’ve gone, take them off the list. They can join again." : "If they’ve gone, take them out, or every vote and night will wait for them."
+        let seen: String = gone.count > 1 ? " have phones that haven’t checked in for a minute. " : " has a phone that hasn’t checked in for a minute. "
+        let advice: String = lobby ? "If they’ve gone, take them off the list of players. They can still join again later." : "If they’ve gone, take them out of the game. If you don’t, every vote and every night will wait for them until its clock runs out."
         if !gone.isEmpty {
             Card(.hot) {
                 Para(b(Words.andList(gone.map(\.name))) + Text(seen + advice))
@@ -858,7 +858,7 @@ struct PauseBox: View {
     private var words: some View {
             VStack(spacing: 0) {
                 Text("The game is paused").font(Theme.book(tv ? 9 * vh : 34, fixed: tv)).foregroundStyle(Theme.tallow).padding(.vertical, 6)
-                Text(me?.director == true ? "Every clock has stopped. Carry on when the table is ready." : "The clocks have stopped. " + (v.director?.name ?? "The host") + " will carry on in a moment.")
+                Text(me?.director == true ? "Every clock has stopped, and nobody can answer anything. Tap Carry on when everyone is ready." : "Every clock has stopped, and nothing can be answered for now. " + (v.director?.name ?? "The host") + " will carry on soon.")
                     .font(Theme.ui(tv ? 3.2 * vh : 18, fixed: tv)).foregroundStyle(Theme.tallow2).padding(.bottom, 12)
                 if me?.director == true && !session.demo {
                     Button("Carry on") { session.act("pause", "off") }.btn(.fill, .big)
@@ -895,7 +895,7 @@ struct WaitHost: View {
     private static let lines = ["Watch who talks the most.", "Someone here swore the Oath and didn’t mean it.", "A quiet player is a careful player.", "Nobody here is as calm as they look.", "Who looked away just then?"]
     var body: some View {
         if v.me?.director != true {
-            Waiting(who: v.director?.name ?? "the host", line: WaitHost.lines[(v.round + v.phase.count) % WaitHost.lines.count])
+            Waiting(who: v.director.map { $0.name + ", the host" } ?? "the host", line: WaitHost.lines[(v.round + v.phase.count) % WaitHost.lines.count])
         }
     }
 }

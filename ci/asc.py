@@ -376,7 +376,9 @@ def screenshots():
     print("   not sent (no set of that size):", ", ".join(sorted(n for n, _ in ours.values() if n not in done)) or "none")
 
 def submit(go=False):
-    aid = app_id(); ver = editable(aid); items = []
+    aid = app_id(); items = []
+    # or one already in a draft submission (READY_FOR_REVIEW), as a submit Apple turned away leaves it
+    ver = editable(aid) or next((v for v in versions(aid) if state(v) == "READY_FOR_REVIEW"), None)
     if ver is not None:
         vid = ver["id"]
         b = call("GET", f"/v1/appStoreVersions/{vid}/build", ok=True).get("data")
