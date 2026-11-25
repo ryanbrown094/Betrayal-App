@@ -36,7 +36,7 @@ enum Page: String, Identifiable {
         ("", ["This page explains everything that happens in a game of The Betrayal, from the first oath to the last betrayal. You don’t need to learn any of it before you play. Every phone tells its player what to do, and when."]),
         ("The idea", [
             "A few of the players are secretly **Forsworn**. They are the traitors, and they know who each other are. Everyone else is one of the **Loyal**, and doesn’t know who anyone is. Every night, the Forsworn poison someone, and that player is out of the game. Every day, everyone votes to throw someone out. The Loyal win if they find every Forsworn before the end. The Forsworn win if even one of them is still in the game when it finishes.",
-            "In between, you play party games for a shared prize pot, called the Purse, and for protection. You argue, you make alliances, and you lie to people you’ve known for years. A game usually lasts an hour or two. It’s best with drinks and snacks.",
+            "In between, you play party games for a shared prize pot, called the Purse, and for protection. You argue, you make alliances, and you lie to people you’ve known for years. A game lasts from about 45 minutes to two hours, depending on how many play. It’s best with drinks and snacks.",
         ]),
         ("Joining", [
             "Each game is called a **Table**. The host starts one in The Betrayal app and types their name. It can be a free game, or ad-free with a pass. The app then shows a six-character Table code. Everyone else opens The Betrayal app, types that code and their name, and they’re in. They can also scan the QR code on the host’s phone or the TV. Nobody needs to make an account, and the TV is optional. When everyone has joined, the host starts the game.",
@@ -106,7 +106,7 @@ enum Page: String, Identifiable {
         ]),
         ("What you need", [
             "• 8 to 24 players. 8 to 16 is the sweet spot.",
-            "• An hour or two. That’s about an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24.",
+            "• From about 45 minutes to two hours. That’s about 45 minutes for 8 to 10 players, an hour to an hour and a quarter for 12 to 16, and an hour and a half to two hours for 20 to 24.",
             "• A prize.",
             "• A phone each, with The Betrayal app.",
             "• A TV, if you like. It turns the game into a show, but it’s optional. You can AirPlay the host’s phone to it, and while the game is open the TV shows the game, not what’s on the phone. Or you can make an iPad or a spare phone the TV, with **Set up a TV** on the start screen.",
@@ -117,7 +117,7 @@ enum Page: String, Identifiable {
     private static let faqText: [(String, [String])] = [
         ("What is The Betrayal?", ["It’s a party game for 8 to 24 players in one room, each playing on their own phone. It’s best with 8 to 16. A few players are secretly the **Forsworn**, the traitors. Everyone else is **Loyal**, and has one evening to find them. Trials, which are quizzes and party games on the phones, fill a shared prize pot called the Purse. Each round, a secret vote exiles someone, which means they’re voted out. Each night, the Forsworn poison someone."]),
         ("Does everyone need the app?", ["Yes. Everyone plays on their own phone with The Betrayal app, the host included. Nobody needs to make an account, and joining a game is always free."]),
-        ("How long does a game take?", ["About an hour for 8 to 10 players, an hour and a half for 12 to 16, and about two hours for 20 to 24. A Table, which is one game, stays open for 48 hours, so you can set it up in the afternoon."]),
+        ("How long does a game take?", ["About 45 minutes for 8 to 10 players, an hour to an hour and a quarter for 12 to 16, and an hour and a half to two hours for 20 to 24. A Table, which is one game, stays open for 48 hours, so you can set it up in the afternoon."]),
         ("What does it cost?", [
             "Hosting is free. A free game shows a banner ad at the bottom of each phone’s screen. Each phone also shows a short full-screen ad when the debate before each vote starts, at night once that player has chosen, and at the end. There are never ads during a Trial or a vote. A free game plays 8 of the 15 Trials, with half the questions.",
             "• A **Night Pass** makes one night ad-free, with every Trial and the full question banks. Its 24 hours start the first time you use it, and every game you start in those 24 hours is ad-free.",

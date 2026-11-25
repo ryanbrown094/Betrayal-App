@@ -27,7 +27,10 @@
 #   python3 ci/asc.py submit [--go]      the version that can be edited, with each pass version waiting to go, in one
 #                                        review submission (as App Review needs a new app's first passes); without
 #                                        --go, only what it would send
-# Never a version that's live or with App Review, and nothing outside this app.
+#   python3 ci/asc.py withdraw [--go]    takes the app version that's waiting for (or in) App Review back out of it,
+#                                        so the version can be edited again: prepare then turns it into the next
+#                                        version (a newer build, a new number). Without --go, only what it would do
+# Never a version that's live, never one with App Review except by withdraw, and nothing outside this app.
 import glob, hashlib, json, os, re, sys, time, urllib.parse, urllib.request
 
 BUNDLE = "uk.co.thebetrayal.app"
@@ -414,9 +417,33 @@ def submit(go=False):
     print("submitted to App Review" if "error" not in r else f"not submitted: {r['body']}")
     if "error" in r: sys.exit(1)
 
+def withdraw(go=False):
+    aid = app_id()
+    subs = [r for r in every(f"/v1/apps/{aid}/reviewSubmissions", **{"filter[platform]": "IOS"})
+            if r["attributes"].get("state") in ("WAITING_FOR_REVIEW", "IN_REVIEW", "UNRESOLVED_ISSUES")]
+    found = None
+    for sub in subs:
+        items = every(f"/v1/reviewSubmissions/{sub['id']}/items", include="appStoreVersion,appCustomProductPageVersion,appEvent")
+        what = [k + " " + r["data"]["id"] for it in items for k, r in it.get("relationships", {}).items() if isinstance(r, dict) and r.get("data")]
+        if any(w.startswith("appStoreVersion ") for w in what): found = (sub, what); break
+    if not found: print("no app version is with App Review"); return
+    sub, what = found
+    ver = next((v for v in versions(aid) if state(v) in ("WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_APPLE_RELEASE")), None)
+    print(f"review submission {sub['id']} ({sub['attributes'].get('state')}), with: " + ", ".join(what))
+    if ver: print(f"   version {ver['attributes']['versionString']} ({state(ver)})")
+    if not go: print("(a preview: run with --go to take it out of review)"); return
+    r = call("PATCH", f"/v1/reviewSubmissions/{sub['id']}", {"data": {"type": "reviewSubmissions", "id": sub["id"], "attributes": {"canceled": True}}}, ok=True)
+    if "error" in r: sys.exit(f"not withdrawn: {r['body'][:2500]}")
+    print("withdrawn from App Review")
+    for _ in range(36):  # Apple takes a little while to hand the version back
+        v = editable(aid)
+        if v: print(f"   version {v['attributes']['versionString']} can be edited again ({state(v)})"); return
+        time.sleep(5)
+    print("   ::warning:: the version isn't editable yet: Apple may still be cancelling the review; check again in a minute")
+
 if __name__ == "__main__":
     a = sys.argv[1:]
-    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go]")
+    if not a: sys.exit(__doc__ or "check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go] | withdraw [--go]")
     cmd = a[0]
     if cmd == "check": check()
     elif cmd == "next-build": next_build()
@@ -431,6 +458,7 @@ if __name__ == "__main__":
     elif cmd == "event": event("--go" in a)
     elif cmd == "screenshots": screenshots()
     elif cmd == "submit": submit("--go" in a)
-    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go]")
+    elif cmd == "withdraw": withdraw("--go" in a)
+    else: sys.exit("check | next-build | wait-build V B | prepare V [B] [--on-approval] | adstxt | promo | analytics | pages [--go] | event [--go] | screenshots | submit [--go] | withdraw [--go]")
 
 # (checked against App Store Connect on 2026-11-16)
