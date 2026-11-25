@@ -11,7 +11,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [check, adstxt, analytics, promo, pages-preview, pages, event-preview, event, screenshots, prepare, submit-preview, submit]
+        options: [check, adstxt, analytics, promo, pages-preview, pages, event-preview, event, screenshots, prepare, submit-preview, submit, withdraw-preview, withdraw]
         default: check
       version:
         description: "Version (prepare): blank for the project's"
@@ -50,6 +50,8 @@ jobs:
             prepare) python3 ci/asc.py prepare "$V" $BUILD ;;
             submit-preview) python3 ci/asc.py submit ;;
             submit) python3 ci/asc.py submit --go ;;
+            withdraw-preview) python3 ci/asc.py withdraw ;;
+            withdraw) python3 ci/asc.py withdraw --go ;;
             adstxt) python3 ci/asc.py adstxt ;;
             analytics) python3 ci/asc.py analytics ;;
             promo) python3 ci/asc.py promo ;;
