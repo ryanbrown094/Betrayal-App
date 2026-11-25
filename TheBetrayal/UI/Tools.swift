@@ -9,25 +9,27 @@ struct ToolsView: View {
     @State private var sound = Sound.shared.enabled && !Sound.shared.muted
 
     private struct Tool: Identifiable { let label: String; let v: String; let why: String; var id: String { v + label } }
-    fileprivate static let asks = ["endTrial": "End this Trial now?", "closeVote": "Close the vote now?", "dawnNow": "End the night now?", "deal": "Deal the roles now?", "skipStep": "Skip this step?",
-                                   "end": "End the game now? Everyone’s role is shown, and it’s scored as it stands."]
+    fileprivate static let asks = ["endTrial": "End this Trial now? The questions that have finished still count.", "closeVote": "Close the vote now? Anyone who hasn’t voted yet won’t get a vote.",
+                                   "dawnNow": "End the night now? If the Forsworn haven’t finished choosing, the game decides for them.", "deal": "Give out the roles now? Anyone who hasn’t answered the Oath counts as “either way”.",
+                                   "skipStep": "Skip this step? The game moves on to the next one.",
+                                   "end": "End the game now? Everyone’s role is shown, and it’s scored as it stands. If any Forsworn are still in, they win."]
 
     private var tools: [Tool] {
         var l: [Tool] = []
         let t = v.trial, it = t?.item
-        if v.phase == "oath" { l.append(Tool(label: "Deal the roles now", v: "deal", why: "For anyone who hasn’t answered the Oath: they’re dealt in as “either way”.")) }
-        if v.phase == "roles" { l.append(Tool(label: "Begin the game", v: "begin", why: "As if everyone had tapped “Got it”.")) }
-        if v.phase == "day" && me.canSkip { l.append(Tool(label: "Skip “" + (v.next ?? "") + "”", v: "skipStep", why: "Leave it out and go to the next step.")) }
-        if t?.stage == "intro" { l.append(Tool(label: "Start the Trial now", v: "skip", why: "Skip the rest of the introduction.")) }
-        if let it, it.isOpenish { l.append(Tool(label: "Close this question now", v: "skip", why: "Whatever has been answered counts.")) }
-        if let t, t.stage != "done" { l.append(Tool(label: "End this Trial now", v: "endTrial", why: "The questions that finished count; the one still open doesn’t.")) }
-        if v.phase == "talk" { l.append(Tool(label: "Open the vote now", v: "voteNow", why: "Cut the talking short.")) }
-        if v.phase == "vote" { l.append(Tool(label: "Close the vote now", v: "closeVote", why: "Counts the votes in; nobody else can vote.")) }
-        if v.phase == "night" { l.append(Tool(label: "End the night now", v: "dawnNow", why: "Anyone who hasn’t chosen is chosen for.")) }
+        if v.phase == "oath" { l.append(Tool(label: "Give out the roles now", v: "deal", why: "Anyone who hasn’t answered the Oath yet counts as “either way”.")) }
+        if v.phase == "roles" { l.append(Tool(label: "Begin the game", v: "begin", why: "Starts the game as if everyone had tapped “Got it” on their role.")) }
+        if v.phase == "day" && me.canSkip { l.append(Tool(label: "Skip “" + (v.next ?? "") + "”", v: "skipStep", why: "Leaves it out and moves on to the next step.")) }
+        if t?.stage == "intro" { l.append(Tool(label: "Start the Trial now", v: "skip", why: "Skips the rest of the introduction and starts the first question.")) }
+        if let it, it.isOpenish { l.append(Tool(label: "Close this question now", v: "skip", why: "Stops this question’s clock now. Any answers already sent still count.")) }
+        if let t, t.stage != "done" { l.append(Tool(label: "End this Trial now", v: "endTrial", why: "The questions that have finished count. The one still open doesn’t.")) }
+        if v.phase == "talk" { l.append(Tool(label: "Open the vote now", v: "voteNow", why: "Ends the debate early and opens the vote on every phone.")) }
+        if v.phase == "vote" { l.append(Tool(label: "Close the vote now", v: "closeVote", why: "Counts the votes now. Anyone who hasn’t voted misses out.")) }
+        if v.phase == "night" { l.append(Tool(label: "End the night now", v: "dawnNow", why: "Moves straight to dawn. If the Forsworn haven’t finished choosing, the game decides for them.")) }
         let clockRuns = (it.map { ["open", "study", "prep"].contains($0.stage) && $0.end != nil && $0.k != "snap" } ?? false) || ["talk", "vote", "night", "honour"].contains(v.phase)
             || (v.phase == "dawn" && v.dawn?.lastEnd != nil) || (v.phase == "trust" && v.trust?.result == nil)
-        if clockRuns { l.append(Tool(label: "Add a minute", v: "more", why: "A minute more on the clock that’s running.")) }
-        if !["lobby", "end"].contains(v.phase) { l.append(Tool(label: "End the game now", v: "end", why: "Everyone’s role is shown, and it’s scored as it stands: if any Forsworn are still in, they win.")) }
+        if clockRuns { l.append(Tool(label: "Add a minute", v: "more", why: "Adds a minute to the clock that’s running now.")) }
+        if !["lobby", "end"].contains(v.phase) { l.append(Tool(label: "End the game now", v: "end", why: "Everyone’s role is shown, and the game is scored as it stands. If any Forsworn are still in, they win.")) }
         return l
     }
 
@@ -36,9 +38,9 @@ struct ToolsView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(session.rejoin) { r in RejoinCard(r: r) }
             H2("Host tools")
-            Sub("For when something goes wrong. Nothing here shows you anyone’s role, except the last one.")
+            Sub("Use these if something goes wrong. None of them shows you anyone’s role, except the very last one.")
             let list = tools
-            if list.isEmpty { Small("Nothing to fix at this moment.") }
+            if list.isEmpty { Small("There’s nothing to fix right now.") }
             ForEach(list) { tool in
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -52,14 +54,14 @@ struct ToolsView: View {
                 .overlay(alignment: .bottom) { Rectangle().fill(Theme.rule2).frame(height: 1) }
             }
             More("Take someone out of the game") {
-                Small("If someone is ill or has to go home. They leave for good, and nobody is told their role.")
+                Small("Use this if someone is ill or has to go home. They leave the game for good, and nobody is told their role.")
                 PickGrid(list: others) { p in run("remove", who: p) }
             }
             // never a bot (the server refuses): so not at a practice game
             let people = others.filter { !$0.bot }
             if !people.isEmpty {
                 More("Make someone else the host") {
-                    Small("Their phone gets these controls, and yours loses them.")
+                    Small("Their phone gets the host’s buttons and these tools, and yours loses them. You both keep playing as before.")
                     PickGrid(list: people) { p in run("host", who: p) }
                 }
             }
@@ -76,7 +78,7 @@ struct ToolsView: View {
                 .btn(.dark, .sm, fit: true)
             }
             VStack(alignment: .leading, spacing: 0) {
-                Small(Text("The last resort.").font(Theme.ui(15, .bold)).foregroundColor(Theme.blood2) + Text(" Only if the game can’t carry on otherwise, say a phone died and nobody remembers who was Forsworn."))
+                Small(Text("The last resort.").font(Theme.ui(15, .bold)).foregroundColor(Theme.blood2) + Text(" Use this only if the game can’t carry on any other way. For example, a phone died and nobody remembers who was Forsworn."))
                 Button("Show me the roles…", action: peek).btn(.ghost, .sm, fit: true)
             }
             .padding(.top, 16).padding(.bottom, 4)

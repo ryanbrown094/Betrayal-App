@@ -106,14 +106,14 @@ struct TVBody: View, TVType {
                 QRBox(text: Server.joinLink(session.room)).frame(width: u.vh * 30, height: u.vh * 30)
                 VStack(alignment: .leading, spacing: u.vh * 1.5) {
                     Text(session.room).font(Theme.book(u.vh * 13, fixed: true)).tracking(u.vh * 1.5).foregroundStyle(Theme.brass2)
-                    (Text("Scan, or type the code in ") + Text("The Betrayal").font(Theme.ui(u.vh * 3.4, .bold, fixed: true)).foregroundColor(Theme.tallow) + Text(" app"))
+                    (Text("To join, scan this or type the code in ") + Text("The Betrayal").font(Theme.ui(u.vh * 3.4, .bold, fixed: true)).foregroundColor(Theme.tallow) + Text(" app"))
                         .font(Theme.ui(u.vh * 3.4, fixed: true)).foregroundStyle(Theme.tallow2)
                 }
             }
             TVPeople(v: v, list: v.players, u: u)
-            count(Words.plural(v.players.count, "player") + " · 8 to 24")
+            count(Words.plural(v.players.count, "player") + " joined · 8 to 24 can play")
         case "oath":
-            eyebrow("the oath"); h1("Swear on your phones"); sub("Would you like to be Forsworn? Nobody sees your answer.")
+            eyebrow("the oath"); h1("Swear on your phones"); sub("Your phone asks if you’d like to be Forsworn, a secret traitor. Nobody sees your answer.")
             TVPeople(v: v, list: v.players, u: u, mark: { $0.optedIn })
         case "roles":
             h1("Look at your role"); sub("Hold your phone close. Tell no one.")
@@ -128,7 +128,7 @@ struct TVBody: View, TVType {
         case "trial":
             if let t = v.trial { TVTrial(v: v, t: t, u: u) }
         case "talk":
-            eyebrow("the reckoning"); h1("Make your accusations"); clock(v.vote?.talkEnd)
+            eyebrow("the reckoning"); h1("Make your accusations"); sub("Who is Forsworn? Debate it, then vote on your phones."); clock(v.vote?.talkEnd)
             TVPeople(v: v, list: v.players, u: u)
         case "vote":
             if let vote = v.vote {
@@ -136,22 +136,22 @@ struct TVBody: View, TVType {
                 h1(vote.tie ? "Vote again" : "Vote on your phones")
                 if let r = vote.revote { sub("Between " + Words.andList(r.map { v.name($0) })) }
                 HStack(spacing: u.vw * 0.6) { count("\(vote.voted) of \(vote.of) voted · "); clock(vote.voteEnd) }
-                if let i = vote.immune { sub(v.name(i) + " laid down the Crown, and is safe from this exile.") }
+                if let i = vote.immune { sub(v.name(i) + " laid down the Crown, so they can’t be voted out this time.") }
                 TVPeople(v: v, list: v.players, u: u, mark: vote.revote.map { r in { (p: Player) in r.contains(p.id) } })
             }
         case "reveal":
             if let r = v.reveal {
                 h1(r.name + " is exiled")
                 sub(r.counts.map { v.name($0.id) + " \($0.n)" }.joined(separator: " · ") + (r.cast ? " · settled by the Casting Vote" : ""))
-                if r.secret { sub("In the final, the exiled go without a word.") }
+                if r.secret { sub("In the final, roles stay secret until the end.") }
                 else if r.role != nil {
                     Verdict(role: r.role, wait: nil, tv: true, vh: u.vh)
-                    if !r.called.isEmpty { sub("Called from beyond by " + Words.andList(r.called)) }
+                    if !r.called.isEmpty { sub("The Ghosts who guessed right: " + Words.andList(r.called)) }
                     if let w = r.words { LastWords(name: r.name, words: w, tv: true, vh: u.vh).multilineTextAlignment(.leading) }
                 } else { Verdict(role: nil, wait: nil, tv: true, vh: u.vh) }
             }
         case "night":
-            eyebrow("the night"); h1("Heads down"); sub("Everyone, tap your phone. The Forsworn are choosing.")
+            eyebrow("the night"); h1("Heads down"); sub("Everyone, tap a name on your phone. The Forsworn are secretly choosing who to poison.")
         case "dawn":
             if let d = v.dawn {
                 eyebrow("dawn")
@@ -167,14 +167,18 @@ struct TVBody: View, TVType {
         case "trust":
             if let t = v.trust {
                 h1(t.result.map { $0 == "trust" ? "The table trusts" : "Doubt" } ?? "Do you trust everyone left?")
-                if t.result == nil { HStack(spacing: u.vw * 0.6) { count("\(t.voted) of \(t.of) chosen" + (t.end != nil ? " · " : "")); if let e = t.end { clock(e) } } }
+                if let res = t.result { sub(res == "trust" ? "Everyone chose Trust. The roles are revealed next." : "Not everyone chose Trust, so there’s another Reckoning.") }
+                else {
+                    sub("If everyone chooses Trust, the game ends. One Doubt means another Reckoning.")
+                    HStack(spacing: u.vw * 0.6) { count("\(t.voted) of \(t.of) chosen" + (t.end != nil ? " · " : "")); if let e = t.end { clock(e) } }
+                }
             }
         case "unmask":
             eyebrow("the unmasking"); h1("Who were they?")
             TVPeople(v: v, list: (v.unmask?.order ?? []).map { v.player($0) }, u: u, roles: true)
         case "honour":
             if let h = v.honour {
-                eyebrow("the last betrayal"); h1("Honour or betray?"); sub("The Forsworn choose, in secret.")
+                eyebrow("the last betrayal"); h1("Honour or betray?"); sub("Each Forsworn secretly chooses: share the prize, or betray the others to take it all.")
                 HStack(spacing: u.vw * 0.6) { count("\(h.made) of \(h.of) chosen" + (h.end != nil ? " · " : "")); if let e = h.end { clock(e) } }
             }
         case "end":
@@ -188,7 +192,7 @@ struct TVBody: View, TVType {
         var bits: [String] = [], say: [String] = []
         switch v.phase {
         case "lobby": break
-        case "oath": bits = ["the oath", "Swear on your phones", "Would you like to be Forsworn? Nobody sees your answer."]
+        case "oath": bits = ["the oath", "Swear on your phones", "Your phone asks if you’d like to be Forsworn, a secret traitor. Nobody sees your answer."]
         case "roles": bits = ["Look at your role", "Hold your phone close. Tell no one."]
         case "day": bits = [v.final ? "The final" : "Day \(v.round)"]
         case "break": bits = ["a break", v.brk?.name ?? ""]
@@ -205,16 +209,16 @@ struct TVBody: View, TVType {
                 else if x.k == "actor" { bits.append(v.name(x.actor) + " is up") }
                 else if x.k == "tempt" { bits += ["PURSE or SELF?", "Choose on your phones, in secret."] }
             }
-        case "talk": bits = ["the reckoning", "Make your accusations"]
+        case "talk": bits = ["the reckoning", "Make your accusations", "Who is Forsworn? Debate it, then vote on your phones."]
         case "vote": bits = ["the reckoning", v.vote?.tie == true ? "Vote again" : "Vote on your phones"]
         case "reveal":
             if let r = v.reveal {
                 bits = [r.name + " is exiled"]
-                if r.secret { bits.append("In the final, the exiled go without a word.") }
+                if r.secret { bits.append("In the final, roles stay secret until the end.") }
                 else if let role = r.role { bits.append(role == "f" ? "Forsworn" : "Loyal") }
                 if let w = r.words, r.role != nil { say.append("“" + w + "” " + r.name + "’s last words") }
             }
-        case "night": bits = ["the night", "Heads down", "Everyone, tap your phone. The Forsworn are choosing."]
+        case "night": bits = ["the night", "Heads down", "Everyone, tap a name on your phone. The Forsworn are secretly choosing who to poison."]
         case "dawn":
             if let d = v.dawn {
                 if d.revealed {
@@ -223,9 +227,12 @@ struct TVBody: View, TVType {
                     for n in d.victims { if let q = d.likely.first(where: { $0.name == n })?.q { say.append("The table voted \(n) " + Epitaphs.lower(q) + ". Now we’ll never find out.") } }
                 } else { bits = ["dawn", "Heads up", "Who made it through the night?"] }
             }
-        case "trust": bits = [v.trust?.result.map { $0 == "trust" ? "The table trusts" : "Doubt" } ?? "Do you trust everyone left?"]
+        case "trust":
+            bits = [v.trust?.result.map { $0 == "trust" ? "The table trusts" : "Doubt" } ?? "Do you trust everyone left?"]
+            if let res = v.trust?.result { bits.append(res == "trust" ? "Everyone chose Trust. The roles are revealed next." : "Not everyone chose Trust, so there’s another Reckoning.") }
+            else { bits.append("If everyone chooses Trust, the game ends. One Doubt means another Reckoning.") }
         case "unmask": bits = ["the unmasking", "Who were they?"]
-        case "honour": bits = ["the last betrayal", "Honour or betray?", "The Forsworn choose, in secret."]
+        case "honour": bits = ["the last betrayal", "Honour or betray?", "Each Forsworn secretly chooses: share the prize, or betray the others to take it all."]
         case "end": if let r = v.result { bits = [r.forsworn ? "The Forsworn win" : "The Loyal win", "the prize", Words.prize(r)] }
         default: break
         }
@@ -248,7 +255,7 @@ struct TVTrial: View, TVType {
             let w = t.winners.first
             eyebrow(t.title)
             h1(TrialDone.head(v, t))
-            if w != nil && t.byLot && t.key != "tempt" { count("a tie at the top, settled by lot") }
+            if w != nil && t.byLot && t.key != "tempt" { count("a tie at the top, settled at random") }
             ans(Words.signed(t.points) + " to the Purse")
             meter()
             if let g = t.gave { sub(v.name(g) + " takes the Crown.") }
@@ -297,7 +304,7 @@ struct TVItem: View, TVType {
                 ForEach(Array(x.pairs.enumerated()), id: \.offset) { _, pr in
                     (Text(v.name(pr.first)) + Text(" v ").foregroundColor(Theme.mist) + Text(v.name(pr.last))).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow)
                 }
-                if let bye = x.bye { Text("bye: " + v.name(bye)).font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow) }
+                if let bye = x.bye { Text(v.name(bye) + " sits out").font(Theme.ui(u.vh * 3, fixed: true)).foregroundStyle(Theme.tallow) }
             }
             .frame(maxWidth: u.vw * 84)
             if c { clocked(x) }
@@ -349,7 +356,7 @@ struct TVReveal: View, TVType {
         case "tempt":
             let n = r.selfCount
             h2(n == 1 ? "One SELF" : n > 0 ? "\(n) SELFs" : "Nobody chose SELF")
-            sub(n == 1 ? "They take Sanctuary, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held, so the Purse grows double.")
+            sub(n == 1 ? "They take Sanctuary, and the Purse grows." : n > 0 ? "Too greedy. Nobody gets Sanctuary, and the Purse shrinks." : "The table held together, so the Purse grows twice as much.")
         default: EmptyView()
         }
     }

@@ -22,7 +22,7 @@ struct ScanSheet: View {
                 .ignoresSafeArea()
                 VStack {
                     Spacer()
-                    Text(unreadable ? "That isn’t a Table’s code. Point at the QR code on the TV or the host’s phone." : "Point at the QR code on the TV or the host’s phone.")
+                    Text(unreadable ? "That isn’t a Table’s QR code. Point at the one on the TV or the host’s phone." : "Point at the QR code on the TV or the host’s phone.")
                         .font(Theme.ui(18)).foregroundStyle(Theme.tallow)
                         .padding(.horizontal, 18).padding(.vertical, 12)
                         .background(Capsule().fill(Theme.soot.opacity(0.8)))
@@ -32,7 +32,7 @@ struct ScanSheet: View {
                 Color.clear.task { _ = await AVCaptureDevice.requestAccess(for: .video); access = AVCaptureDevice.authorizationStatus(for: .video) }
             } else {
                 VStack(spacing: 14) {
-                    note("The Betrayal needs the camera to read the code. Allow it in Settings, or type the Table code instead.")
+                    note("The Betrayal needs the camera to read the QR code. You can allow it in Settings, or close this and type the Table code instead.")
                     Button("Open Settings") { if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) } }.btn(.ghost, .sm, fit: true)
                 }
             }

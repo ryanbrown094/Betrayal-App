@@ -24,37 +24,37 @@ and the Forsworn type messages to each other in their chat); if it asks about **
 
 Christmas sorted: one room, 8 to 24 friends, a phone each. All December the Quiz is Christmas questions. Find the Forsworn before they take the Purse.
 
-**Description** (2374/4000)
+**Description** (3078/4000)
 
 ```
 Everyone swore an oath tonight. Not everyone meant it.
 
-The Betrayal is a party game of secret roles, played in one room by friends on their own phones. A few of you are secretly Forsworn; everyone else is Loyal. By night the Forsworn choose a victim. By day the table argues, accuses and votes someone out. Find every Forsworn before the end, or watch them walk away with the Purse.
+The Betrayal is a party game of secret roles for 8 to 24 friends in one room, each playing on their own phone. A few of you are secretly Forsworn: the traitors. Everyone else is Loyal, and doesn't know who to trust. Each night, the Forsworn secretly choose someone to poison. Each day, everyone argues, accuses and votes someone out. The Loyal must find every Forsworn before the end, or watch them walk away with the Purse, the prize pot you've all been filling.
 
 EVERY PHONE KNOWS ITS PART
-Your phone tells you what to do, and when. There's nothing to learn before the night and no account to make. The host starts a Table; everyone else joins in the app with its code, or scans the code on the TV.
+Your phone tells you what to do, and when. There's nothing to learn before the party and no account to make. The host starts a game, called a Table, on their phone. Everyone else opens the app and types the Table's code, or scans the QR code on the TV.
 
 PARTY GAMES BETWEEN THE ROUNDS
-Quizzes, guessing games, word games, charades and more, played on the phones, for a shared Purse and for Sanctuary, which keeps its holder safe for a night. In the quiz-style Trials, every wrong answer from a Forsworn costs the Purse: the table hears how many there were, never whose.
+Each round has a Trial: a quiz, a guessing game, a word game, charades and more, played on your phones. Trials fill the Purse, and the winner usually gets Sanctuary, which keeps them safe from poison for one night. If the Forsworn win, they take what the Purse falls short of its target, so they play along while quietly holding it back. In the quiz-style Trials, every wrong answer from a Forsworn costs the Purse. Everyone hears how many wrong answers there were, but never whose.
 
 NIGHT, DAWN AND THE RECKONING
-Heads down while the Forsworn choose. At dawn the victim learns first, in secret, then gets their last words. Then the Reckoning: open debate on a timer and a secret vote. The exile's role is shown as they leave.
+At night, everyone taps a name on their phone, so nobody can tell who the Forsworn are while they choose. At dawn, the player who was poisoned finds out first, in secret, and then gets their last words. Then comes the Reckoning: an open debate on a timer, then a secret vote. The player with the most votes is exiled, and their role is shown as they leave.
 
 A SHOW ON YOUR TV
-Make an iPad or a spare phone the TV, or AirPlay the host's phone to one, and the game becomes a show: the Table, the votes, the reveals and the music. The TV shows the game, never anyone's role.
+A TV is optional, but it turns the game into a show. Make an iPad or a spare phone the TV, or AirPlay the host's phone to one. The TV shows the players, the votes and the reveals, and plays the music. It never shows anyone's role.
 
 TWISTS
-A few twists, which the game explains when they happen.
+A few twists can change the game, and your phone explains each one when it happens.
 
 PRACTISE ON YOUR OWN
-Practice against bots: they fill the Table and play every part, so you can learn the game before the party.
+Tap Practice against bots to play on your own. The bots fill the Table and play every part, so you can learn the game before the party.
 
 FREE, OR AD-FREE
-Free games show a banner, and a short full-screen ad at each Reckoning, each night and the end (never during a Trial or a vote), and use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host.
+Hosting is free. Free games show a banner ad, and a short full-screen ad at each Reckoning, each night and at the end. There are never ads during a Trial or a vote. Free games use eight of the fifteen Trials. A Night Pass makes tonight ad-free for everyone at your Table, with every Trial and the full question banks. The Host Pass does that every time you host. Guests never need a pass.
 
-You'll need 8 to 24 players in one room, and a phone each. The game is made for adults.
+You'll need 8 to 24 players in one room, and a phone each with the app. The game is made for adults.
 
-The Host Pass is a yearly subscription. Payment is taken from your Apple Account. It renews automatically unless cancelled at least 24 hours before the end of the year; manage or cancel it in your Apple Account's subscriptions.
+The Host Pass is a yearly subscription. Payment is taken from your Apple Account. It renews automatically unless you cancel at least 24 hours before the end of the year. You can manage or cancel it in your Apple Account's subscriptions.
 
 Terms of use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy: https://thebetrayal.co.uk/app-privacy

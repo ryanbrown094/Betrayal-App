@@ -137,7 +137,7 @@ final class Session {
             if screen == .wait {
                 let r = try await API.room(room, "m/join", body: ["req": UserDefaults.standard.string(forKey: Session.reqKey(room)) ?? ""])
                 if let t = r.json["tok"].string { setToken(t); UserDefaults.standard.removeObject(forKey: Session.reqKey(room)); screen = .play }
-                else if r.json["gone"].bool == true { UserDefaults.standard.removeObject(forKey: Session.reqKey(room)); screen = .join; say(r.error ?? "The host turned that request down.", error: true) }
+                else if r.json["gone"].bool == true { UserDefaults.standard.removeObject(forKey: Session.reqKey(room)); screen = .join; say(r.error ?? "The host didn’t let you back in.", error: true) }
             } else {
                 let q = "m?v=" + (view.map { String($0.ver) } ?? "") + "&me=" + (view?.me?.id ?? "")
                 let r = try await API.room(room, q, token: isTV ? nil : token)
@@ -235,8 +235,8 @@ final class Session {
             let r = try await API.room(room, "m/join", body: body)
             reclaim = r.error != nil ? r.json["reclaim"].string : nil
             if r.json["none"].bool == true {
-                if r.json["classic"].bool == true { classic = true; return say("This Table can’t be played in the app. Ask the host to start a new Table in the app.", error: true) }
-                return say("This Table hasn’t been set up yet. The host opens it first.", error: true)
+                if r.json["classic"].bool == true { classic = true; return say("This Table is set up for a different kind of game, so it can’t be played in the app. Ask the host to start a new Table in the app instead.", error: true) }
+                return say("This Table hasn’t been set up yet. The host needs to open it first.", error: true)
             }
             if let t = r.json["tok"].string { setToken(t); take(r.json); screen = .play; toast = nil; start(); return }
             if let q = r.json["req"].string { UserDefaults.standard.set(q, forKey: Session.reqKey(room)); screen = .wait; toast = nil; start(); return }
