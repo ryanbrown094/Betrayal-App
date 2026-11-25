@@ -162,6 +162,9 @@ struct Trial {
     let gave: String?
     let item: Item?
     let last: ItemResult?
+    let tally: [Tally] // Most Likely To's end: who the table picked most over all its prompts, most first
+
+    struct Tally { let id: String; let n: Int }
 
     init(_ j: JSON) {
         key = j["key"].string ?? ""
@@ -182,6 +185,7 @@ struct Trial {
         gave = j["gave"].string
         item = j["item"].isNull ? nil : Item(j["item"])
         last = j["last"].isNull ? nil : ItemResult(j["last"])
+        tally = j["tally"].array.compactMap { e in e[0].string.flatMap { id in e[1].int.map { Tally(id: id, n: $0) } } }
     }
 }
 

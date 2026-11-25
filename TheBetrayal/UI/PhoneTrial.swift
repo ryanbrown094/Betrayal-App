@@ -8,14 +8,14 @@ struct TrialView: View {
     var body: some View {
         if let t = v.trial {
             if t.stage == "intro" { intro(t) }
-            else if t.stage == "done" { TrialDone(v: v, me: me, t: t) }
+            else if t.stage == "done" { if t.key == "likely" { LikelyDone(v: v, me: me, t: t) } else { TrialDone(v: v, me: me, t: t) } }
             else if let it = t.item { item(t, it) }
         }
     }
 
     @ViewBuilder private func intro(_ t: Trial) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            Eyebrow("trial" + TrialView.prizeLine(t))
+            Eyebrow(TrialView.brow(t))
             H1(t.title)
             Para(t.rules)
             if t.prize && t.special == nil { Small("Whoever holds Sanctuary can’t be poisoned tonight.") }
@@ -37,6 +37,9 @@ struct TrialView: View {
             }
         }
     }
+
+    // Most Likely To is the icebreaker, with nothing to win
+    static func brow(_ t: Trial) -> String { t.key == "likely" ? "the icebreaker" : "trial" + prizeLine(t) }
 
     static func prizeLine(_ t: Trial) -> String {
         switch t.special {
@@ -426,6 +429,38 @@ struct GhostItem: View {
             case "tempt": H2("PURSE or SELF?"); Sub("Choose on your phones, in secret."); count
             default: EmptyView()
             }
+        }
+    }
+}
+
+// Most Likely To's end (likely in trialDone() in src/modern-ui.js): who the table picked most, never a winner or the Purse
+struct LikelyDone: View {
+    let v: Snapshot
+    let me: Me
+    let t: Trial
+    @Environment(Session.self) private var session
+
+    static func head(_ v: Snapshot, _ t: Trial) -> String {
+        let top = t.tally.filter { $0.n == t.tally.first?.n }.map { v.name($0.id) }
+        if top.isEmpty { return "Nobody voted" }
+        return top.count == 1 ? top[0] + " got the most votes" : Words.andList(top) + " tied for the most votes"
+    }
+    static func votes(_ t: Trial) -> String? {
+        guard let n = t.tally.first?.n else { return nil }
+        return Words.plural(n, "vote") + (t.tally.filter { $0.n == n }.count > 1 ? " each" : "")
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Eyebrow(t.title + " · the table’s verdict")
+            H1(LikelyDone.head(v, t))
+            if let c = LikelyDone.votes(t) { Sub(c + ", over all the questions.") }
+            VStack(spacing: 0) {
+                ForEach(t.tally, id: \.id) { e in ScoreRow(player: v.player(e.id), highlight: e.id == me.id) { points("\(e.n)") } }
+            }
+            Small("That was just a warm-up to get everyone talking. It doesn’t change the Purse, and nobody wins Sanctuary.")
+            DirCard { Button("Back to the table") { session.act("cont") }.btn(.fill) }
+            WaitHost(v: v)
         }
     }
 }

@@ -198,7 +198,8 @@ struct TVBody: View, TVType {
         case "break": bits = ["a break", v.brk?.name ?? ""]
         case "trial":
             guard let t = v.trial else { break }
-            if t.stage == "intro" { bits = ["trial" + TrialView.prizeLine(t), t.title, t.rules] }
+            if t.stage == "intro" { bits = [TrialView.brow(t), t.title, t.rules] }
+            else if t.stage == "done" && t.key == "likely" { bits = [t.title, LikelyDone.head(v, t), "That was just for fun. The Purse hasn’t changed."] }
             else if t.stage == "done" { bits = [t.title, TrialDone.head(v, t), Words.signed(t.points) + " to the Purse"] }
             else if let x = t.item {
                 bits = [t.title]
@@ -250,7 +251,13 @@ struct TVTrial: View, TVType {
 
     var body: some View {
         if t.stage == "intro" {
-            eyebrow("trial" + TrialView.prizeLine(t)); h1(t.title, disp: true); sub(t.rules); if t.introEnd != nil { clock(t.introEnd) }
+            eyebrow(TrialView.brow(t)); h1(t.title, disp: true); sub(t.rules); if t.introEnd != nil { clock(t.introEnd) }
+        } else if t.stage == "done" && t.key == "likely" {
+            eyebrow(t.title + " · the table’s verdict")
+            h1(LikelyDone.head(v, t))
+            if let c = LikelyDone.votes(t) { count(c) }
+            sub("That was just for fun. The Purse hasn’t changed.")
+            if !t.tally.isEmpty { TVScores(v: v, t: t, u: u, tally: true) }
         } else if t.stage == "done" {
             let w = t.winners.first
             eyebrow(t.title)
@@ -486,9 +493,10 @@ struct TVScores: View {
     let v: Snapshot
     let t: Trial
     let u: TVUnits
+    var tally = false // Most Likely To's votes, not a Trial's scores
     var body: some View {
-        let w = t.winners.first
-        let cols = TVScores.columns(t.scores, winner: w)
+        let w = tally ? t.tally.first?.id : t.winners.first
+        let cols = TVScores.columns(tally ? Dictionary(t.tally.map { ($0.id, $0.n) }, uniquingKeysWith: { a, _ in a }) : t.scores, winner: w)
         HStack(alignment: .top, spacing: u.vw * 4) {
             ForEach(0..<2, id: \.self) { c in
                 VStack(spacing: u.vh * 0.6) {

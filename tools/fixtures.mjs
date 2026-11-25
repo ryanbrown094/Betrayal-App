@@ -75,7 +75,7 @@ side(() => {
 });
 side(() => { trial("estimate"); toItems(); snap("estimate-open", ryan); alive().forEach((id, i) => a(id, { a: "ans", v: String(100 + i * 37) })); t(100); snap("estimate-reveal", ryan); });
 side(() => { trial("hilo"); toItems(); snap("hilo-open", ryan); alive().forEach((id, i) => a(id, { a: "ans", v: i % 2 ? "higher" : "lower" })); t(100); snap("hilo-reveal", ryan); });
-side(() => { trial("likely"); toItems(); snap("likely-open", ryan); alive().forEach((id, i) => a(id, { a: "ans", v: [marcus, jess, marcus][i % 3] })); t(100); snap("likely-reveal", ryan); });
+side(() => { trial("likely"); toItems(); snap("likely-open", ryan); alive().forEach((id, i) => a(id, { a: "ans", v: [marcus, jess, marcus][i % 3] })); t(100); snap("likely-reveal", ryan); a(dir, { a: "tool", v: "endTrial" }); snap("likely-done", ryan); });
 side(() => {
   trial("countdown"); toItems(); snap("word-open", ryan); a(ryan, { a: "ans", v: "rate" }); snap("word-mine", ryan);
   alive().forEach((id, i) => { if (id !== ryan) a(id, { a: "ans", v: ["seat", "tears", "xyzzy", "stare"][i % 4] }); }); t(46000); snap("word-reveal", ryan);
